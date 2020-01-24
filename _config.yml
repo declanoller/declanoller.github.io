@@ -25,7 +25,7 @@ github_username:  declanoller
 
 # Build settings
 markdown: kramdown
-theme: minima
+theme: simpol-jekyll-theme
 plugins:
   - jekyll-feed
 
