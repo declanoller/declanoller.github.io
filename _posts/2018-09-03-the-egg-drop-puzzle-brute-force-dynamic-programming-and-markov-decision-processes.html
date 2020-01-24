@@ -38,6 +38,7 @@ author:
   first_name: ''
   last_name: ''
 permalink: "/2018/09/03/the-egg-drop-puzzle-brute-force-dynamic-programming-and-markov-decision-processes/"
+header-img : "feat_imgs/eggdrop.png"
 ---
 <p>I first heard this puzzle when taking an algorithms class in undergrad. The prof presented it as a teaser for the type of thing you could solve using algorithmic thinking, though he never told us the answer, or what the way of thinking is. Then, it more recently came up with my friends while we were hiking, and we were talking about it. I'll talk about what I have so far, but first let's say what the puzzle actually is.</p>
 <p>There's a building with 100 floors. You have two identical crystal eggs. They will break if dropped from (or above) some height (the same height for both), and you'd like to find that height using the fewest number of drops possible. If you drop an egg from some height and it doesn't break, you can use that egg again. Once an egg is broken (i.e., you dropped it from that breaking height or above), you can't use that egg again. So the question is, what's the best dropping strategy?</p>
