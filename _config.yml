@@ -23,6 +23,11 @@ baseurl: "" # the subpath of your site, e.g. /blog
 url: "declanoller.github.io" # the base hostname & protocol for your site, e.g. http://example.com
 github_username:  declanoller
 
+nav_link_one_link: "/about/"
+nav_link_one_name: "About"
+
+
+
 # Build settings
 markdown: kramdown
 remote_theme: declanoller/simpol-theme
