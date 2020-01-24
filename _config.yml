@@ -25,7 +25,7 @@ github_username:  declanoller
 
 # Build settings
 markdown: kramdown
-theme: simpol-jekyll-theme
+remote_theme: scottmathson/simpol-theme
 plugins:
   - jekyll-feed
 
