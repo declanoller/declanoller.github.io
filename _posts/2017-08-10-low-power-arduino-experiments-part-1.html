@@ -1,0 +1,146 @@
+---
+layout: post
+title: Low power Arduinos, part 1
+date: 2017-08-10 17:04:30.000000000 -04:00
+type: post
+parent_id: '0'
+published: true
+password: ''
+status: publish
+categories:
+- electronics
+- projects
+tags:
+- arduino
+- electronics
+- low power
+- power
+- programming
+- radio
+meta:
+  _publicize_job_id: '8134523264'
+  _rest_api_published: '1'
+  _rest_api_client_id: "-1"
+  _thumbnail_id: '1181'
+  _edit_last: '1'
+  ecae_meta: a:1:{s:15:"disable_excerpt";s:2:"no";}
+  penci_post_views_count: '226'
+  penci_post_week_views_count: '4'
+  penci_post_month_views_count: '20'
+author:
+  login: declanoller
+  email: declanoller@gmail.com
+  display_name: declanoller
+  first_name: ''
+  last_name: ''
+permalink: "/2017/08/10/low-power-arduino-experiments-part-1/"
+---
+<p style="text-align: justify;">As part of an ongoing project, I wanted to see how low I could get the power consumption of Arduinos to go. The reason is as follows. When getting back into Arduinos a few months ago, I wanted to try a <a href="https://en.wikipedia.org/wiki/Telemetry">telemetry</a> project of some sort, collecting data remotely and sending it back. Ideally, the idea would be to collect data from different places and analyze the aggregate in some cool way, but that's a story for another post.</p>
+<p style="text-align: justify;">The point I was going for, though, is that I wanted to put these Arduinos in places that wouldn't have constant access to power, so that already means using a battery. Using a battery to power an Arduino isn't a big deal (plenty of people do it for portable projects), but once you're looking at long term powering without recharging, it's a different story.</p>
+<p style="text-align: justify;">That's what this post is about. This info is all elsewhere on the web in one form or another, but I haven't seen it presented as systematically, showing the effect of each decrease at a time presented here.</p>
+<p style="text-align: justify;">Here's the deal: normally, low power isn't really a concern for Arduinos. They know that for 99.9% of users, they'll be powering it from the USB jack or a regulator jack, so it makes more sense to cram more features on at the price of a little power. However, a lot of these features, even if you're not really using them, consume power simply by being there.</p>
+<p style="text-align: justify;">So, the first thing to change is the type of Arduino itself. If you don't really have a specific purpose in mind, there's a good chance you might be using something like an Arduino Uno, since it's a common one, has lots of I/O pins, and clones of it go as low as like, 3 bucks. And it's actually fairly minimal as far as they go (no fancy wifi chip or cappuccino module), but it still has one big killer: the USB jack.</p>
+<p style="text-align: justify;">You see, USB is realllllyyyy convenient for a dumb user like me, but I think we often take for granted how complicated it actually is. For example, if you've ever done machine control/data collection/etc from scientific equipment, you'll know that some pretty common ways are parallel connections, RS232 serial connections, and GPIB connections. They're all fairly low level and understandable; most languages I've used have pretty simple ways of communicating with RS232 and GPIB. On the other hand, as far as I can tell, USB tends to be fairly "black box". I'm sure you <em>can</em> communicate with a USB device with C++/python/matlab, but in my experience USB devices seem to demand their own software pretty often. And, most Arduinos are definitely aimed at beginners, and it's a lot easier to tell them to use a jack and wire they're already familiar with, most laptops already have, and they already use to charge their phone. Most people already use a piece of specialized software for programming Arduinos anyway, so having it be USB isn't a big deal.</p>
+<p style="text-align: justify;">That said, USB isn't as direct to deal with for the Arduino either. It needs a special chip, the ATmega16U2, to convert the USB to Serial, that the Arduino can handle, and this chip actually eats a decent amount of power.</p>
+<p style="text-align: justify;">Soooo, the first step is getting an Arduino that doesn't have this chip. However, since we still need to program it, you'll end up having to get one of <a href="https://store.arduino.cc/usa/arduino-usb-2-serial-micro">these bad boys</a>:</p>
+<p style="text-align: justify;"><img class=" size-full wp-image-1129 aligncenter" src="{{ site.baseurl }}/assets/usb2serial.jpg" alt="usb2serial.jpg" width="520" height="330" /></p>
+<p style="text-align: justify;">If you can make it out, that converter actually has the ATmega16U2 on it, so what we're basically doing here is still using the chip, but moving it off the Arduino so we don't have to power it when we're not programming the Arduino.</p>
+<p style="text-align: justify;">Here, I'll be using the 3.3V/8MHz Arduino Pro Mini. I'm using it partly because it will naturally use less power running at 3.3 rather than 5V, and IIRC, the 8MHz variation will use less power than the 16MHz.</p>
+<p style="text-align: justify;">Now I need to say a little about how this is gonna work. We're going to do two types of things to decrease the power consumption: physical, and programming. We've already mentioned one of the physical things (the choice of Arduino), but we'll also be changing options of the Arduino internally so that it essentially goes into a low power mode. I'll get to that more later, but I bring it up now because when you run it in low power mode, it sleeps for some percent of the time, and then briefly wakes up to do something, and then goes back to sleep. So we'll want to know how much power (everything else being equal) is being used in both its awake and asleep states.</p>
+<p style="text-align: justify;">To do this, the test program I'm running is a slightly modified Blink, the "Hello World" of Arduinos:</p>
+<blockquote><p>void setup() {<br />
+// initialize digital pin LED_BUILTIN as an output.<br />
+pinMode(LED_BUILTIN, OUTPUT);<br />
+}</p>
+<p>// the loop function runs over and over again forever<br />
+void loop() {<br />
+digitalWrite(LED_BUILTIN, HIGH); // turn the LED on (HIGH is the voltage level)<br />
+delay(4000); // wait for a second<br />
+digitalWrite(LED_BUILTIN, LOW); // turn the LED off by making the voltage LOW<br />
+delay(4000); // wait for a second<br />
+}</p></blockquote>
+<p style="text-align: justify;">So this will just turn the on-board LED on for 4 seconds, then turn it off, and repeat. We're not messing around with any sleep modes yet, this is just to get a baseline reading. To test the power, we unplug the USB/serial converter from the Arduino, so we're only powering it from my breadboard 3.3V regulator, and then put my Digital multimeter (DMM) in between the +3.3V power supply and the Arduino power, so all power being used has to go through it. So...</p>
+<p style="text-align: justify;">5.3 mA with the LED off, 6.7 mA with the LED on. Apparently the LED uses about 1.3mA itself (for my actual application, I won't have an LED, but it's good to know), but there's a baseline of 5.3mA.</p>
+<p style="text-align: justify;">Now I'm going to upload an example sleep sketch I found <a href="http://donalmorrissey.blogspot.com/2011/11/sleeping-arduino-part-4-wake-up-via.html">here</a>, where he explains it in far more detail than I do. The important part for these next few steps are that there are different "levels" of sleep mode, where more or fewer things get disabled in the sleep mode. We'll apply them one at a time here.</p>
+<p style="text-align: justify;">Now we're cookin. There will be 4 states here, LED on/off crossed with sleep/awake (the LED stays on if it went into sleep mode with it on). Results:</p>
+<p style="text-align: justify;">LED on:</p>
+<p style="text-align: justify;">Awake: 6.7 mA</p>
+<p style="text-align: justify;">Asleep: 3.8 mA</p>
+<p style="text-align: justify;">LED off:</p>
+<p style="text-align: justify;">Awake: 5.3 mA</p>
+<p style="text-align: justify;">Asleep: 2.4 mA</p>
+<p style="text-align: justify;">So we can see that putting it to sleep saves it about 2.9 mA, with the LED either on or off, and the LED takes about 1.4 mA, in sleep or awake.</p>
+<p style="text-align: justify;">Now, the next level, using the Watchdog timer sketch from <a href="http://donalmorrissey.blogspot.com/2010/04/sleeping-arduino-part-5-wake-up-via.html">here.</a></p>
+<p style="text-align: justify;">Same deal:</p>
+<p style="text-align: justify;">LED on:</p>
+<p style="text-align: justify;">Awake: 6.7 mA</p>
+<p style="text-align: justify;">Asleep: 3.5 mA</p>
+<p style="text-align: justify;">LED off:</p>
+<p style="text-align: justify;">Awake: 5.3 mA</p>
+<p style="text-align: justify;">Asleep: 2.1 mA</p>
+<p style="text-align: justify;">So it's pretty much the same as before, but it's saving an extra 0.3 mA when asleep.</p>
+<p style="text-align: justify;">Now... even with the Pro Mini I'm using, there's still a little on-board LED (not the one you can control) that's always on, when it's powered. But we know that the LED we're blinking is taking ~1.4mA... so what if we got rid of this other one?</p>
+<p style="text-align: justify;">This is a pretty common tactic, as seen <a href="https://forum.pimatic.org/topic/383/tips-battery-powered-sensors">here</a>, for example. Grab a pair of pliers (or desolder it, if you're fancy), and rip that sucka out:</p>
+<p style="text-align: justify;"><img class=" size-full wp-image-1181 aligncenter" src="{{ site.baseurl }}/assets/pro_mini_led.jpg" alt="pro_mini_led.jpg" width="500" height="500" /></p>
+<p style="text-align: justify;">Now...</p>
+<p style="text-align: justify;">LED on:</p>
+<p style="text-align: justify;">Awake: 5.1 mA</p>
+<p style="text-align: justify;">Asleep: 1.9 mA</p>
+<p style="text-align: justify;">LED off:</p>
+<p style="text-align: justify;">Awake: 3.7 mA</p>
+<p style="text-align: justify;">Asleep: 0.53 mA</p>
+<p style="text-align: justify;"><i>Nooice. </i>This is getting good. Down to ~500uA.</p>
+<p style="text-align: justify;">I read on a number of sites that getting rid of the regulator can save even more power. Initially, this seems a little weird because I'm not actually <em>using</em> the regulator; I'm powering it directly to VCC with 3.3V. But I guess it's not surprising; we're talking about such tiny amounts of current here that maybe even backwards leakage current, or something, matters now.</p>
+<p style="text-align: justify;">Same as the LED, we physically remove it off the board (probably best to desolder this one...):</p>
+<p style="text-align: justify;"><img class=" size-full wp-image-1188 aligncenter" src="{{ site.baseurl }}/assets/pro_mini.jpg" alt="pro_mini" width="500" height="500" /></p>
+<p style="text-align: justify;">Without the regulator:</p>
+<p style="text-align: justify;">LED on:</p>
+<p style="text-align: justify;">Awake: 5.08 mA</p>
+<p style="text-align: justify;">Asleep: 1.87 mA</p>
+<p style="text-align: justify;">LED off:</p>
+<p style="text-align: justify;">Awake: 3.7 mA</p>
+<p style="text-align: justify;">Asleep: 0.48 mA</p>
+<p style="text-align: justify;">Hmmm, nothing incredibly mindblowing...</p>
+<p style="text-align: justify;">D'oh! I checked the code from that guy's page, and he was using the sleep setting SLEEP_MODE_PWR_SAVE, which is actually only the middle out of 5 in terms of power savings. Let's get crazy.  Let's try SLEEP_MODE_PWR_DOWN, the lowest... is such a thing possible?</p>
+<p style="text-align: justify;">LED on:</p>
+<p style="text-align: justify;">Awake: 5.08 mA</p>
+<p style="text-align: justify;">Asleep: 1.49 mA</p>
+<p style="text-align: justify;">LED off:</p>
+<p style="text-align: justify;">Awake: 3.68 mA</p>
+<p style="text-align: justify;">Asleep: 0.10 mA</p>
+<p style="text-align: justify;"><em>Oh god yes.</em> That apparently saved us another 0.38 mA or so. Honestly, at this point, I have to start suspecting that my DMM may not be accurate enough.</p>
+<p style="text-align: justify;">A bit more Googlin' led me to find that I should be also disabling the ADC, which apparently the sketch above didn't. This was a little confusing to me because I had seen this list on several sites, outlining the different power saving modes:</p>
+<ul style="text-align: justify;">
+<li><span class="Apple-style-span">SLEEP_MODE_IDLE - the least power savings</span></li>
+<li><span class="Apple-style-span">SLEEP_MODE_ADC</span></li>
+<li><span class="Apple-style-span">SLEEP_MODE_PWR_SAVE</span></li>
+<li><span class="Apple-style-span">SLEEP_MODE_STANDBY</span></li>
+<li><span class="Apple-style-span">SLEEP_MODE_PWR_DOWN - the most power savings</span></li>
+</ul>
+<p style="text-align: justify;">And, if SLEEP_MODE_PWR_DOWN saves more than <span class="Apple-style-span">SLEEP_MODE_ADC (which I assume disables the ADC...), then I would also assume that SLEEP_MODE_PWR_DOWN would disable it too. Apparently not, as briefly mentioned <a href="http://www.rocketscream.com/blog/2011/04/26/mini-ultra-8-mhz-current-consumption-part-2/">here.</a></span></p>
+<p style="text-align: justify;">The relevant code snippet is</p>
+<blockquote>
+<div class="line number22 index21 alt1"><code class="cpp comments">      // Disable ADC, must be done before calling</code></div>
+<div class="line number23 index22 alt2"><code class="cpp spaces">    </code><code class="cpp comments">// power_all_disable() as to disable ADC,</code></div>
+<div class="line number24 index23 alt1"><code class="cpp spaces">    </code><code class="cpp comments">// clock is required</code></div>
+<div class="line number25 index24 alt2"><code class="cpp spaces">    </code><code class="cpp comments">// Refer to datasheet page 45</code></div>
+<div class="line number26 index25 alt1"><code class="cpp spaces">    </code><code class="cpp plain">ADCSRA &amp;= ~(1 &lt;&lt; ADEN);</code></div>
+</blockquote>
+<p style="text-align: justify;">Anyway, let's see what this does:</p>
+<p style="text-align: justify;">LED on:</p>
+<p style="text-align: justify;">Awake: 5.33 mA</p>
+<p style="text-align: justify;">Asleep: 1.54 mA</p>
+<p style="text-align: justify;">LED off:</p>
+<p style="text-align: justify;">Awake: 3.82 mA</p>
+<p style="text-align: justify;">Asleep: 0.01 mA</p>
+<p style="text-align: justify;"><em>Hot. Damn.</em> 10uA. That's less than some microelectronics devices I do research on use. It actually displays 0.02mA at first but then reliably drops to 0.01mA. I'm pretty sure the DMM's precision may actually be the bottleneck here, so I may bring this into work and use a precision electrometer.</p>
+<p style="text-align: justify;">Well, there you go. The ADC was using the last ~90uA. Strangely, all the other combinations above actually went <em>up</em> in current, strange...</p>
+<p style="text-align: justify;">Update: I brought it into work, here are the more accurate values:</p>
+<p style="text-align: justify;">LED on:</p>
+<p style="text-align: justify;">Awake: 5.1 mA</p>
+<p style="text-align: justify;">Asleep: 1.45 mA</p>
+<p style="text-align: justify;">LED off:</p>
+<p style="text-align: justify;">Awake: 3.82 mA</p>
+<p style="text-align: justify;">Asleep: 16.6 uA</p>
+<p style="text-align: justify;"><img class=" size-full wp-image-1205 aligncenter" src="{{ site.baseurl }}/assets/happycat.jpg" alt="happycat.jpg" width="161" height="161" /></p>
+<p style="text-align: justify;">At this point I'm pretty happy, though I will say that I'm still curious; some people online are reporting that they're getting down to about ~5uA, so I'm left wondering where that last ~10uA is going. Are they ripping out another component? Either way, this last 10uA is kind of pointless: almost no matter what I do, at this point, the "awake" state will consume so much more power that averaging over the brief time it's awake will mean this last 10uA is meaningless.</p>

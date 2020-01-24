@@ -1,0 +1,129 @@
+---
+layout: page
+title: testing_js
+date: 2019-03-21 15:53:31.000000000 -04:00
+type: page
+parent_id: '0'
+published: true
+password: ''
+status: publish
+categories: []
+tags: []
+meta:
+  _edit_last: '1'
+  CODEd3_ex: "<!DOCTYPE html>\r\n<meta charset=\"utf-8\">\r\n<canvas id=\"canv_drag\"
+    width=\"960\" height=\"500\"></canvas>\r\n<script src=\"https://d3js.org/d3.v4.min.js\"></script>\r\n<script>\r\n\r\nvar
+    canvas = document.querySelector(\"#canv_drag\"),\r\n    context = canvas.getContext(\"2d\"),\r\n
+    \   width = canvas.width,\r\n    height = canvas.height,\r\n    radius = 20;\r\n\r\nvar
+    circles = d3.range(324).map(function(i) {\r\n  return {\r\n    x: (i % 25) * (radius
+    + 1) * 2,\r\n    y: Math.floor(i / 25) * (radius + 1) * 2\r\n  };\r\n});\r\n\r\nvar
+    simulation = d3.forceSimulation(circles)\r\n    .force(\"collide\", d3.forceCollide(radius
+    + 1).iterations(4))\r\n    .on(\"tick\", drawCircles);\r\n\r\nd3.select(canvas)\r\n
+    \   .call(d3.drag()\r\n        .container(canvas)\r\n        .subject(dragsubject)\r\n
+    \       .on(\"start\", dragstarted)\r\n        .on(\"drag\", dragged)\r\n        .on(\"end\",
+    dragended));\r\n\r\nfunction drawCircles() {\r\n  context.clearRect(0, 0, width,
+    height);\r\n  context.save();\r\n  context.beginPath();\r\n  circles.forEach(drawCircle);\r\n
+    \ context.fill();\r\n  context.strokeStyle = \"#fff\";\r\n  context.stroke();\r\n}\r\n\r\nfunction
+    drawCircle(d) {\r\n  context.moveTo(d.x + radius, d.y);\r\n  context.arc(d.x,
+    d.y, radius, 0, 2 * Math.PI);\r\n}\r\n\r\nfunction dragsubject() {\r\n  return
+    simulation.find(d3.event.x, d3.event.y, radius);\r\n}\r\n\r\nfunction dragstarted()
+    {\r\n  if (!d3.event.active) simulation.alphaTarget(0.3).restart();\r\n  d3.event.subject.fx
+    = d3.event.subject.x;\r\n  d3.event.subject.fy = d3.event.subject.y;\r\n}\r\n\r\nfunction
+    dragged() {\r\n  d3.event.subject.fx = d3.event.x;\r\n  d3.event.subject.fy =
+    d3.event.y;\r\n}\r\n\r\nfunction dragended() {\r\n  if (!d3.event.active) simulation.alphaTarget(0);\r\n
+    \ d3.event.subject.fx = null;\r\n  d3.event.subject.fy = null;\r\n}\r\n\r\n</script>"
+  _wp_page_template: default
+  CODEjs_fireworks: " <canvas id=\"canv_fireworks\" width=\"1000\" height=\"800\">Please
+    update your browser</canvas>\r\n\r\n<script>\r\n\r\nvar canvas_fireworks = document.getElementById(\"canv_fireworks\");\r\n//var
+    canvas_fireworks = document.getElementsByTagName(\"canvas_fireworks\")[0];\r\nvar
+    context_fireworks = canvas_fireworks.getContext(\"2d\");\r\n\r\n//var height =
+    canvas_fireworks.height = window.innerHeight;\r\n//var width = canvas_fireworks.width
+    = window.innerWidth;\r\nvar height = canvas_fireworks.height;\r\nvar width = canvas_fireworks.width;\r\n\r\ndocument.addEventListener(\"click\",
+    onMouseClick, false);\r\n\r\nconst max_sparks = 50;\r\nconst max_age = 200;\r\nlet
+    fireworks = [];\r\nwindow.requestAnimationFrame(explode);\r\n\r\n\r\nfunction
+    onMouseClick(e) {\r\n  let firework = {\r\n    sparks: []\r\n  };\r\n  for (let
+    n = 0; n < max_sparks; n++) {\r\n    let spark = {\r\n      vx: Math.random()
+    * 5 + .5,\r\n      vy: Math.random() * 5 + .5,\r\n      weight: Math.random()
+    * .3 + .03,\r\n      red: Math.floor(Math.random() * 2),\r\n      green: Math.floor(Math.random()
+    * 2),\r\n      blue: Math.floor(Math.random() * 2)\r\n    };\r\n    if (Math.random()
+    > .5) spark.vx = -spark.vx;\r\n    if (Math.random() > .5) spark.vy = -spark.vy;\r\n
+    \   firework.sparks.push(spark);\r\n  }\r\n\r\n  firework.x = e.clientX;\r\n  firework.y
+    = e.clientY;\r\n  firework.age = 0;\r\n  fireworks.push(firework);\r\ncanvas_fireworks}\r\n\r\nfunction
+    getRandomColor() {\r\n    var letters = '0123456789ABCDEF';\r\n    var color =
+    '#';\r\n    for (var i = 0; i < 6; i++ ) {\r\n        color += letters[Math.floor(Math.random()
+    * 16)];\r\n    }\r\n    return color;\r\n}\r\n\r\n\r\nfunction removeFirework(index)
+    {\r\n  fireworks.splice(index, 1);\r\n}\r\n\r\n\r\nfunction explode() {\r\n  context_fireworks.clearRect(0,
+    0, canvas_fireworks.width, canvas_fireworks.height);\r\n  fireworks.forEach((firework,index)
+    => {\r\n\r\n        firework.sparks.forEach((spark) => {\r\n        for (let i
+    = 0; i < 10; i++) {\r\n          let trailAge = firework.age + i;\r\n          let
+    x = firework.x + spark.vx * trailAge;\r\n          let y = firework.y + spark.vy
+    * trailAge + spark.weight * trailAge * spark.weight * trailAge;\r\n          let
+    fade = i * 20 - firework.age * 2;\r\n          let r = Math.floor(spark.red *
+    fade);\r\n          let g = Math.floor(spark.green * fade);\r\n          let b
+    = Math.floor(spark.blue * fade);\r\n          context_fireworks.beginPath();\r\n
+    \         context_fireworks.fillStyle = 'rgba(' + r + ',' + g + ',' + b + ',1)';\r\n
+    \         context_fireworks.rect(x, y, 4, 4);\r\n          context_fireworks.fill();\r\n
+    \       }\r\n      });\r\n      firework.age++;\r\n      if (firework.age > max_age
+    && Math.random() < .05) {\r\n        removeFirework(index);\r\n      }\r\n  });\r\n
+    \ window.requestAnimationFrame(explode);\r\n}\r\n\r\n\r\n\r\n\r\n\r\n\r\n</script>"
+  _oembed_dfc80a4446c124519d75235145c7cbca: '<blockquote class="wp-embedded-content"
+    data-secret="jMyYj18VpT"><a href="https://www.sitepoint.com/canvas-vs-svg-choosing-the-right-tool-for-the-job/">Canvas
+    vs. SVG: Choosing the Right Tool for the Job</a></blockquote><iframe class="wp-embedded-content"
+    sandbox="allow-scripts" security="restricted" style="position: absolute; clip:
+    rect(1px, 1px, 1px, 1px);" src="https://www.sitepoint.com/canvas-vs-svg-choosing-the-right-tool-for-the-job/embed/#?secret=jMyYj18VpT"
+    data-secret="jMyYj18VpT" width="600" height="338" title="&#8220;Canvas vs. SVG:
+    Choosing the Right Tool for the Job&#8221; &#8212; SitePoint" frameborder="0"
+    marginwidth="0" marginheight="0" scrolling="no"></iframe>'
+  _oembed_time_dfc80a4446c124519d75235145c7cbca: '1553186103'
+  _oembed_13e288e8597e23189d7812a1f2baa9f2: "{{unknown}}"
+  _oembed_431972589b07c8e53eea591e58b77cab: "{{unknown}}"
+  CODEsvg_test: "<div class=\"svg-container\">\r\n<svg id=\"click\" xmlns=\"http://www.w3.org/2000/svg\"
+    width=\"600\" height=\"300\">\r\n    <defs>\r\n        <g id=\"pointer\" transform=\"scale(0.8)\">\r\n
+    \           <path d=\"M0-1c-14.5-25.6-14.5-25.7-14.5-33.8c0-8.1,6.5-14.6,14.5-14.6s14.5,6.6,14.5,14.6C14.5-26.7,14.5-26.6,0-1z\"></path>\r\n
+    \           <path d=\"M0-49c7.7,0,14,6.3,14,14.1c0,8,0,8.1-14,32.8c-14-24.7-14-24.9-14-32.8C-14-42.7-7.7-49,0-49
+    M0-50c-8.3,0-15,6.8-15,15.1 S-15-26.5,0,0c15-26.5,15-26.5,15-34.9S8.3-50,0-50L0-50z\"></path>\r\n
+    \       </g>\r\n    </defs>\r\n</svg>\r\n</div>\r\n\r\n<script>\r\n\r\nvar svg
+    = d3.select(\"svg\");\r\n\r\nsvg.on(\"click\", function () {\r\n    var mouse
+    = d3.mouse(this);\r\n\r\n    var pointer = svg\r\n        .append(\"use\")\r\n
+    \       .attr(\"href\", \"#pointer\")\r\n        .attr(\"transform\", \"translate(\"
+    + mouse[0] + \",\" + mouse[1] + \")scale(0)\")\r\n        .attr(\"fill\", \"#039BE5\")\r\n
+    \       .attr(\"stroke\", \"#039BE5\")\r\n        .attr(\"stroke-width\", \"1px\");\r\n\r\n
+    \   pointer\r\n        .transition()\r\n        .duration(500)\r\n        .attr(\"x\",
+    mouse[0])\r\n        .attr(\"y\", mouse[1])\r\n        .attr(\"transform\", \"scale(1)\");\r\n});\r\n</script>"
+  _oembed_44d933c425aafd0ffcfd697e0c051e03: "{{unknown}}"
+  _oembed_4b4b4d7cbb4990de97773bb0220d9638: "{{unknown}}"
+  _oembed_aa8e46319d695d878deb08082802a1d1: '<blockquote class="wp-embedded-content"
+    data-secret="j02XZw0Shg"><a href="https://www.sitepoint.com/canvas-vs-svg-choosing-the-right-tool-for-the-job/">Canvas
+    vs. SVG: Choosing the Right Tool for the Job</a></blockquote><iframe title="&#8220;Canvas
+    vs. SVG: Choosing the Right Tool for the Job&#8221; &#8212; SitePoint" class="wp-embedded-content"
+    sandbox="allow-scripts" security="restricted" style="position: absolute; clip:
+    rect(1px, 1px, 1px, 1px);" src="https://www.sitepoint.com/canvas-vs-svg-choosing-the-right-tool-for-the-job/embed/#?secret=j02XZw0Shg"
+    data-secret="j02XZw0Shg" width="600" height="338" frameborder="0" marginwidth="0"
+    marginheight="0" scrolling="no"></iframe>'
+  _oembed_time_aa8e46319d695d878deb08082802a1d1: '1567816355'
+author:
+  login: admin
+  email: declanoller@gmail.com
+  display_name: admin
+  first_name: ''
+  last_name: ''
+permalink: "/testing_js/"
+---
+<p>stuff stuff stuff</p>
+<p>blah blah</p>
+<p>{{CODEd3_ex}}</p>
+<p>&nbsp;</p>
+<p>click around</p>
+<p>{{CODEjs_fireworks}}</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>cool</p>
+<p>SVG working?</p>
+<p>{{CODEsvg_test}}</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>https://bl.ocks.org/yonester/acf5f6a52c370a3d1fa5cc08ba955db9</p>
+<p>https://bl.ocks.org/john-guerra/e80f02e59681ace122626c39407526a0</p>
+<p>https://www.sitepoint.com/canvas-vs-svg-choosing-the-right-tool-for-the-job/</p>
+<p>&nbsp;</p>

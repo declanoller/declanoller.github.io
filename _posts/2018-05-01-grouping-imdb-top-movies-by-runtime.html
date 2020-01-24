@@ -1,0 +1,169 @@
+---
+layout: post
+title: Grouping IMDb top movies by runtime
+date: 2018-05-01 01:38:35.000000000 -04:00
+type: post
+parent_id: '0'
+published: true
+password: ''
+status: publish
+categories: []
+tags:
+- coding
+- data
+- data science
+- machine learning
+- movie ratings
+- movies
+- pandas
+- programming
+- python
+- ratings
+- runtimes
+meta:
+  _edit_last: '1'
+  ecae_meta: a:1:{s:15:"disable_excerpt";s:2:"no";}
+  _thumbnail_id: '3470'
+  penci_post_views_count: '212'
+  penci_post_week_views_count: '8'
+  penci_post_month_views_count: '23'
+author:
+  login: admin
+  email: declanoller@gmail.com
+  display_name: admin
+  first_name: ''
+  last_name: ''
+permalink: "/2018/05/01/grouping-imdb-top-movies-by-runtime/"
+---
+<p>Howdy!</p>
+<p>This is a fun lil one. For an upcoming article, I need to know a list of (hopefully good) movies I haven't yet seen, with similar runtimes. Now, I could have just scrolled down the <a href="https://www.imdb.com/chart/top">list of IMDb.com's top 250 movies</a>, ctrl + clicking on the ones I haven't seen, and then compared them by eye, because, to be honest, I think I've seen many (/most?) of them (we'll see shortly).</p>
+<p>But of course, that would be an efficient use of my time, and I'm learning <a href="https://pandas.pydata.org/">pandas</a> these days anyway, so why not use it!</p>
+<p>To do what I want, I basically need to take that top 250 list (let's say I don't really care about the ratings <em>within</em> that list, I just want to select movies from it), get a column with the runtimes, and then manually make a column with 0/1 entries for if I haven't/have seen it, and then select for the ones I have. Then, I could group, or at least visualize them.</p>
+<p>The first (tiny) hurdle comes from the data source. IMDb.com <a href="https://www.imdb.com/interfaces/">very helpfully provides</a> several zipped files of ALL their movies (beware, the "basics" one is 420MB unzipped!), buuut... they have separate files for the table with the runtimes (title.basics.tsv.gz) and the ratings (title.ratings.tsv.gz). That wouldn't be too bad, you might think: you could just sort the ratings file by the rating column, take those entries, and select from the basics file, to get the runtimes.</p>
+<p>Buuuut... a quick glance (or if you've ever just perused the dark back alleys of IMDb itself) reveals that there are <em>many</em> entries with very high ratings, higher than the top 250 scores (which range from 8.0 to 9.2). This is probably because there are lots of smaller productions where you get a selection bias, such that you pretty much only get people who really like the movie voting, so they're all voting 10. Of course, IMDb links actually <a href="https://help.imdb.com/article/imdb/featured-content/why-doesn-t-a-title-with-the-average-user-vote-of-9-4-appear-in-your-top-250-movies-or-tv-list/GTU67Q5QQ8W53RJT#">links to an explanation</a> of this effect:</p>
+<blockquote><p>As indicated at the <a href="http://www.imdb.com/chart/top?ref_=helpms_ih_fc_top250">Top Rated Movies</a> page, only votes from regular IMDb voters are considered when creating the top 250 out of the full voting database. This explains any difference between the vote averages reported in the top 250 lists and those on the individual title pages. This also explains why movies or shows you might think from their averages ought to appear on the list yet do not actually appear there.</p>
+<p>To maintain the effectiveness of the top 250 lists, we deliberately do not disclose the criteria used for a person to be counted as a regular voter.</p></blockquote>
+<p>and says on the top 250 page itself:</p>
+<blockquote><p>The list is ranked by a formula which includes the number of ratings each movie received from users, and value of ratings received from regular users<br />
+To be included on the list, a movie must receive ratings from at least 25000 users</p></blockquote>
+<p>I assumed this before starting this thing but wasn't sure how they did it. I always assumed that the simplest way would be to just have some threshold of a minimum number of votes (which they do), to even qualify. The "small, religiously devoted fanbase theory" of those artificially high ratings would probably break if you set it correctly -- I mean, once you set the threshold of minimum votes high enough, if the rating is still high, it's not really "artificial" anymore, is it? There are potential problems with that, like only selecting for really large productions (depending on the threshold). It appears they actually do this, but also add a secret "special sauce" where they weigh certain votes more, but they don't say how.</p>
+<p>Anyway, that's a bit of a long winded way to say that it'd be hard to do what I said above, to get the runtimes of the top 250. At this point, I saw a few options: I probably <em>could</em> try their method manually, using the ratings file (which has average ratings and number of votes for each one), just taking the subset of movies that have a rating at and above the minimum of the top 250 list, and then thresholding those for the minimum number of votes. Maybe I'll try this anyway, but I assumed (because they say they do something else in addition) that I might end up with another list if I did that.</p>
+<p>Another thing I briefly considered (that, at this point, may have been much easier) would be some sort of web scraping. It'd be reaaaaaal easy (in theory) to have a script go to the link for each entry on the top 250 page (which would lead directly to the actual movie, which as we'll see shortly, is actually a bit of a pain), and then each page has a well defined "runtime" field right below the title. I briefly debated this (and maybe I'll try it later), but I don't actually know how to do web scraping in python yet, so it would probably be a really hacky job on my part.</p>
+<p>So, speaking of hack-y, here's what I ended up doing. Everything is presented in bits because I did it in a Jupyter notebook.</p>
+<p>To get around the "which are actually the top 250 movies" problem, I literally copied and pasted the top 250 list from the page, and pasted it into a text file, which I imported and dropped two things that ended up being garbage columns. Then I had to do a tiny bit of parsing, because using "\t" as a delimiter worked to separate the title and year, but not the rank and title. So, I had to delimit that column with the "." after the rank #, but setting n=1, because some titles have a period in their name as well (Monsters, Inc. for example), so you wouldn't want to chop those up into separate fields. Ahhh details!</p>
+<p>&nbsp;</p>
+<pre class="EnlighterJSRAW" data-enlighter-language="python">movieRatings_df = pd.read_csv("copypasteRatings.csv","\t")
+display(movieRatings_df.head())
+movieRatings_df = movieRatings_df.drop(["Your Rating","Unnamed: 3"],axis=1)
+display(movieRatings_df.head())
+
+dotsplit = movieRatings_df["Rank &amp; Title"].str.split(".",n=1)
+titleYears = pd.Series([entry[1] for entry in dotsplit])
+rank = pd.Series([entry[0] for entry in dotsplit]).rename("Rank")
+years = pd.Series([int(title[-5:-1]) for title in titleYears]).rename("Year")
+titles = pd.Series([title[1:-7] for title in titleYears]).rename("Title")
+
+ratings_df = pd.concat([rank,titles,years],axis=1)
+ratings_df.head()</pre>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p><img class="aligncenter size-full wp-image-3455" src="{{ site.baseurl }}/assets/imdb250.png" alt="" width="536" height="555" /></p>
+<p>Now, I import the maaaaaaaaaassive file that contains the runtimes. You can see that each movie has an ID tag (not its name) that must be at least somewhat organized by release date, which is kinda cool because the first one is from 1894:</p>
+<p>&nbsp;</p>
+<pre class="EnlighterJSRAW" data-enlighter-language="null">movieBasics_df = pd.read_csv("data_basics.tsv","\t")
+
+print(movieBasics_df.shape)
+display(movieBasics_df.head())</pre>
+<p><img class="aligncenter size-full wp-image-3462" src="{{ site.baseurl }}/assets/basics.png" alt="" width="961" height="161" /></p>
+<p>Anyway, now we can just go through the titles of the top 250 in a for loop, selecting the entry from the huge table for each title, and grab its runtime, right? HAHAHAHA, as if anything is ever that simple. The first problem you find is that there are a <em>lot</em> of movies with the same exact name, even (maybe especially, because they're popular and therefore get remade, or have "common" names?) within the top 250:</p>
+<p><img class="aligncenter size-full wp-image-3461" src="{{ site.baseurl }}/assets/cityofgod.png" alt="" width="807" height="181" /></p>
+<p>(I was using the "primaryTitle" field, because I know some of them have foreign names, which the "originalTitle" field might reflect.)</p>
+<p>That's not too bad though, I thought. We have the year of the top 250 titles from my copy and pasted list, so we'll just make sure the year is the same, and it should select the right one:</p>
+<p><img class="aligncenter size-full wp-image-3460" src="{{ site.baseurl }}/assets/mult_entry4.png" alt="" width="857" height="521" /></p>
+<p>Oh, you thought a simple fix would do the job, did you? That's cute!</p>
+<p><img class="aligncenter size-full wp-image-3459" src="{{ site.baseurl }}/assets/mult_entry5.png" alt="" width="889" height="435" /></p>
+<p>Apparently there are a few cases of movies with the same name, released the same year. At first, I thought that, since the Coco I was dimly aware of was kind of a spooky animated kids' movie, the one labeled "horror" might also be it, but a quick googlin' showed otherwise:</p>
+<p><img class="aligncenter size-full wp-image-3466" src="{{ site.baseurl }}/assets/coco1.png" alt="" width="893" height="511" /></p>
+<p>&nbsp;</p>
+<p><img class="aligncenter size-full wp-image-3465" src="{{ site.baseurl }}/assets/coco2.png" alt="" width="686" height="417" /></p>
+<p>You'd think that the smaller production would yield to the bigger one, so they wouldn't be confused for that. Unless... they're actually happy to have the increased viewership from the tiny percent of people who put the "horror" Coco on for their kids and leave the room? Aww, poor kiddos. This is the worst film title incident since they made that feature length Thomas the Tank Engine movie called "Trainspotting".</p>
+<p>I'm pretty sure I'm learning a fun data science lesson here: even simple data is treacherous and will screw you wherever it can. Assume the worst.</p>
+<p>Anyway, my solve for this was a little hacky (and might fail if we were looking at many more movies), but here it is. At this point, for the movies that have the same and were produced in the same year, I have their ID tags. I can look those up in the movie ratings table (which are sorted by only those IMDB ID tags), and then just take the one with the most votes. It would be <em>really</em> unlikely that there would be two movies made in the same year with the same name, and the top 250 one wouldn't have the most votes.</p>
+<p>And it works!</p>
+<p><img class="aligncenter size-full wp-image-3467" src="{{ site.baseurl }}/assets/coco_fixed.png" alt="" width="890" height="660" /></p>
+<p>Here's the code for that piece. It's pretty messy, but I wanted a lot of output and didn't feel like making it as clean as it could potentially be as long as it works. Womp womp.</p>
+<pre class="EnlighterJSRAW" data-enlighter-language="null">runTimes = pd.Series(np.zeros(len(ratings_df))).rename("Runtime")
+
+for index,film in ratings_df.iterrows():
+    print(index)
+    entry = movieBasics_df[(movieBasics_df["primaryTitle"]==film["Title"]) &amp; (movieBasics_df["titleType"]=="movie")]
+    if len(entry)&lt;1: print("no entries found for {}".format(film["Title"])) if len(entry)&gt;1:
+        print("multiple entries found for {}".format(film["Title"]))
+        display(entry.head())
+        
+        noNAentry = entry[entry.startYear!="\\N"]
+        print("without \\N characters: ")
+        display(noNAentry.head())
+        noNAentry["startYear"] = noNAentry["startYear"].astype("int")
+        noNAentry = noNAentry[abs(noNAentry["startYear"]-film["Year"])&lt;2]
+        print("selecting by year: ")
+        display(noNAentry.head())
+        if len(noNAentry)==1:
+            runTimes[index] = int(noNAentry["runtimeMinutes"])
+        else:
+            IDs = noNAentry["tconst"]
+            ratingEntries = imdbRatings_df[imdbRatings_df["tconst"].isin(IDs)]
+            print("rating entries with the same name:")
+            display(ratingEntries.head())
+            maxVoteID = ratingEntries["numVotes"].argmax()
+            movie = noNAentry[noNAentry["tconst"]==imdbRatings_df.iloc[maxVoteID]["tconst"]]
+            print("correct entry: ")
+            display(movie)
+            runTimes[index] = int(movie["runtimeMinutes"])
+    if len(entry)==1:
+        runTimes[index] = int(entry["runtimeMinutes"])</pre>
+<p>Now we can add all the runtimes:</p>
+<pre class="EnlighterJSRAW" data-enlighter-language="null">ratingsRuntimes_df = pd.concat([ratings_df,runTimes],axis=1)
+ratingsRuntimes_df.head()</pre>
+<p>&nbsp;</p>
+<p><img class="aligncenter size-full wp-image-3468" src="{{ site.baseurl }}/assets/runtimes_table.png" alt="" width="504" height="279" /></p>
+<p>At this point, the last part is actually adding the "me" to this, the main reason I did all this. For this I just went manually through the Top 250 list and copied and pasted each title into a list ("notSeenList"). It turns out there are 110 of the top 250 that I haven't seen! This is gonna sound douchey, but I really thought that number would be lower. I think I thought that because the handful of times I scrolled through it, I was focusing on how many I had seen, but not really paying attention to ones I hadn't, because they're all kind of the same if you don't know them. It also seems like the ones I haven't seen could be divided up into a few categories (to me, anyway): 1) "Oh damn, I really should've seen that by now" (e.g., Schindler's List), 2) "Some old movie I'm dimly aware of but am just not at all excited to see" (e.g., Witness for the Prosecution), and 3) "What the hell is that movie? I've never even heard of it" (e.g., A Separation).</p>
+<p>Anyway, what I did here was just create a pandas Series called Watched from an numpy array of 1's. Then, I went through and for each entry that has a title in notSeenList, I made that a 0:</p>
+<pre class="EnlighterJSRAW" data-enlighter-language="null">Watched = pd.Series(np.ones(len(ratingsRuntimes_df))).astype(int).rename("Watched")
+watchedAndRuntimes_df = pd.concat([ratingsRuntimes_df,Watched],axis=1)
+
+watchedAndRuntimes_df.loc[watchedAndRuntimes_df["Title"].isin(notSeenList),"Watched"] = 0
+display(watchedAndRuntimes_df.head(25))</pre>
+<p><img class="aligncenter size-full wp-image-3472" src="{{ site.baseurl }}/assets/watched_table.png" alt="" width="570" height="249" /></p>
+<p>Lastly, to actually get what I initially wanted... I plotted it, but also binned the movies into ones that are within the same 5 minute lengths of each other. Obviously, since the bin boundaries are kind of arbitrary, for the movies in the [120,125] and [125,130], some of those will be within 5 minutes of each other even if they're in different bins (for example, ones that are 124 ad 126 minutes long). I was kind of hoping for some natural "clustering" I could try and detect (though there's no real reason to expect that), but you can see from the plot of them (sorted by short to long) that it's a fairly continuous line, with only a few very minor plateaus, and a few very short and very long outliers:</p>
+<pre class="EnlighterJSRAW" data-enlighter-language="null">runTimeList = np.sort(np.array(watchedAndRuntimes_df.loc[watchedAndRuntimes_df["Watched"]==0,"Runtime"]))
+print("min: {}".format(min(runTimeList)))
+print("max: {}".format(max(runTimeList)))
+plt.figure(figsize=(10,10))
+plt.plot(runTimeList,'ro')
+plt.xlabel("Sorted index",fontsize=24)
+plt.ylabel("Runtime",fontsize=24)
+plt.tick_params(axis="both",labelsize=18)
+plt.show()
+
+plt.figure(figsize=(10,10))
+binBds = [0]+list(range(50,250,5))+[350]
+plt.hist(runTimeList,bins=binBds)
+
+plt.xlabel("Runtime",fontsize=24)
+plt.ylabel("Number of films",fontsize=24)
+plt.tick_params(axis="both",labelsize=18)
+plt.show()
+
+
+for i in range(len(binBds)-1):
+    binMovies = watchedAndRuntimes_df.loc[(watchedAndRuntimes_df["Watched"]==0) &amp; 
+           (watchedAndRuntimes_df["Runtime"]&gt;=binBds[i]) &amp; (watchedAndRuntimes_df["Runtime"]&lt;=binBds[i+1])] if len(binMovies)&gt;1:
+        print("movies with runtime in between {} and {} minutes: ".format(binBds[i],binBds[i+1]))
+        display(binMovies)</pre>
+<p><img class="aligncenter size-full wp-image-3471" src="{{ site.baseurl }}/assets/runtime_plot.png" alt="" width="635" height="600" /></p>
+<p><img class="aligncenter size-full wp-image-3470" src="{{ site.baseurl }}/assets/runtime_dist.png" alt="" width="632" height="610" /></p>
+<p>I briefly considered doing some cool thing where it would show me the movies in a bin or on the plot when I mouse hovered over them, but a quick googling showed that that wasn't a totally trivial thing to implement. So, I just made it print it out the bins:</p>
+<p><img class="aligncenter size-full wp-image-3458" src="{{ site.baseurl }}/assets/myRuntimes.png" alt="" width="460" height="745" /></p>
+<p>Anyway, that was a fun little thing. I'm sure I did some stuff really, really inefficiently, and probably in ways that might fail if I had more pathological movie titles/entries/etc, but it worked for what I wanted.</p>
+<p>Come back next time to read about the reason I needed this info!</p>

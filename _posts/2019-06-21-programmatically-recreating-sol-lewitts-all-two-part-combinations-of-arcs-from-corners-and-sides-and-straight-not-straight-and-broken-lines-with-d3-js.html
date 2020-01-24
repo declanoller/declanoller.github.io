@@ -1,0 +1,64 @@
+---
+layout: post
+title: Programmatically recreating Sol LeWitt's "All two-part combinations of arcs
+  from corners and sides, and straight, not straight and broken lines" with d3.js
+date: 2019-06-21 18:16:55.000000000 -04:00
+type: post
+parent_id: '0'
+published: true
+password: ''
+status: publish
+categories:
+- Coding
+- Miscellaneous
+- projects
+tags:
+- art
+- code
+- coding
+- computer science
+- conceptual art
+- d3
+- d3.js
+- drawing 146
+- html
+- javascript
+- mass moca
+- programming
+- sol lewitt
+meta:
+  _edit_last: '1'
+  ecae_meta: a:1:{s:15:"disable_excerpt";s:2:"no";}
+  _thumbnail_id: '5558'
+  penci_post_views_count: '432'
+  penci_post_week_views_count: '9'
+  penci_post_month_views_count: '32'
+author:
+  login: admin
+  email: declanoller@gmail.com
+  display_name: admin
+  first_name: ''
+  last_name: ''
+permalink: "/2019/06/21/programmatically-recreating-sol-lewitts-all-two-part-combinations-of-arcs-from-corners-and-sides-and-straight-not-straight-and-broken-lines-with-d3-js/"
+---
+<p><a href="https://www.declanoller.com/wp-content/uploads/2019/06/two_part_combos_fullscreen.html">Skip to the full page interactive version</a> if you don't want to read the post!</p>
+<p>I recently went to <a href="https://massmoca.org/">MASS MoCA</a> with my friends for the first time. I had heard of it, but assumed they were talking about a huge chocolate flavored coffee drink. So imagine my surprise!</p>
+<p>I missed it when they went last year, but they spoke really highly of it, and particularly of one artist's <em>oeuvre</em> (that's the even more pretentious way of saying "works"!): <a href="https://en.wikipedia.org/wiki/Sol_LeWitt">Sol LeWitt</a>. In fact, they liked one of his pieces so much that <a href="http://blog.benwiener.com/programming/art/2017/08/24/lewitt.html">Ben</a> and <a href="http://www.philipzucker.com/elm-eikonal-sol-lewitt/">Phil</a> made posts on recreating it with code!</p>
+<p>So it shouldn't surprise you that when I saw his stuff for the first time, I had the same reaction, loving it and wanting to recreate it programmatically. I thought I'd do one that I liked, one of his big ones with the wordy title "All two-part combinations of arcs from corners and sides, and straight, not straight and broken lines". Here's a sample of it:</p>
+<p><img class="aligncenter size-large wp-image-5519" src="{{ site.baseurl }}/assets/IMG_20190616_135057-1024x768.jpg" alt="" width="640" height="480" /></p>
+<p><img class="aligncenter size-large wp-image-5526" src="{{ site.baseurl }}/assets/IMG_20190616_135053-1024x757.jpg" alt="" width="640" height="473" /></p>
+<p>While many (most?) artists make distinct material "pieces" (e.g., there's a single Mona Lisa in Paris), a blurb at the museum mentioned that <a href="https://www.wsj.com/articles/SB10001424052970204456604574204210695323316">Sol LeWitt wanted to create "templates" with clear directions, more similar to a composer writing a piece of music</a>, so others could make them (in fact, it seems like <a href="https://www.guggenheim.org/artwork/2472">the Guggenheim has another version,</a> but with blue lines on white, and slightly different wiggly lines). This obviously appeals to the computer scientist in me! For this piece, as the name might suggest, he started with 20 lines and curves, each fitting inside a square:</p>
+<p><img class="aligncenter size-large wp-image-5522" src="{{ site.baseurl }}/assets/IMG_20190616_134811-1024x674.jpg" alt="" width="640" height="421" /></p>
+<p>You can see some symmetry, except for the 4th column, which seems like a wildcard he threw in. So that was the first thing to create, like so:</p>
+<p><img class="aligncenter wp-image-5524" src="{{ site.baseurl }}/assets/SL_sample2.png" alt="" width="707" height="566" /></p>
+<p>It was pretty easy to create the basic curves and lines, but that weirdo 4th column was a bit trickier. I probably could've done it a few ways, but I ended up creating them by just eyeballing them with splines. And not to toot my own horn, but I'm pretty happy with how close they turned out...toot toot! Also, I took the museum pics above with my derpy phone camera, which mauled the colors, so I chose the blue in my version to match the blue in the first pic above, which was what it was actually like, not the washed out looking blue in the other pics.</p>
+<p>He then combined pairs of them to create a square, and creates a grid of them. In the actual exhibit, he paired them by starting with 1 for the first number and 2 for the second, and counting up the second number until it reaches 20 (skipping it when it's the same as the first number), and then ticking the first number up one (and starting the second number from the new first number plus one):</p>
+<p><img class="aligncenter size-large wp-image-5525" src="{{ site.baseurl }}/assets/IMG_20190616_135228-1024x497.jpg" alt="" width="640" height="311" /></p>
+<p><img class="aligncenter size-large wp-image-5527" src="{{ site.baseurl }}/assets/IMG_20190616_135232-1024x454.jpg" alt="" width="640" height="284" /></p>
+<p>We were wondering about the seemingly arbitrary breaks in the blocks of them. I only realized at home that they corresponded to the 4 walls of the actual exhibit for it in the adjacent room:</p>
+<p><img class="aligncenter size-large wp-image-5520" src="{{ site.baseurl }}/assets/IMG_20190616_135249-1024x768.jpg" alt="" width="640" height="480" /></p>
+<p>Note that in the real exhibit, there are no grid lines; I guess he just added those to explain to us simpletons.</p>
+<p>Here's what a wall produced by my code looks like:</p>
+<p><img class="aligncenter wp-image-5528" src="{{ site.baseurl }}/assets/SL_wall_example.png" alt="" width="1012" height="520" /></p>
+<p>I wanted to create something people could mess around with, <a href="https://www.declanoller.com/wp-content/uploads/2019/06/two_part_combos_fullscreen.html">so I made a full screen version with d3.js</a>. In it, you can adjust the number of squares across, and save the image if you want to use it as a desktop background!</p>
+<p>That's all for now. I'm sure I'll be doing more Sol LeWitt recreations or inspired things, because I'm a big fan. See ya next time!</p>

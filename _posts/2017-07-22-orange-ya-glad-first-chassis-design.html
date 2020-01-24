@@ -1,0 +1,80 @@
+---
+layout: post
+title: 'Orange Ya Glad: first chassis design'
+date: 2017-07-22 03:10:39.000000000 -04:00
+type: post
+parent_id: '0'
+published: true
+password: ''
+status: publish
+categories:
+- pedals
+- projects
+tags:
+- analog
+- effects
+- electronics
+- pedal
+- pedals
+meta:
+  _rest_api_published: '1'
+  _rest_api_client_id: "-1"
+  _publicize_job_id: '7351102495'
+  _thumbnail_id: '195'
+  _edit_last: '1'
+  ecae_meta: a:1:{s:15:"disable_excerpt";s:2:"no";}
+  penci_post_views_count: '310'
+  penci_post_week_views_count: '15'
+  penci_post_month_views_count: '49'
+author:
+  login: admin
+  email: declanoller@gmail.com
+  display_name: admin
+  first_name: ''
+  last_name: ''
+permalink: "/2017/07/22/orange-ya-glad-first-chassis-design/"
+---
+<p style="text-align: justify;">The first of many. So, so many.</p>
+<p style="text-align: justify;">So I've been making these guitar pedals. Ostensibly they're about cool musical effects, but, let's be honest: if you've seen any of them on the internet, it's at least half about how they look. People make <em>really damn cool</em> designs on their guitar pedals. One of my favorite guys who makes cool designs is <a href="http://music.codydeschenes.com/">this guy Cody Deschenes</a>, though he actually does a different design method than I've done here (which you'll see in a future post!).</p>
+<p style="text-align: justify;">I had assembled a couple pedals at this point but hadn't actually done any designs, so I was excited to. There are a handful of methods people use, but I decided to go for a fairly straightforward one. I followed <a href="https://www.youtube.com/watch?v=xkvizYfDkxw">the method in this video</a>, which is basically based on printing your pattern on a transparent sticker, sticking it to the pedal, and lacquering the hell out of it after. It doesn't give the most mindblowing results, but it's pretty decent for fairly minimal effort (compared to other methods).</p>
+<p style="text-align: justify;">It boils down to this:</p>
+<ol style="text-align: justify;">
+<li>Sand/clean/prepare chassis</li>
+<li>Prime chassis (necessary? ehhh)</li>
+<li>Spray paint several layers</li>
+<li>Stick sticker on</li>
+<li>Lacquer, like 5 coats (very important!)</li>
+</ol>
+<p style="text-align: justify;">Pretty simple. The sticker paper I used was the same as in the video, same with the paints, etc.</p>
+<p style="text-align: justify;">Actually, lemme briefly talk about the circuit itself for a minute. After the previous "worst fuzz pedal ever" I made, I kind of wanted one that didn't suck as much. I searched for a little bit and found that a pretty common one is the "Bazz fuss" (spoonerisms, wheee), and it's pretty damn simple. Here's a pic some guy drew of the basic schematic:</p>
+<p style="text-align: justify;"><img class=" wp-image-1737 aligncenter" src="{{ site.baseurl }}/assets/small-fuss-layout.jpg" alt="small-fuss-layout" width="626" height="429" /></p>
+<p style="text-align: justify;">Reaaaaaaaal simple. Very vaguely, the transistor is acting as an amplifier, and the diode is probably creating distortion (because it lets nothing pass in one direction, and only stuff past its cutoff voltage, etc), and the pot is for attenuating the output signal/volume, etc.</p>
+<p style="text-align: justify;">Here's the thing. I looked at a bunch of different schematics for it, and they all seemed to have that R1 resistor set to either 10k or 100k, which is kind of a big difference. I honestly didn't know which to do, so I thought I'd split the difference and make it 47k.</p>
+<p style="text-align: justify;">Anyway, you can see that this circuit is crazy small. He drew it on a 5 x 10 stripboard, and it could probably be even smaller. I actually wanted to mount the pot directly on the board for this one, so I downloaded "DIY layout creator" (which is a kind of ghetto piece of software, but actually relatively easy to use) and made one of those nice looking stripboard layouts that suited my purpose:</p>
+<p style="text-align: justify;"><img class=" size-full wp-image-1748 aligncenter" src="{{ site.baseurl }}/assets/stripboard.jpg" alt="stripboard" width="471" height="443" /></p>
+<p style="text-align: justify;">The discerning reader will notice (just kidding, no one's paying that much attention) that the pot is actually not in the same place in the schematic that it is in the schematic above. The reason is that, I didn't particularly care about having a volume knob (I usually have like 3 different volume knobs available to me; why would I want another, rather than one that does something else?), so I replaced the original pot with 33k and 68k resistors, so it was kind of permanently set at 33% volume. However, I also read that adding a resistor between the transistor and ground (where it connects to ground) would affect the amount of fuzz. Therefore, I added a 5k potentiometer, and lo and behold, it does affect it.</p>
+<p style="text-align: justify;">Anyway, here are a few pics of that part.</p>
+<p style="text-align: justify;">Here's the teensy stripboard I was able to use. At the time of writing this, I actually tend to use the drill method for making stripboard breaks, but at the time I was still using a razor, and it's honestly pretty good as long as you make several deep cuts, scrape a little, and test the conductivity on either side of the cut well.</p>
+<p style="text-align: justify;"><img class=" wp-image-1762 aligncenter" src="{{ site.baseurl }}/assets/img_20161216_013355154.jpg" alt="IMG_20161216_013355154.jpg" width="499" height="374" /></p>
+<p style="text-align: justify;">Here's the completed circuit. Insanely.<em> Teensy.</em></p>
+<p style="text-align: justify;"><img class=" size-full wp-image-1767 aligncenter" src="{{ site.baseurl }}/assets/img_20161216_102651178.jpg?w=504" alt="IMG_20161216_102651178.jpg" width="504" height="378" /></p>
+<p style="text-align: justify;">Anyway, onto the chassis!</p>
+<p style="text-align: justify;">Drilled and cleaned:</p>
+<p style="text-align: justify;"><img class=" wp-image-1769 aligncenter" src="{{ site.baseurl }}/assets/img_20161216_134303939.jpg" alt="IMG_20161216_134303939.jpg" width="489" height="367" /></p>
+<p style="text-align: justify;">Painting in my serial-killer-lair-looking basement:</p>
+<p style="text-align: justify;"><img class="aligncenter wp-image-1771" src="{{ site.baseurl }}/assets/img_20161217_183424554.jpg" alt="IMG_20161217_183424554.jpg" width="485" height="364" /></p>
+<p style="text-align: justify;">Applying the sticker. I wanted to go for something silly and fun, and I'm partial to stupid puns, so... here we are. If you notice now, it doesn't look that great: the sticker parts looks a lot lighter:</p>
+<p style="text-align: justify;"><img class=" wp-image-1773 aligncenter" src="{{ site.baseurl }}/assets/img_20161218_010653328.jpg" alt="IMG_20161218_010653328.jpg" width="472" height="354" /></p>
+<p style="text-align: justify;">I would be disappointed if it ended up like that, but...</p>
+<p style="text-align: justify;"><img class=" wp-image-1774 aligncenter" src="{{ site.baseurl }}/assets/img_20161218_122100122.jpg" alt="IMG_20161218_122100122.jpg" width="500" height="375" /></p>
+<p style="text-align: justify;">...the lacquer really makes it pop!</p>
+<p style="text-align: justify;">A couple little details: I really like how the "faded" look came through in the font (that it's supposed to look like!). If you add a "border" like I did (credits to the above video), it's really hard to notice the boundary of the sticker. Lastly, they tell you to be really aggressive with smoothing out bubbles when you apply the sticker, but you're supposed to use a "rolling" motion and I guess I used too much of a "smearing" motion, because you can see that below the G in "glad", I smeared the ink a little. Oh well.</p>
+<p style="text-align: justify;">Electrical taping the inside, so we don't accidentally short something (the chassis is ground, as usual).</p>
+<p style="text-align: justify;"><img class=" wp-image-1776 aligncenter" src="{{ site.baseurl }}/assets/img_20161218_123713572.jpg" alt="IMG_20161218_123713572.jpg" width="511" height="383" /></p>
+<p style="text-align: justify;">Adding the circuit: I actually could have probably spaced it out more. I really like this size chassis (1590A I think?), when you can use it. It's very compact and cute.</p>
+<p style="text-align: justify;"><img class=" wp-image-1777 aligncenter" src="{{ site.baseurl }}/assets/img_20161218_124320827.jpg" alt="IMG_20161218_124320827.jpg" width="495" height="371" /></p>
+<p style="text-align: justify;">My great shame: At this point I wasn't using washers, because I'm stupid. When I went to tighten the nuts, my pliers I was using (also a bad idea...) gouged through the paint, down to the chassis metal... ugh. Learned a good lesson here.</p>
+<p style="text-align: justify;"><img class=" wp-image-1778 aligncenter" src="{{ site.baseurl }}/assets/img_20161218_124329564.jpg" alt="IMG_20161218_124329564.jpg" width="475" height="356" /></p>
+<p style="text-align: justify;">The final product! It's a little hard to make out in this pic, but the knob is yellow, which I think goes with a general "citrus" theme.</p>
+<p style="text-align: justify;"><img class="wp-image-195 aligncenter" src="{{ site.baseurl }}/assets/orangeyaglad.jpg" alt="orangeyaglad" width="1050" height="700" /></p>
+<p style="text-align: justify;"><img class="wp-image-196 aligncenter" src="{{ site.baseurl }}/assets/orangeyaglad2.jpg" alt="orangeyaglad2" width="1026" height="684" /></p>

@@ -1,0 +1,113 @@
+---
+layout: post
+title: Machine Learning with Python, 1
+date: 2017-10-04 17:42:36.000000000 -04:00
+type: post
+parent_id: '0'
+published: true
+password: ''
+status: publish
+categories: []
+tags:
+- coding
+- data
+- data science
+- machine learning
+- ML
+- programming
+- python
+- science
+- technology
+meta:
+  _rest_api_published: '1'
+  _rest_api_client_id: "-1"
+  _thumbnail_id: '1765'
+  _publicize_job_id: '9971794720'
+  _edit_last: '1'
+  ecae_meta: a:1:{s:15:"disable_excerpt";s:2:"no";}
+  penci_post_views_count: '156'
+  penci_post_week_views_count: '5'
+  penci_post_month_views_count: '31'
+author:
+  login: declanoller
+  email: declanoller@gmail.com
+  display_name: declanoller
+  first_name: ''
+  last_name: ''
+permalink: "/2017/10/04/machine-learning-with-python-1/"
+---
+<p style="text-align: justify;">Here, I'm beginning my ML journey by reading: <a href="https://www.amazon.com/Introduction-Machine-Learning-Python-Scientists/dp/1449369413/">A. C. Mueller and S. Guido - Introduction to Machine Learning with Python, 2017</a></p>
+<p>These will very much be just random notes, thoughts, and questions on the book as I go along.</p>
+<p>Chapter 1 is mostly just getting set up and some general background. I skimmed it but not a ton worth writing here. A lot of it is about getting and setting up the packages we're going to use.</p>
+<p style="text-align: justify;">scikit-learn: pretty easy install with pip3, which I got with apt-get install pip3, because I want to be using Python 3.</p>
+<p style="text-align: justify;">mglearn is a package that (I think?) corresponds just to the stuff in this book, but is actually in pip3 as well, which is nice.</p>
+<p style="text-align: justify;">They appear to leave some stuff out. For example, to do the plots they have in Ch1, you need to add:</p>
+<pre style="text-align: justify;">import matplotlib.pyplot as plt
+
+plot.show()</pre>
+<p style="text-align: justify;">Which is a little inconsistent. They first teach you:</p>
+<pre style="text-align: justify;">knn.fit(X_train,y_train)
+
+y_pred=knn.predict(X_test)
+ print("predictions:"+format(y_pred))
+
+print("test set score:"+str(np.mean(y_pred==y_test)))</pre>
+<p style="text-align: justify;">then later use:</p>
+<pre style="text-align: justify;"> knn.fit(X_train, y_train)
+ print("Test set score: {:.2f}".format(knn.score(X_test, y_test)))</pre>
+<p>Okay, at this point I've noticed a pattern. They present a piece of code, and then kind of continually add to it in bits and pieces. However, they don't really make it clear which of the earlier pieces you'll need for it to actually run. So you've gotta guess a little, or just keep a close eye on the variables they're using.</p>
+<p>That's all for Ch. 1. They show you some fun stuff with the classic iris dataset that lots of resources use.</p>
+<p>&nbsp;</p>
+<p><span style="text-decoration: underline;">Chapter 2:</span></p>
+<p style="text-align: justify;">Supervised learning: you already have I/O pairs, and you want to predict future outcomes for given inputs.</p>
+<p style="text-align: justify;">Two main types of SL: classification (finite categories for output) and regression (a continuous output parameter).</p>
+<p style="text-align: justify;">Interesting: for the real world regression data, medium value of homes in the Boston area during the 1970s, they have a bunch of features like crime rate, highway accessibility, etc. But they mention that you can also look at "interactions", like the product of two features, as a new feature itself. looking at a "derived feature" is called "feature engineering". So, they also offer an extended version of this dataset with all the first order interactions.</p>
+<p style="text-align: justify;"><img class=" size-full wp-image-1765 aligncenter" src="{{ site.baseurl }}/assets/knn1.png" alt="knn1" width="822" height="292" /></p>
+<p style="text-align: justify;">Fewer neighbors --&gt; more detailed boundary --&gt; more complex model --&gt; possible overfitting.</p>
+<p style="text-align: justify;">Also, when you predict new ones, do you include them in your model with the training ones? Probably not.</p>
+<p style="text-align: justify;">Okay, this is a little confusing. Here they're doing a KNN regression model, which itself is pretty straightforward:</p>
+<p style="text-align: justify;"><img class=" wp-image-1774 aligncenter" src="{{ site.baseurl }}/assets/knn_reg1.png" alt="knn_reg1" width="631" height="403" /></p>
+<p style="text-align: justify;">(NN=3 here. Note that the distance that determines NN is only in the feature dimension, not euclidean.)</p>
+<p style="text-align: justify;">And then they do it for different numbers of NN:</p>
+<p style="text-align: justify;"><img class=" size-full wp-image-1779 aligncenter" src="{{ site.baseurl }}/assets/knn_reg2.png" alt="knn_reg2.png" width="972" height="322" /></p>
+<p style="text-align: justify;">The kind of confusing thing is that at the top of each chart, they show the "train score" and the "test score". What I initially found a little surprising is that the train score (that is, the score you get from putting the data you used to train the model back into the model) actually changes. I guess that makes sense; the model was essentially changed with NN=1, so that's all we should expect it to match perfectly with.</p>
+<p style="text-align: justify;">Also, this is just one specific case and not many data points, but from those three you can see that, for increasing NN (decreasing complexity), while the test score increases and then decreases, the train score seems to only decrease.</p>
+<p style="text-align: justify;">Kind of a bummer: at the end they say that because KNN is slow to predict and has trouble handling many features, it's actually rarely used in practice. Womp womp.</p>
+<p style="text-align: justify;">But now...</p>
+<p style="text-align: justify;"><span style="text-decoration: underline;">Linear models:</span></p>
+<p style="text-align: justify;">Much more widely used.</p>
+<p style="text-align: justify;">So it's pretty much just making a linear term for each feature:</p>
+<p style="text-align: justify;">y =w[0]*x[0]+w[1]*x[1]+...</p>
+<p style="text-align: justify;">where x[i] is a feature, and w[i] is the weight/slope/whatever we assigned to it (x[i] will have a different value for each sample, obviously. It's just the variable name here).</p>
+<p style="text-align: justify;">If you only have one feature, the model is basically a line, as you'd expect. The real "modeling" for lin reg comes from how you actually choose the w's.</p>
+<p style="text-align: justify;">The first one they look at is "ordinary least squares" (OLS), basically what I've always known as "least squares" fitting.</p>
+<p style="text-align: justify;">Doing this for their example gives a training R^2 score of 0.67 and a test R^2 score of 0.66. While it's good that they're similar, 0.66 for the training score kind of sucks, which implies that it's underfitting, which makes sense since there's really one feature and the points seem to have a high variance (actually, can it be said to be underfitting if there's just no good fit at all?). They mention that for a dataset with only one feature (like this one), it's actually pretty hard to overfit.</p>
+<p style="text-align: justify;">In contrast, they show how a lin. reg can easily overfit with data with more features, and use their "extended boston" (the boston statistics + interactions) dataset, which finds a train score of 0.95 and a test score of 0.61. This is a typical sign of overfitting: great score for the train set, but the comparatively low test score implies that the model was too specific to the train set and not generalizable to new data.</p>
+<p style="text-align: justify;">To combat this...</p>
+<p style="text-align: justify;"><span style="text-decoration: underline;">Ridge Regression:</span></p>
+<p style="text-align: justify;">Okay, they kinda threw a lot at me here... seems like RR is still using OLS, but with a constraint on the w's, so they're all "as close to 0 as possible" (it's really minimizing their total euclidean distance, the square root of the sum of their squares). They say that this is an example of "regularization", which is constraining the model to avoid overfitting.</p>
+<p style="text-align: justify;">They then do RR on the same boston data, and show that you get a train score of 0.89 but a test score of 0.75. So this is definitely an improvement, since even though the train score went down a bit, the test score went up.</p>
+<p style="text-align: justify;">how does it know how much to constrain it? with this "alpha" parameter. For the above example, alpha was 1.0, but that doesn't necessarily mean much. Higher alpha means the coefficients are constrained to be closer to 0.</p>
+<p style="text-align: justify;">To be honest, I'm a little uncomfortable with the connection between alpha and complexity. When I think of making the model less complex, I don't think of making the coefficients smaller in general, I think of using fewer features in the model. I know that not using a feature is equivalent to setting its weight to 0, but it seems like you could have a situation where you want a bunch of features to have their weights decreased, but a couple of them to still be really high, and those ones would just make the model worse if you decreased them.</p>
+<p style="text-align: justify;">This is another interesting way of looking at it that they mention. Here they've plotted the R^2 for the training and test sets for LR and RR, for increasing training set size:</p>
+<p style="text-align: justify;"><img class=" wp-image-1829 aligncenter" src="{{ site.baseurl }}/assets/rr_1.png" alt="RR_1" width="617" height="490" /></p>
+<p style="text-align: justify;">A couple obvious things. The LR is always better than the RR for the training sets, because it's able to make a better fit to them; it has the same parameter space, but also more. However, for smaller training set sizes, the LR model doesn't generalize well, so has a terrible test R^2, and the RR is better because it has been regularized. However, you see that for bigger training sets, the test LR increases, because (if I understand correctly), the LR model built from the training set isn't <em>able</em> to do the wacky shit that gave rise to high R^2 for the training set, but a non generalizable model; it is constrained by just the large amount of data, but has more capability than the RR. So, the graph inconveniently cuts out here, but I'd guess that for a really large training set size, the test LR should actually surpass the test RR, right?</p>
+<p style="text-align: justify;">They also point out that R^2 actually decreases for the training set data for LR, because, for the same reason, it becomes harder to overfit (it should still be potentially superior though, I think..?).</p>
+<p style="text-align: justify;"><span style="text-decoration: underline;">Lasso:</span></p>
+<p style="text-align: justify;">This is similar to RR, but the minimization term is instead just the sum of the absolute value of the weights. It says that the benefit of Lasso is that it can eliminate some features altogether (how is this different than RR? It seems like that was also able to...). It's pretty similar.</p>
+<p style="text-align: justify;"><span style="text-decoration: underline;">Linear models for classification:</span></p>
+<p style="text-align: justify;">Basically, just using a line (or plane, etc, depending on feature dimension) to chop the space in two, to separate the classes. Then, depending on which side a sample is on, it gets "thresholded" to -1 or +1. Like above, the main game is actually in deciding the w's and b intercept. Now the line is a "decision boundary"...fancy fancy.</p>
+<p style="text-align: justify;">They say that all linear model algorithms come down to two decisions: 1) determining how well a model fits the training data, and 2) using regularization, and if so, which.</p>
+<p style="text-align: justify;">Two main linear classification algorithms: logistic regression and support vector machines (SVM). Both use an L2 regularization, like RR. However, the constraining parameter here is C, where higher C means less regularization (recall that higher alpha meant more constraint/regularization). So lower C --&gt; algorithm tries to fit most training points, higher C --&gt; tries to fit specific ones. Here's a handy example they give:</p>
+<p style="text-align: justify;"><img class=" wp-image-1874 aligncenter" src="{{ site.baseurl }}/assets/svc1.png" alt="SVC1" width="636" height="237" /></p>
+<p style="text-align: justify;">Makes sense. You probably wouldn't wanna use C = 100 though.</p>
+<p style="text-align: justify;">Okay, I still don't think they've said what LogReg vs SVC actually does.</p>
+<p style="text-align: justify;">You can also use the L1 regularization, like before.</p>
+<p style="text-align: justify;"><span style="text-decoration: underline;">LMs for multiclass classification:</span></p>
+<p style="text-align: justify;">So you can also use LMs for when you have multiple (more than 2) classes. Basically, for each class, you divide it up into a binary model of that class vs. everything else. Then, for a test point, you test it with each of those binary classifications and see which gives the highest score. There will be regions where it's "in" more than one binary classification; in that case, you look at which one has the highest score, as expected.</p>
+<p style="text-align: justify;">Basic overview of pros/cons of LMs:</p>
+<p style="text-align: justify;">pros: fast training, fast prediction, scale well, work well with sparse data, easy to understand why a prediction was made</p>
+<p style="text-align: justify;">cons: hard to understand why coefficients were chosen, not as good with lower dimensional feature spaces</p>
+<p style="text-align: justify;">Okay, I'm getting a little bored of that to be honest. It's not even done with the 2nd chapter on unsupervised learning (there are still many other algorithms!).</p>
+<p style="text-align: justify;">Review so far of the book: I like how it explains stuff, and it looks at cool little quirks/exceptions/etc, and has good graph examples of varying parameters. However, I'm not a fan of the style where it's showing a bunch of code and what it does but there's not much for me to actually do. I was typing out the code from the book for a bit, but I dunno... I wasn't learning a ton that way. I really need some simple HW type questions right after each section.</p>
+<p>&nbsp;</p>

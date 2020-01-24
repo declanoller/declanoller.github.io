@@ -1,0 +1,209 @@
+---
+layout: post
+title: EDX Artificial Intelligence, week 4
+date: 2018-07-27 15:38:34.000000000 -04:00
+type: post
+parent_id: '0'
+published: true
+password: ''
+status: publish
+categories:
+- Coding
+- projects
+tags:
+- '2048'
+- adversarial games
+- ai
+- alpha beta
+- alpha beta pruning
+- artificial intelligence
+- coding
+- computer science
+- game tree
+- iterative deepening
+- programming
+- python
+meta:
+  _edit_last: '1'
+  ecae_meta: a:1:{s:15:"disable_excerpt";s:2:"no";}
+  _oembed_aa5e2697d326e3d6256c7708c71fa9ae: <iframe width="640" height="480" src="https://www.youtube.com/embed/2aED90sMZII?feature=oembed"
+    frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+  _oembed_time_aa5e2697d326e3d6256c7708c71fa9ae: '1531419908'
+  _thumbnail_id: '3911'
+  _wp_old_date: '2018-07-12'
+  penci_post_views_count: '260'
+  penci_post_week_views_count: '9'
+  penci_post_month_views_count: '40'
+author:
+  login: admin
+  email: declanoller@gmail.com
+  display_name: admin
+  first_name: ''
+  last_name: ''
+permalink: "/2018/07/27/edx-artificial-intelligence-week-4/"
+---
+<p>Week 4 is where it gets <em>really</em> good. Week 3 was cool because it got into heuristic search, which is the start of what feels like a glimmer of "intelligence", but week 4 is on <em>adversarial search and games</em>. Hot damn that's cool. Additionally (skip to the bottom if you're only interested in that), the project for the week was to make an AI that plays the game 2048!</p>
+<p>&nbsp;</p>
+<p><span style="text-decoration: underline;">Theory</span></p>
+<p>Adversarial search problems are basically the same as a game (a certain type, anyway). The idea is that there's an opponent, whom we can't control, and they're planning against us! So the main difference between a game and a typical search is that the optimal solution for a game isn't a sequence of actions, but a "policy" for what to do in response to the opponent's actions. Fortunately, they can still be very well modeled by search trees if you know how.</p>
+<p>You can divide games up into the cross of two categories, each with two possibilities: information you see (full vs non-full) and determinism (fully vs some randomness), which will change exactly how you play the game. We're mostly going to look at fully available information, deterministic games. Further, we're also going to look at zero-sum games, where by definition a good thing for your opponent is bad thing for you, and the amount of "goodness" (i.e., points) in the game is conserved.</p>
+<p>A big part of what we do here is called "embedded thinking". This means that, to decide what choice to make, you'll need to consider what it will allow your opponent to do, but of course what he does (to win) will need to consider what you'll do. So you end up going back and forth (thinking alternately as yourself and your opponent) to decide your best move. To illustrate the following, we're gonna consider two players, Max (who tries to maximize the resulting score) and Min (who...tries to minimize it).</p>
+<p>The first search tactic we look at is the minimax algorithm. This is a recursive algorithm (but in a slightly indirect way, like I'll explain below) that starts at the top of the game tree and tries to figure out the choice that should be made to maximize Max's possible score, given that at each choice Min can make, Min will try to minimize the score (it's really solving for Min as well, because you just take the opposite choice to get the correct plays for Min). It works like this. There are two pretty similar functions, Minimize() and Maximize(). Maximize is called on the top, first node (because we're trying to maximize the tree). Within Maximize, if it's a terminal node (game over), it returns the value of that node. If it's not, it calls Minimize on each of the child nodes, and then, if any of those returns from Minimize are bigger than the best value achieved so far (which starts off as negative infinity in each function call so at least one child gets chosen), that node is selected and that value becomes the new best value. Finally, it returns whatever is the best node and value after calling Minimize on each of the children. What does Minimize do? Well, nearly the exact same, but with the sign switched at each place. It calls Maximize on each of its children, and tries to find the <em>minimum</em> value of them (starting with a minimum value of positive infinity).</p>
+<p>So, the algorithm is recursive, but in a "flip flop" way, where Maximize() calls Minimize(), which then calls Maximize(), etc, until a terminal node is found (as opposed to what I've usually seen recursive algorithms do, just call themselves).</p>
+<p>This is actually pretty familiar to anyone who's played chess (or lots of strategy games, really). When considering a move to make, you then put yourself in your opponent's shoes and think, "what move would I make if I were <em>them?</em>" Of course, you don't always get to complete it to "terminal nodes" (i.e., checkmate), so you just kind of say "okay, 5 moves down the line, if we both do our best that I can see, this looks like it maximizes the game for me" (and of course sometimes you didn't look far enough, and there are surprises!). But what you're really doing is some version of the minimax algorithm!</p>
+<p>So what can you do when you can't really get to a terminal node? They offer 3 strategies:</p>
+<ol>
+<li>Use an evaluation function for non terminal nodes. That is, only go D layers deep, but have some function that tells you how good you're doing at that node when you stop.</li>
+<li>Use Iterative Deepening Search (IDS). You basically limit the depth, keep re-calculating it for deeper depths, and then take the best result you got when you had to stop.</li>
+<li>Prune, which means cut out big chunks of the tree when you either know or suspect that it won't give you better results.</li>
+</ol>
+<p>They focus on pruning first, and specifically, a famous algorithm called alpha-beta pruning. The basic idea of pruning is that if you're smart, and keep track of the right stuff while traversing the tree, sometimes you can skip whole sections of the tree because you realize they just <em>can't</em> do better than what you've already done. So this is pruning generally, but alpha-beta pruning is more specifically about passing the best values for max (alpha) and min (beta) down the tree, and the propagating new discoveries back up the tree.</p>
+<p>The specifics can actually get a little confusing, so I'll try and explain it here for my own knowledge. The first thing to note is that alpha and beta are values at each (expanded) node, <em>not</em> global variables. Similar to minimax, there will be a "flip flop" recursion between Maximize and Minimize. The difference here is that each time one of them is called, they're called with an alpha and beta value. The first time, Maximize is called on the root node with alpha = -infinity and beta = +infinity. At the beginning of Maximize (everything will be the same for Minimize, but backwards), the (best node, best value) combo for that node's expansion is set to (Null, -infinity). Then, they go through a for loop of each of the children. For each child, Minimize() is called on it, and the resulting value is gotten. If this value is better than the best value, that value becomes the new best value. So, the first time this happens, anything will be bigger than -infinity, so it will be the new best (biggest) value. Then, this best value (whether or not it got updated) is compared to beta (the one passed to Maximize). If it's bigger, that means that Minimize will certainly choose that beta, which is worse (for Max) than the best Max can already achieve on another branch. Therefore, we can ignore the rest of that branch, and prune.</p>
+<p>There's also a brief section on move ordering, which is the order of the nodes you evaluate. If alpha-beta pruning potentially allows you to not have to evaluate the rest of a node's children, if evaluation of one of them gives you alpha &gt; beta, you can imagine that you'd want to evaluate that node first.</p>
+<p>&nbsp;</p>
+<p><span style="text-decoration: underline;">Project</span></p>
+<p>Alright, now for the actual project! The cool part. The goal here is to make an AI that plays <a href="http://2048game.com/">2048</a>. There are a few constraints. You only get 0.2 second per move, so you have to cut off your search of the game tree after that time and just return what you've found for your best move. Additionally, typically in the minimax algorithm, you assume your opponent (if you're Max) wants to minimize, that is, give you the worst possible move. However, in 2048, the 2 or 4 tile that's placed each turn is random. So there's a good chance that you could get better scores if you programmed your AI with this in mind (i.e., if you make a move where, if the computer was playing randomly as it actually does, and there's a 1% chance it would make the move that's worst for you, but that other 99% is great for you, that would actually be a pretty great move to make). However, the instructions say to program it as though the game is actively playing against you, giving you the worst move at each point.</p>
+<p>I mentioned above what you have to do when you can't get to a terminal mode. So far they showed you trees that seemed to assume that you could see the outcomes of Max and Min choosing their best moves, and finishing the game to completion or something. I'm not sure you even could theoretically (given infinite calculation time) get all the ending game states for 2048, because it seems possible that there are some rare branches of the tree where the game could continue indefinitely (actually, is this true? If you could also place tiles yourself, and choose the moves, could the game go on forever? I'm not sure, because it seems like as the game goes on, to get higher numbers, you need to have the lower ones that build up to them present as well, which would clog the board up (edit: actually, see below for an example of this)).</p>
+<p>Anyway, the point is that when you can't reach terminal states in the game tree (that is, the game doesn't end, giving you a "definite vaule" for that state), you basically have to make up your own value for a state. And that's a heuristic, in a sense! It turns out choice of heuristic is very important and the hard problem of this assignment. At each node, you'll calculate the heuristic for that game state, which will let you make choices.</p>
+<p>They suggest starting by just implementing a-b pruning with the heuristic of "number of free cells", which should let you get some combo of 256's and 512's if you run it repeatedly (the way they score it is to run your program 10 times and take the 5 best scores). This actually isn't a bad heuristic, but could use a little tweaking. In general, you probably do want more open cells, and that also encourages combining them, which will tend to give you higher number tiles. So, I implemented this, and it indeed gave me a bunch of 256's and 512's. I also implemented IDS to start, so for a given move, I have a "depth limit" to search in the tree, which I increase, until I run out of time. That still had me at the same scores.</p>
+<p>Okay, to the code. I'm mostly going to focus on what I did for the heuristic here, because that's the interesting part, and honestly, I did the main parts in Minimize() and Maximize() pretty ugly.</p>
+<p>The simplest, the starting heuristic, was just:</p>
+<pre class="EnlighterJSRAW" data-enlighter-language="null">def heuristic(self,grid):
+        #For the heuristic, higher is better for the playerAI.
+        N_free_cells = len(grid.getAvailableCells())
+        return(N_free_cells)</pre>
+<p>But now let's try to get better. I don't know a ton about 2048 but the one thing I did know was that you want your highest value in the corner. To do that, I added another piece to the heuristic function, that just adds the value of the tile in the corner to the heuristic, still keeping the N_free_cells thing:</p>
+<pre class="EnlighterJSRAW" data-enlighter-language="null">def heuristic(self,grid):
+        #For the heuristic, higher is better for the playerAI.
+        N_free_cells = len(grid.getAvailableCells())
+        corner_weight_val = grid.getCellValue((0,0))
+        return(self.weight1*N_free_cells + self.weight2*corner_weight_val)</pre>
+<p>This definitely worked better, giving me a few 1024's. A kind of important note, maybe: I think when I originally did this with my friends, we were actually using the log() of tile values, because we thought that if you're using something like N_free_cells, then a value like even 256 completely washes out that component of the heuristic. So instead we did things like adding log(1 + grid.getCellValue((0,0))), which goes linearly as the tile value increases. But here's the thing. I think you <em>want</em> those values to wash out effects like the number of free tiles, until a certain point, where you should be really worried about the lack of free tiles.</p>
+<p>The number of free tiles as a driver to combine stuff isn't super powerful -- for example, when you have a ton of free spaces, you would much rather get a higher number than worry about keeping free spaces. It should only become worrying when you're really running out, I think. So, one of the first things I did was make a nonlinear function of N_free_cells:</p>
+<pre class="EnlighterJSRAW" data-enlighter-language="null">N_free_cells = len(grid.getAvailableCells())
+free_cells_val = N_free_cells - 15/(N_free_cells + 0.01)</pre>
+<p>This is mostly linear for higher values of N_free_cells, but really diverges (negatively) and freaks out at N_free_cells = 0, which seems good (I could add a little offset to make it freak out earlier if I wanted). The 0.01 value determines how much it diverges, which is good I think, because it means it'll be -1500 when there are no free cells. That should offer high incentive to avoid things, unless it can actually get a corner tile that outweighs that, in which case it's probably worth it.</p>
+<p>Okay, I should've kept better track of my scores while repeatedly submitting, but I didn't. However, I'm pretty sure at this point I got an 83/100, which corresponds to getting four 1024's in your top five scores:</p>
+<p><img class="aligncenter wp-image-3909" src="{{ site.baseurl }}/assets/scores.png" alt="" width="815" height="293" /></p>
+<p>At this point I tried a few other things. One was adding a term for just the <em>highest</em> value tile you had, because I figured that if you can get a really high one, you might not care that it's not in the upper left. That didn't work great though, probably because organization of tiles is so important; unless you can win, getting a higher value but screwing over your future moves will quickly end the game often. Because I had a rough sense that you wanted higher tiles in the corner, I tried implementing a "gradient" thing, where it incentivized stuff being closer to the upper left corner (and therefore higher values there rather than lower values):</p>
+<pre class="EnlighterJSRAW" data-enlighter-language="null">def cornerGradientBoardVal(self,grid):
+        sum = 0
+        for i in range(4):
+            for j in range(4):
+                sum += (1/6.0)*((3-i)+(3-j))*grid.getCellValue((i,j))
+        return(sum)</pre>
+<p>So it weights stuff the closer it is to that corner, which I hoped would make it want to move stuff in that direction. This may have worked, kind of. It's hard to tell, and I also switched from doing the log() to no log thing at some point during this, but I don't think this was actually very successful either way, as I'll show in a minute.</p>
+<p>At this point, I had a handful of heuristics, but it was kind of hard to tell which was the best. I thought that maybe I just didn't have their respective weights set correctly, i.e., maybe I had the right one(s) in that sum, but one just tended to produce such high numbers that it basically solely determined the choices. So, I made a brute force thing that would choose weights (a weight for each term of the heuristic), and try a bunch of different combinations of them, and for each combo, do a few trials (to account for the luck factor). Here's the code for that:</p>
+<pre class="EnlighterJSRAW" data-enlighter-language="null">from Grid_3 import Grid
+from Displayer_3 import Displayer
+from ComputerAI_3 import ComputerAI
+from PlayerAI_3 import PlayerAI
+from GameManager_3 import GameManager
+from multiprocessing import Pool
+from time import time
+
+def playGameInstance(weights):
+    gameManager = GameManager()
+    playerAI  	= PlayerAI()
+    (w1,w2,w3,w4) = weights
+    playerAI.setWeights((w1,w2,w3,w4))
+    computerAI  = ComputerAI()
+    displayer 	= Displayer()
+
+    gameManager.setDisplayer(displayer)
+    gameManager.setPlayerAI(playerAI)
+    gameManager.setComputerAI(computerAI)
+
+    gameManager.start()
+
+    max_tile = gameManager.grid.getMaxTile()
+    return(max_tile)
+
+
+all_range = [0,1,2,4]
+weight1_range = weight2_range = weight3_range = weight4_range = all_range
+
+fname = 'weights_opt.txt'
+weights_file = open(fname,'w+')
+weights_file.write('{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format('w1','w2','w3','w4','max1','max2','max3','avg','time'))
+weights_file.close()
+
+pool = Pool(processes=3)
+
+for w1 in weight1_range:
+    for w2 in weight2_range:
+        for w3 in weight3_range:
+            for w4 in weight4_range:
+
+                start_time = time()
+
+                weights = (w1,w2,w3,w4)
+                print('trying weights:', weights)
+
+                p1 = pool.apply_async(playGameInstance,args=(weights,))
+                p2 = pool.apply_async(playGameInstance,args=(weights,))
+                p3 = pool.apply_async(playGameInstance,args=(weights,))
+
+                max1 = p1.get(timeout=600)
+                max2 = p2.get(timeout=600)
+                max3 = p3.get(timeout=600)
+                avg = (max1+max2+max3)/3.0
+
+                print('maxes: {}\t{}\t{}\tavg: {}'.format(max1,max2,max3,avg))
+
+                time_elapsed = time() - start_time
+                print('time elapsed:',time_elapsed)
+
+                weights_file = open(fname,'a')
+                weights_file.write('{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(w1,w2,w3,w4,max1,max2,max3,avg,time_elapsed))
+                weights_file.close()</pre>
+<p>This...worked a little, I think improving my score to 88, but nothing spectacular. It basically took a longass time and convinced me that my heuristic components weren't enough.</p>
+<p>At this point, I figured that I should probably see what's actually an intelligent strategy for the game. I played a few myself, trying to see if there was anything that made intuitive sense, but I couldn't see anything aside from the corner tile thing and some sort of rough space freeing strategy. So, I Youtubed "2048 strategy" and immediately found some pretty good ones. <a href="https://www.youtube.com/watch?v=2aED90sMZII">This was the one</a> that gave what seems to be the most important things. His tips, in order of importance, were:</p>
+<ol>
+<li>Only take moves that keep the valuable tile in its corner, unless you're forced to take another move. This is pretty much equivalent to the corner weight value thing I'm already doing.</li>
+<li>Keep the top row (or whichever, just one of the rows or columns that your corner tile is in) filled in. I wasn't really doing this directly, rather just the corner gradient thing, which incentivized stuff more towards the corner, but not the one row.</li>
+<li>Lastly, in that top row, you ideally want it in descending order from the corner tile (for example, 1024, 512, 256, 128. This makes it so that If you can get a 128 outside of that row, you can probably quickly scoop up the whole top row into the next level. It can also be a killer if you happen to get something like 1024, 2, 512, 128 in the top row: pretty much the only way to proceed will be to build that 2 up to 512, which is slow and clogs things.</li>
+</ol>
+<p>So, the first thing I did was to implement that top row thing. At first I was doing a similar gradient thing, where the top row was most valuable but the 2nd top row was still more valuable than the third, and so on. I realized that doesn't work because it makes downward moves feasible sometimes, which we almost never, ever want. Even with a nonlinearity like (3-i)**2 it didn't work great. Instead, I just modified the corner gradient function to just do the top row values:</p>
+<pre class="EnlighterJSRAW" data-enlighter-language="null">def topRowGradient(self,grid):
+        sum = 0
+        for i in range(1):
+            for j in range(4):
+                sum += (1/6.0)*((3-i)**2)*grid.getCellValue((i,j))
+        return(sum)</pre>
+<p>So, at this point I popped this sucka in, and was just using three heuristic components: corner value, my nonlinear N_free_cells, and this new row gradient thing, all with weights of 1.</p>
+<p>And this got me... 98! Awesome. It's cool to see that a strategy I hadn't thought of really was the key.</p>
+<p>I was still hungry for that 100 though. I next tried implementing his third tip, trying to incentivize order in the top row. I tried adding a term like:</p>
+<pre class="EnlighterJSRAW" data-enlighter-language="null">def topRowOrder(self,grid):
+        return(
+        (grid.getCellValue((0,0))-grid.getCellValue((0,1))) +
+        (grid.getCellValue((0,1))-grid.getCellValue((0,2))) +
+        (grid.getCellValue((0,2))-grid.getCellValue((0,3)))
+        )</pre>
+<p>but, to be honest, found it didn't help. My best guess is that it's honestly hard to enforce that. When I played a few games, I tried keeping this tip in mind, but it seemed like it would just happen by luck rather than any place where I could see to make that choice, so it seems hard to believe getting it in the right order <em>and</em> also having the more important things already in place would often be a choice you can make. However, it's very possible that the weights between these heuristics would need to be fixed again to make this one effective.</p>
+<p>Instead, what I did at this point was to try my parameter search method again, with only the three heuristics that had given me the 98. I strongly suspected that a little bit of tuning might give me another 2048 or two, pushing me to 100.</p>
+<p>At this point, here was my heuristic:</p>
+<pre class="EnlighterJSRAW" data-enlighter-language="null">def heuristic(self,grid):
+        #For the heuristic, higher is better.
+        N_free_cells = len(grid.getAvailableCells())
+        free_cells_val = N_free_cells - 15/(N_free_cells + 0.01)
+        corner_weight_val = grid.getCellValue((0,0))
+        top_row_gradient = self.topRowGradient(grid)
+
+        return(
+        self.weight1*free_cells_val +
+        self.weight4*corner_weight_val +
+        self.weight5*top_row_gradient
+        )</pre>
+<p>The parameter search is pretty similar, but instead of doing the multiprocessing Pool() thing I was doing before, I just did them sequentially (obviously, doing them at the same time slows them down, but I thought that should be okay, the best combo will still give the best scores. But it's also possible that really slowing down the speed means that a given game instance can only search, say, depth 2 instead of 4 down the game tree, and that would hurt some heuristics a lot more than others. So I thought I should just do it like they'll actually be run).</p>
+<p>So, I ran it overnight, doing 10 trials for each, and... dun dun dun</p>
+<p><img class="aligncenter size-large wp-image-3910" src="{{ site.baseurl }}/assets/weights1-1024x468.png" alt="" width="640" height="293" /></p>
+<p>Three 2048's, and plenty of 1024's. Excuse the weight labels, I was reusing some older stuff, so the order of the weights is a bit messy. But, they correspond to weight_(free cells) = 1, weight_(corner val) = 1, and weight_(top row val) = 4. Submitting with these weights gave me a nice 100!</p>
+<p>Since that one was 4, it's very possible if I let it increase further, it would give better scores. I could also let the top row ordering in the game, which might do it too.</p>
+<p>Here are a few other little things.</p>
+<p>Here's an example of what I was talking about before, with it getting crowded no matter what.</p>
+<p><img class="aligncenter size-full wp-image-3911" src="{{ site.baseurl }}/assets/good_but_cramped.png" alt="" width="290" height="287" /></p>
+<p>This game is going about as well as possible, 2048 already, and some lower tiles to build further, but it's just going to need a lot of space. It needs to make two 16's before it can even add to that 32, not even counting getting there. And the 1024 isn't even on the board! So I imagine that it gets nearly impossible to get 8192 or something.</p>
+<p>Another improvement that could possibly be done is to look for nasty/unlucky placements that'll force you to move that corner tile. Actually, I <em>thought</em> this should already be the case, because it should be expecting the worst, and see that it could set itself up for that, but apparently something else sometimes outweighs that. Here's an example of that happening:</p>
+<p><img class="aligncenter size-full wp-image-3912" src="{{ site.baseurl }}/assets/2048_ouch.png" alt="" width="297" height="923" /></p>
+<p>It's of course unlikely that the computer would place that last 2 there, but it did, and now could really mess up that otherwise good game. The player AI could have seen this coming and moved to the left, which would leave a definite move (up) for next turn. Anyway, that's all for now!</p>

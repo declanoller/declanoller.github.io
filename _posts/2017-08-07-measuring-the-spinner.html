@@ -1,0 +1,75 @@
+---
+layout: post
+title: Measuring the spinner
+date: 2017-08-07 15:58:57.000000000 -04:00
+type: post
+parent_id: '0'
+published: true
+password: ''
+status: publish
+categories:
+- Miscellaneous
+- projects
+tags: []
+meta:
+  _thumbnail_id: '988'
+  _rest_api_published: '1'
+  _rest_api_client_id: "-1"
+  _publicize_job_id: '8004976782'
+  _edit_last: '1'
+  ecae_meta: a:1:{s:15:"disable_excerpt";s:2:"no";}
+  penci_post_views_count: '134'
+  penci_post_week_views_count: '2'
+  penci_post_month_views_count: '20'
+author:
+  login: declanoller
+  email: declanoller@gmail.com
+  display_name: declanoller
+  first_name: ''
+  last_name: ''
+permalink: "/2017/08/07/measuring-the-spinner/"
+---
+<p style="text-align: justify;">This is silly and derpy, but here we are. Read on if you're having trouble getting to sleep.</p>
+<p style="text-align: justify;">Often for research, we need to make a thin film of photoresist, so we can do <a href="https://en.wikipedia.org/wiki/Photolithography" target="_blank" rel="noopener noreferrer">photolithography</a> or <a href="https://en.wikipedia.org/wiki/Electron-beam_lithography" target="_blank" rel="noopener noreferrer">e-beam lithography</a>. Photolithography is cool (technical term) because you can pretty easily (seriously: with a UV flashlight and a home printer; I'll probably write that up at some point) pattern the film over a wide area. It's straightforward and easy enough that machines can do it. However, its resolution is relatively limited, down to about 1 micron (human hair thickness: 25-100 micron). I should be careful saying this because you can get better resolution through various methods (like using a smaller wavelength of light), and for industrial applications they can do a lot smaller. However, for research purposes, ~1-10 micron is usually the figure people say (and this depends on definition too; do you mean the smallest linewidth, distance between lines, or precision for a given spot?).</p>
+<p style="text-align: justify;">E-beam lithography is also really cool. It's essentially the same idea as photolithography, but using an electron beam instead of UV light. However, this allows <em>much</em> higher resolution. I'm not going to even attempt to give a solid quote about its lower limits, because people have done all sorts of things with various levels of repeatability, etc. The number that I've seen a bunch is ~20nm, if you're pretty careful. However, the process is very difficult compared to photolithography and therefore it's not something that can be easily and widely used in industry.</p>
+<p style="text-align: justify;">Anyway, back to the films.</p>
+<p style="text-align: justify;">The films usually have to be <em>very</em> thin when doing lithography, because if they were thicker, you'd start to get weird profiles in the depth of the film due to "shadow" and scattering type effects, among other things.</p>
+<p style="text-align: justify;">So how do we make thin films? Well, as outlined in <a href="http://www.microchemicals.com/technical_information/photoresist_coating.pdf">this manual</a> (PDF) from a photoresist company, there are actually several methods. However, a common one is called "spin coating". It's pretty straightforward. You have a wheel that spins around in the horizontal plane, you put your sample in the middle, you cover it with a bit of the goop you want the film of, and then...spin it, <em>really really fast.</em> The centrifugal force smears the goop (another technical term) out in a surprisingly thin and uniform film.</p>
+<p style="text-align: justify;">The machine that does, that's commonly found in clean rooms is called a... dun dun dun... <em>spinner</em>. Whoa, man. Here's a picture of a typical spinner (or "spin coater"):</p>
+<p style="text-align: justify;"><img class=" wp-image-835 aligncenter" src="{{ site.baseurl }}/assets/spinner.jpg" alt="spinner" width="498" height="373" /></p>
+<p style="text-align: justify;">Now, we <em>do</em> have a fancy spin coater in our clean room facility at work (in fact, I think it might be the same exact model as above?), but I often don't need the accuracy it offers and it's a bit of a hassle to go in there. Luckily, in our lab we have...</p>
+<p style="text-align: justify;"><em><strong>THE SPINNER FROM HELL</strong></em></p>
+<p style="text-align: justify;"><img class=" wp-image-872 aligncenter" src="{{ site.baseurl }}/assets/img_1814.jpg" alt="IMG_1814.JPG" width="438" height="292" /></p>
+<p style="text-align: justify;">Look, it even looks like it's splattered with blood (don't worry, it's just S1818 photoresist).</p>
+<p style="text-align: justify;">Now, you may look at this abomination and say, <em>you actually do scientific research with that piece of trash?</em> But hear me out, because it's actually perfect for what I need.</p>
+<p style="text-align: justify;">Lemme talk about precision with this stuff for a minute. First of all, I'm gonna just be talking about making films for photolithography, because e-beam lithography can actually need fairly precise film thicknesses (which I <em>still</em> think this might actually be fine for, but I'd concede that at that point you might as well be as careful as possible).</p>
+<p style="text-align: justify;">So, the way it works is like this. You want to create a photoresist film of a certain thickness. A given photoresist normally comes in various types that essentially determine the final thickness the film will be. It basically just does this by making the film more or less viscous; the more viscous the film, the more resistant it will be to the centrifugal force, and it will end up thicker.</p>
+<p style="text-align: justify;">If you look at the manual, they'll give you what's called a "spin speed/thickness curve". Here's one from a popular SU-8 photoresist:</p>
+<p style="text-align: justify;"><img class=" wp-image-892 aligncenter" src="{{ site.baseurl }}/assets/su8.png" alt="SU8.PNG" width="468" height="416" /></p>
+<p style="text-align: justify;">This is assuming (it mentions it in the manual) that you spin it at this speed for 45 seconds. The plot shows the curves for 4 different types (the name, 2075 for example, is because 75 is the thickness is microns if you spin at 3000RPM).</p>
+<p style="text-align: justify;">The part I want to bring attention to is, at the speeds you usually spin at (~3000RPM), the curves are <em>pretty flat</em>. For example, look at SU-8 2025 and compare the thicknesses at 2500 and 3500 RPM. What's the range, 35 micron to 25 micron, maaaybe? And that's a pretty big variation in spin speed, anyway. Even a crappy spinner would likely have much better precision than that.</p>
+<p style="text-align: justify;">Beyond that, the thickness matters, but... for most applications, just not that much. Sure, thicker films have to bake longer, be exposed longer... but you usually tune your process so you're not "riding the edge" anyway; that is, you usually overexpose and overbake a little anyway.</p>
+<p style="text-align: justify;">So, all this is just my justification for saying that it's not a huge deal.</p>
+<p style="text-align: justify;">That said, I'd like to know what the speed it's spinning at is, as closely as possible.</p>
+<p style="text-align: justify;">What is this thing, anyway? Maybe I could look at the manual?</p>
+<p style="text-align: justify;"><img class=" wp-image-905 aligncenter" src="{{ site.baseurl }}/assets/img_1817.jpg" alt="IMG_1817.JPG" width="447" height="298" /></p>
+<p style="text-align: justify;">Ah, a "crystal master", of course. As far as I can tell, it's for polishing crystals. If you look at the first picture of it, the spinning wheel, underneath that horrendous bloodbath, is actually a sandpaper disk. You'd manually (I think) press your fancy crystal against it as it spun, and it would polish it. If you notice, in the upper left corner, it has this little outcropping -- I think that's where some polishing fluid would be, so it could drip onto the sandpaper.</p>
+<p style="text-align: justify;">Anyway, I looked at the manual and I believe it said the top speed was either 3000 or 3500RPM. I trusted this, and actually did some measurements which (roughly) verified the thickness I expected for various resists at that speed.</p>
+<p style="text-align: justify;">But I was thinking (also before I found that manual, which was actually kind of a long shot because the thing is pretty ancient; the manual was a scan of a photocopy), how could I measure the speed?</p>
+<p style="text-align: justify;">One way could be, use an accelerometer module. But that would be a whole little project probably (though it could be cool!). If I were clever, I could probably get strobe light and then use that trick where you strobe it at the right frequency so some spot on the spinning thing looks stationary. Buuut, I don't have a strobe (and can they strobe at ~50Hz? I dunno). You could also maybe do something where you tie a piece of string to the rotating part and then measure how long it takes it to wind that string up, but that has problems too...you'd have to deal with the (unknown) acceleration of the wheel as it spun up, and also measure how fast the string is being wound, and... yeah, that's a dumb idea.</p>
+<p style="text-align: justify;">Anyway, I'm sure there's a really smart way to do this (let me know if you know of one!), but here's the way I thought of. I had my DSLR camera in the lab anyway. The shutter speed can be set from as slow as 30 seconds to 1/8000th of a second. When something moves during the exposure (while the shutter is open), it creates a blurred image. Therefore, by seeing how long the blur is, and knowing the shutter speed, you can figure out how fast something was going in the shot.</p>
+<p style="text-align: justify;">So, I did the following. First, I put a marker (actually several) at one point along the spinner wheel:</p>
+<p style="text-align: justify;"><img class=" wp-image-958 aligncenter" src="{{ site.baseurl }}/assets/img_1862.jpg" alt="img_1862" width="521" height="347" /></p>
+<p style="text-align: justify;">I also put a black foamcore disk on the wheel. The reason for this and the multiple pieces (a piece of white napkin, piece of metal, and piece of white wax paper) is that we need the point along the circle to stand out from the background. So, I chose things that would scatter light diffusely, so I could light it from the side and take the picture from above, making only the spots stand out.</p>
+<p style="text-align: justify;">I took several shots at different shutter speeds. By seeing how far around the circle the markers went, we can calculate the speed, hopefully. The shutter speed is written in the lower left corner of each.</p>
+<p style="text-align: justify;"><img class=" wp-image-966 aligncenter" src="{{ site.baseurl }}/assets/50.jpg" alt="50" width="483" height="322" /></p>
+<p style="text-align: justify;">At 1/50, it's completing at least a whole revolution, so we can't actually tell much (aside from a lower limit of the speed).</p>
+<p style="text-align: justify;"><img class=" wp-image-967 aligncenter" src="{{ site.baseurl }}/assets/60.jpg" alt="60" width="449" height="299" /></p>
+<p style="text-align: justify;"><img class=" wp-image-968 aligncenter" src="{{ site.baseurl }}/assets/80.jpg" alt="80" width="445" height="296" /></p>
+<p style="text-align: justify;"><img class=" wp-image-969 aligncenter" src="{{ site.baseurl }}/assets/100.jpg" alt="100" width="440" height="293" /></p>
+<p style="text-align: justify;"><img class=" wp-image-970 aligncenter" src="{{ site.baseurl }}/assets/200.jpg" alt="200" width="436" height="290" /></p>
+<p style="text-align: justify;">So, plotting the angle vs the rotation time for that angle:</p>
+<p style="text-align: justify;"><img class=" size-full wp-image-1050 aligncenter" src="{{ site.baseurl }}/assets/timevsangle.png" alt="timevsangle" width="584" height="323" /></p>
+<p style="text-align: justify;">Looking for the time it takes to do 360 degrees, we get ~0.019s, or about 52.6 Hz. This gives us about 3157 RPM, which is pretty close to what the manual said. Once you take into account the blurriness of the pictures I based this on, and the fact that the line I drew may not be totally accurate, this is <em>very</em> reasonable. Is the blurriness of the edge of the streak due to the "rolling shutter" effect? I'm using a DSLR, which I believe does essentially have a rolling shutter, because it's essentially "falling" from top to bottom. In fact, I just googled it, and Wikipedia had a very relevant illustration:</p>
+<p style="text-align: justify;"><img class="wp-image-1060 aligncenter" src="{{ site.baseurl }}/assets/1280px-rolling_shutter_effect-svg.png" alt="1280px-Rolling_shutter_effect.svg.png" width="408" height="306" /></p>
+<p>Anyway, there's that little thing. Do you have any better ideas for measuring the speed of something rotating very fast like this? Let me know!</p>
