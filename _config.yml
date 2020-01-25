@@ -23,8 +23,11 @@ baseurl: "" # the subpath of your site, e.g. /blog
 url: "declanoller.github.io" # the base hostname & protocol for your site, e.g. http://example.com
 github_username:  declanoller
 
-nav_link_one_link: "/about/"
-nav_link_one_name: "About"
+nav_link_one_link: "/cv_prof/"
+nav_link_one_name: "CV/Professional"
+
+nav_link_two_link: "/about/"
+nav_link_two_name: "About"
 
 
 
