@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "_posts/2025-04-03-test-post.md",
+                "file": "_posts/another test.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "2025-04-03-test-post"
+              "title": "another test"
             }
           }
         ]
@@ -94,7 +94,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "_posts/2025-04-03-test-post.md",
+                "file": "_posts/another test.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -104,7 +104,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks for 2025-04-03-test-post"
+              "title": "Backlinks for another test"
             }
           },
           {
@@ -113,12 +113,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "_posts/2025-04-03-test-post.md",
+                "file": "_posts/another test.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Outgoing links from 2025-04-03-test-post"
+              "title": "Outgoing links from another test"
             }
           },
           {
@@ -142,13 +142,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "_posts/2025-04-03-test-post.md",
+                "file": "_posts/another test.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline of 2025-04-03-test-post"
+              "title": "Outline of another test"
             }
           }
         ]
@@ -170,11 +170,12 @@
   },
   "active": "22e74f5debdd6dd0",
   "lastOpenFiles": [
+    "_posts/2025-04-03-test-post.md",
+    "_posts/another test.md",
     "assets/images/skymonkey 1.jpg",
     "assets/images/skymonkey.jpg",
     "assets/images/dogtown 1.png",
     "assets/images/dogtown.png",
-    "_posts/2025-04-03-test-post.md",
     "assets/images/multi_color_2d_reconstructions_train 22 1.png",
     "assets/images/multi_color_2d_reconstructions_train 22.png",
     "assets/images",
