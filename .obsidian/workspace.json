@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "_posts/and_another.md",
+                "file": "_posts/2025-04-06-and_another.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "and_another"
+              "title": "2025-04-06-and_another"
             }
           }
         ]
@@ -94,7 +94,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "_posts/and_another.md",
+                "file": "_posts/2025-04-06-and_another.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -104,7 +104,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks for and_another"
+              "title": "Backlinks for 2025-04-06-and_another"
             }
           },
           {
@@ -113,12 +113,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "_posts/and_another.md",
+                "file": "_posts/2025-04-06-and_another.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Outgoing links from and_another"
+              "title": "Outgoing links from 2025-04-06-and_another"
             }
           },
           {
@@ -142,13 +142,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "_posts/and_another.md",
+                "file": "_posts/2025-04-06-and_another.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline of and_another"
+              "title": "Outline of 2025-04-06-and_another"
             }
           }
         ]
@@ -170,9 +170,10 @@
   },
   "active": "22e74f5debdd6dd0",
   "lastOpenFiles": [
+    "assets/images/sheep.png",
     "_posts/2025-04-03-test-post.md",
     "_posts/another test.md",
-    "_posts/and_another.md",
+    "_posts/2025-04-06-and_another.md",
     "index.md",
     "about.md",
     "assets/images/skymonkey 1.jpg",
