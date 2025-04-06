@@ -1,3 +1,3 @@
 
 
-![](assets/images/skymonkey.jpg)
+![](/assets/images/skymonkey.jpg)

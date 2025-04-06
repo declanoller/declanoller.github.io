@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "_posts/another test.md",
+                "file": "_posts/and_another.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "another test"
+              "title": "and_another"
             }
           }
         ]
@@ -94,7 +94,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "_posts/another test.md",
+                "file": "_posts/and_another.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -104,7 +104,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks for another test"
+              "title": "Backlinks for and_another"
             }
           },
           {
@@ -113,12 +113,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "_posts/another test.md",
+                "file": "_posts/and_another.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Outgoing links from another test"
+              "title": "Outgoing links from and_another"
             }
           },
           {
@@ -142,13 +142,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "_posts/another test.md",
+                "file": "_posts/and_another.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline of another test"
+              "title": "Outline of and_another"
             }
           }
         ]
@@ -172,6 +172,9 @@
   "lastOpenFiles": [
     "_posts/2025-04-03-test-post.md",
     "_posts/another test.md",
+    "_posts/and_another.md",
+    "index.md",
+    "about.md",
     "assets/images/skymonkey 1.jpg",
     "assets/images/skymonkey.jpg",
     "assets/images/dogtown 1.png",
