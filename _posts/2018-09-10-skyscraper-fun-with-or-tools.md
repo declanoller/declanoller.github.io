@@ -1,7 +1,7 @@
 ---
 date: 2018-09-10 15:57:01-04:00
 header-img: feat_imgs/skyscrapers.png
-layout: post
+layout: default
 title: Skyscraper fun with OR-Tools!
 ---
 

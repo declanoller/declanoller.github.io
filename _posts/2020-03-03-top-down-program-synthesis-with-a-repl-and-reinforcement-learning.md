@@ -1,7 +1,7 @@
 ---
 date: 2020-03-03 17:35:37-05:00
 header-img: feat_imgs/top_down_repl.png
-layout: post
+layout: default
 title: Top-down program synthesis with a REPL and reinforcement learning
 ---
 

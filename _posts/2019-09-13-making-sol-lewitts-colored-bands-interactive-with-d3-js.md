@@ -1,7 +1,7 @@
 ---
 date: 2019-09-13 17:02:51-04:00
 header-img: feat_imgs/sol_lewitt_bands.png
-layout: post
+layout: default
 title: Making Sol LeWitt's colored bands interactive with d3.js
 ---
 

@@ -1,7 +1,7 @@
 ---
 date: 2018-06-25 19:57:22-04:00
 header-img: feat_imgs/motion_detect_1.jpg
-layout: post
+layout: default
 title: Motion detection with the Raspberry Pi, part 1
 ---
 

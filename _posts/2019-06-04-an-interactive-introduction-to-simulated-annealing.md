@@ -1,7 +1,7 @@
 ---
 date: 2019-06-04 12:11:50-04:00
 header-img: feat_imgs/sim_anneal_d3.png
-layout: post
+layout: default
 title: An interactive introduction to Simulated Annealing!
 ---
 

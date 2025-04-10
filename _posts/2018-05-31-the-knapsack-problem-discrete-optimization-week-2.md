@@ -1,7 +1,7 @@
 ---
 date: 2018-05-31 17:49:37-04:00
 header-img: feat_imgs/knapsack.png
-layout: post
+layout: default
 title: 'The Knapsack Problem: Discrete Optimization, week 2'
 ---
 

@@ -1,7 +1,7 @@
 ---
 date: 2018-10-08 18:05:47-04:00
 header-img: feat_imgs/genetic_2.png
-layout: post
+layout: default
 title: Genetic Algorithms, part 2
 ---
 

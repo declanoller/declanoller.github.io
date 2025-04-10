@@ -1,7 +1,7 @@
 ---
 date: 2019-05-16 14:01:33-04:00
 header-img: feat_imgs/robot_centi.png
-layout: post
+layout: default
 title: 'In case hexapods weren''t creepy enough: the centipede robot!'
 ---
 
