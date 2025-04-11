@@ -1,5 +1,3 @@
 title: Declan Oller
 description: Thoughts, projects, and code
-theme: minima
-include:
-  - _includes/head-custom.html
+remote-theme: jekyll/minima
