@@ -1,7 +1,7 @@
 ---
 date: 2018-07-24 14:19:41-04:00
 header-img: feat_imgs/slack_wordcloud.png
-layout: default
+layout: post
 title: Word clouds for Slack
 ---
 

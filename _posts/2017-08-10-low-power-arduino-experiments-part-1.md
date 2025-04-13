@@ -1,7 +1,7 @@
 ---
 date: 2017-08-10 17:04:30-04:00
 header-img: feat_imgs/arduino_lowpower.jpg
-layout: default
+layout: post
 title: Low power Arduinos, part 1
 ---
 

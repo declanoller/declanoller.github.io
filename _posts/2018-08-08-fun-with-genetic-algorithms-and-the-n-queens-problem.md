@@ -1,7 +1,7 @@
 ---
 date: 2018-08-08 21:33:53-04:00
 header-img: feat_imgs/genetic_nqueens.png
-layout: default
+layout: post
 title: Fun with Genetic Algorithms and the N Queens Problem
 ---
 

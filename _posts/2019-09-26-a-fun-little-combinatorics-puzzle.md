@@ -1,7 +1,7 @@
 ---
 date: 2019-09-26 04:42:39-04:00
 header-img: feat_imgs/combo_puzzle.png
-layout: default
+layout: post
 title: A fun little combinatorics puzzle
 ---
 

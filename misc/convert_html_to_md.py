@@ -81,9 +81,11 @@ def parse_front_matter(text: str) -> Tuple[dict, str]:
         # Keep only the desired fields.
         keys_to_keep = ["layout", "title", "date", "header-img"]
         front_matter = {k: v for k, v in data.items() if k in keys_to_keep}
+        # Make layout: post
+        front_matter["layout"] = "post"
         # Replace layout: post with layout: default.
-        if front_matter.get("layout", "") == "post":
-            front_matter["layout"] = "default"
+        # if front_matter.get("layout", "") == "post":
+        #     front_matter["layout"] = "default"
         text = text[match.end() :]
     return front_matter, text
 

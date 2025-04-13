@@ -1,7 +1,7 @@
 ---
 date: 2019-05-24 14:05:27-04:00
 header-img: feat_imgs/neat_gd.png
-layout: default
+layout: post
 title: Descending into modular neuroevolution for logic circuits
 ---
 

@@ -1,7 +1,7 @@
 ---
 date: 2019-03-27 01:48:00-04:00
 header-img: feat_imgs/robot_car.png
-layout: default
+layout: post
 title: Training a real robot to play Puckworld with reinforcement learning
 ---
 
