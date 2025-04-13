@@ -1,5 +1,5 @@
 ---
-date: 2025-04-13 17:35:37-05:00
+date: 2025-04-10 01:35:37-05:00
 layout: post
 title: Testing some mathjax
 ---
