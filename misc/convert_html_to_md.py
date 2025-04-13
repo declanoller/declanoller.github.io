@@ -7,6 +7,7 @@ suitable for a new Jekyll site.
 
 Features:
 - Strips the front matter except for: layout, title, date, header-img.
+- Sets the layout field in the front matter to "post" for all posts.
 - Converts HTML <pre> code blocks to Markdown fenced code blocks (with Python syntax highlighting when appropriate).
 - Updates image paths from "{{ site.baseurl }}/assets/..." to "/assets/images/..."
 - Converts <p>...</p> blocks into paragraphs, preserving inline spacing to avoid extra spaces before punctuation.
@@ -22,6 +23,7 @@ Features:
 - Detects isolated math equations in <p> tags and converts them so that:
     - any existing math dollar signs are removed,
     - leading/trailing whitespace is trimmed,
+    - any vertical bar characters ("|") are replaced with " \\mid " (with spaces),
     - and the equation is wrapped in a single pair of dollar signs on its own line.
 - Replaces underlined text created with <p><span style="text-decoration: underline;">...</span></p>
   with a Markdown level-5 heading (i.e., starting with "#####").
@@ -81,11 +83,8 @@ def parse_front_matter(text: str) -> Tuple[dict, str]:
         # Keep only the desired fields.
         keys_to_keep = ["layout", "title", "date", "header-img"]
         front_matter = {k: v for k, v in data.items() if k in keys_to_keep}
-        # Make layout: post
+        # Force the layout to always be "post"
         front_matter["layout"] = "post"
-        # Replace layout: post with layout: default.
-        # if front_matter.get("layout", "") == "post":
-        #     front_matter["layout"] = "default"
         text = text[match.end() :]
     return front_matter, text
 
@@ -206,12 +205,16 @@ def convert_html_to_markdown(html_text: str) -> Tuple[str, Set[str]]:
 
     # Convert <p> tags.
     # For each paragraph, if it appears to be an isolated math expression,
-    # remove any existing $ symbols, trim whitespace, then re-wrap in $...$.
+    # remove any existing $ symbols, trim whitespace, replace vertical bar symbols with " \\mid ",
+    # then re-wrap in $...$ on its own line.
     # Otherwise, convert the paragraph normally.
     for p in soup.find_all("p"):
         text = p.get_text(strip=True)
         if is_math_expression(text):
             eq = text.strip("$").strip()
+            eq = eq.replace(
+                "|", " \\mid "
+            )  # Replace vertical bar with " \mid " (with spaces)
             new_text = f"${eq}$\n"
         else:
             new_text = "".join(str(child) for child in p.contents).strip() + "\n\n"
