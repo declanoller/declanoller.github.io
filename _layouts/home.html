@@ -21,27 +21,32 @@ layout: base
     <h2 class="post-list-heading">{{ page.list_title }}</h2>
     {%- endif -%}
     <ul class="post-list">
-        {%- assign date_format = site.minima.date_format | default: "%b %-d, %Y" -%}
         {%- for post in posts -%}
-        <li>
-            <span class="post-meta">{{ post.date | date: date_format }}</span>
-            <h3>
-                <a class="post-link" href="{{ post.url | relative_url }}">
-                    {{ post.title | escape }}
+        <li style="margin-bottom: 2em;">
+            <div style="display: flex; gap: 1em; align-items: center;">
+                {% if post.thumbnail %}
+                <a href="{{ post.url | relative_url }}">
+                    <img src="{{ post.thumbnail | relative_url }}" alt="Thumbnail for {{ post.title }}"
+                        style="width: 120px; height: auto; object-fit: cover;" />
                 </a>
-            </h3>
-            {%- if post.thumbnail -%}
-            <a href="{{ post.url | relative_url }}">
-                <img src="{{ post.thumbnail | relative_url }}" alt="Thumbnail for {{ post.title }}"
-                    style="max-width: 200px; height: auto;" />
-            </a>
-            {%- endif -%}
-            {%- if site.minima.show_excerpts -%}
-            {{ post.excerpt }}
-            {%- endif -%}
+                {% endif %}
+
+                <div>
+                    <span class="post-meta">{{ post.date | date: date_format }}</span>
+                    <h3 style="margin: 0;">
+                        <a class="post-link" href="{{ post.url | relative_url }}">
+                            {{ post.title | escape }}
+                        </a>
+                    </h3>
+                    {%- if site.minima.show_excerpts -%}
+                    <p>{{ post.excerpt }}</p>
+                    {%- endif -%}
+                </div>
+            </div>
         </li>
         {%- endfor -%}
     </ul>
+
 
     {% if site.paginate %}
     <div class="pager">
