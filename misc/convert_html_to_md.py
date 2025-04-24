@@ -205,24 +205,6 @@ def convert_html_to_markdown(html_text: str) -> Tuple[str, Set[str]]:
         md_blockquote = "\n".join(["> " + line for line in lines]) + "\n\n"
         blockquote.replace_with(NavigableString(md_blockquote))
 
-    # Convert unordered lists (<ul> with <li>) to Markdown bullet lists.
-    for ul in list(soup.find_all("ul")):
-        items = []
-        for li in ul.find_all("li", recursive=False):
-            li_text = li.get_text(separator=" ", strip=True)
-            items.append(f"- {li_text}")
-        md_ul = "\n".join(items) + "\n\n"
-        ul.replace_with(NavigableString(md_ul))
-
-    # Convert ordered lists (<ol> with <li>) to Markdown numbered lists.
-    for ol in list(soup.find_all("ol")):
-        items = []
-        for idx, li in enumerate(ol.find_all("li", recursive=False), start=1):
-            li_text = li.get_text(separator=" ", strip=True)
-            items.append(f"{idx}. {li_text}")
-        md_ol = "\n".join(items) + "\n\n"
-        ol.replace_with(NavigableString(md_ol))
-
     # Convert italic tags (<i> and <em>) to Markdown italics.
     for tag in list(soup.find_all(["i", "em"])):
         italic_text = tag.get_text()
@@ -234,6 +216,32 @@ def convert_html_to_markdown(html_text: str) -> Tuple[str, Set[str]]:
         strong_text = tag.get_text()
         md_strong = f"**{strong_text}**"
         tag.replace_with(NavigableString(md_strong))
+
+    # Convert unordered lists (<ul> with <li>) to Markdown bullet lists.
+    for ul in list(soup.find_all("ul")):
+        items = []
+        for li in ul.find_all("li", recursive=False):
+            for a in li.find_all("a"):
+                if a.has_attr("href"):
+                    markdown_link = f"[{a.get_text(strip=True)}]({a['href']})"
+                    a.replace_with(markdown_link)
+            li_text = li.get_text(separator="", strip=True)
+            items.append(f"- {li_text}")
+        md_ul = "\n".join(items) + "\n\n"
+        ul.replace_with(NavigableString(md_ul))
+
+    # Convert ordered lists (<ol> with <li>) to Markdown numbered lists.
+    for ol in list(soup.find_all("ol")):
+        items = []
+        for idx, li in enumerate(ol.find_all("li", recursive=False), start=1):
+            for a in li.find_all("a"):
+                if a.has_attr("href"):
+                    markdown_link = f"[{a.get_text(strip=True)}]({a['href']})"
+                    a.replace_with(markdown_link)
+            li_text = li.get_text(separator="", strip=True)
+            items.append(f"{idx}. {li_text}")
+        md_ol = "\n".join(items) + "\n\n"
+        ol.replace_with(NavigableString(md_ol))
 
     # Convert <pre> tags (code blocks).
     for pre in soup.find_all("pre"):

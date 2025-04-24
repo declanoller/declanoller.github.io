@@ -79,7 +79,7 @@ Here are the important steps:
 - Choose the starting state (the default is the top floor, but I add the option (see below why) to start at any state)
 - Get the action from that state (greedily or $\epsilon$-greedily)
 - Generate the episode from self.env (the environment)
-- Repeatedly: If in a terminal state (s=0 or s=1), return the ending state and total reward if not, performAction(S,A), get R,S' get next action A' update E and Q set S,A to be S',A', moving the "current state" forward
+- Repeatedly:If in a terminal state (s=0 or s=1), return the ending state and total rewardif not, performAction(S,A), get R,S'get next action A'update E and Qset S,A to be S',A', moving the "current state" forward
 
 Results! How does it do?
 

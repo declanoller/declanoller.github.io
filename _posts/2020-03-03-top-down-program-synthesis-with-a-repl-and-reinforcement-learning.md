@@ -11,10 +11,10 @@ I came to it in a roundabout way, but I wish I had found it earlier. What immedi
 
 From my reading of the literature, Program Synthesis (PS) seems to be having a bit of a revival right now, where people are leveraging powerful, yet somewhat theory-light "general solver" methods like deep learning, reinforcement learning, etc, with the more theory-backed, math-based PS ideas (traditional PS has lots of overlap with areas like optimization, search methods, type systems, and constraint satisfaction problems). I've read a bunch of papers in this area that really struck a chord with me. Here are a few favorites:
 
-- Write, Execute, Assess: Program Synthesis with a REPL
-- Execution-Guided Neural Program Synthesis
-- Program Synthesis Through Reinforcement Learning Guided Tree Search
-- Learning Libraries of Subroutines for Neurally–Guided Bayesian Program Induction
+- [Write, Execute, Assess: Program Synthesis with a REPL](https://arxiv.org/abs/1906.04604)
+- [Execution-Guided Neural Program Synthesis](https://openreview.net/pdf?id=H1gfOiAqYm)
+- [Program Synthesis Through Reinforcement Learning Guided Tree Search](https://arxiv.org/abs/1806.02932)
+- [Learning Libraries of Subroutines for Neurally–Guided Bayesian Program Induction](https://papers.nips.cc/paper/8006-learning-libraries-of-subroutines-for-neurallyguided-bayesian-program-induction)
 
 ![](/assets/images/PT_tree_9-2.png)
 
@@ -58,7 +58,7 @@ Starting at a high level, the algorithm is as follows. The policy model, $\pi$, 
 Here is the algorithm for a single episode:
 
 1. A top-level spec canvas is given and is pushed into an empty evaluation queue.
-2. In a while loop, until the queue is empty: Pop the next queue element and feed it into the policy. If the policy chooses to create a primitive, it creates a primitive canvas to match the input canvas, and the iteration is done (i.e., it's a leaf node in the synthesis tree). If the policy chooses to do an operation like Union, it produces "child" canvases that are the arguments of that action. The child canvases are concretely specified but not built from primitives, so they too must be synthesized from primitives. Therefore, each child canvas is pushed to the queue.
+2. In a while loop, until the queue is empty:Pop the next queue element and feed it into the policy.If the policy chooses to create a primitive, it creates a primitive canvas to match the input canvas, and the iteration is done (i.e., it's a leaf node in the synthesis tree).If the policy chooses to do an operation like Union, it produces "child" canvases that are the arguments of that action. The child canvases are concretely specified but not built from primitives, so they too must be synthesized from primitives. Therefore, each child canvas is pushed to the queue.
 3. When the queue is empty, the actual canvases created from primitives and actions can be constructed by "backing up" the tree, starting at the leaf nodes. Then, the actual canvases synthesized can be evaluated with respect to their spec canvases and rewards can be assigned.
 
 That's a little hard to understand without visualizing it, so here's an example episode of the algorithm, if the policy behaved perfectly:
@@ -282,7 +282,7 @@ That said, it seems like a pretty small gain overall. *That* said, I didn't expe
 
 Anyway, that's all for now. There are about a thousand other details and experiments that I didn't get into here because it's already monstrously long. Here are some things I might look at in the future:
 
-- All the policies here were made from fully connected NNs, which are obviously pretty inefficient in terms of computation and number of weights used. I used conv NN's for a bit, which are the natural NN architecture for this project because the policy inputs are all images. They performed really well for $\pi_{op}$ and $\pi_{params}$, but were worse for $\pi_{canv 1}$ and $\pi_{canv 2}$. This is because while $\pi_{op}$ is doing classification, $\pi_{params}$ is doing something slightly different (but in the same ballpark), $\pi_{canv 1}$ and $\pi_{canv 2}$ have to output full canvases; they're basically doing image segmentation. There's of course a large literature on this, but I wanted to focus more on the algorithm and RL for this problem. In the future, I'd like to try using a Fully Convolutional Network or something.
+- All the policies here were made from fully connected NNs, which are obviously pretty inefficient in terms of computation and number of weights used. I used conv NN's for a bit, which are the natural NN architecture for this project because the policy inputs are all images. They performed really well for $\pi_{op}$ and $\pi_{params}$, but were worse for $\pi_{canv 1}$ and $\pi_{canv 2}$. This is because while $\pi_{op}$ is doing classification, $\pi_{params}$ is doing something slightly different (but in the same ballpark), $\pi_{canv 1}$ and $\pi_{canv 2}$ have to output full canvases; they're basically doing image segmentation. There's of course a large literature on this, but I wanted to focus more on the algorithm and RL for this problem. In the future, I'd like to try using a[Fully Convolutional Network](https://people.eecs.berkeley.edu/~jonlong/long_shelhamer_fcn.pdf)or something.
 - I only used rectangle primitives here, but I'd like to have other shapes. I actually already built the machinery for this into the policies (which take an operation OHE input), but didn't end up doing it. One big reason is that a circle would have such low resolution on these grids that I suspect it would be difficult for the policy to reasonably recognize when one would be optimal to use. So this is related to the first point, where ideally I'd use a ~100 x 100 grid, where more detailed primitives could make sense.
 - Similarly, other actions: subtract, XOR, negate, etc.
 - Higher order operations, like duplicate/map.

@@ -449,8 +449,8 @@ See ya next time!
 
 Resources:
 
-- Auto-Encoding Variational Bayes
-- Autoencoder
-      tutorial people love on the internet
-- Everything on Rui's blog
-- Tutorial on Variational Autoencoders
+- [Auto-Encoding Variational Bayes](https://arxiv.org/abs/1312.6114)
+- [Autoencoder
+      tutorial people love on the internet](https://jaan.io/what-is-variational-autoencoder-vae-tutorial/?source=post_page-----77fd3a8dd368----------------------)
+- [Everything on Rui's blog](http://ruishu.io/2018/03/14/vae/)
+- [Tutorial on Variational Autoencoders](https://arxiv.org/pdf/1606.05908.pdf)

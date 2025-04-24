@@ -151,7 +151,7 @@ What's there left to do? Holy hell, so much. Many, many improvements:
 - Fix detection sensitivity (still often picking up strong shade/sunlight quirks)
 - Total design flaw: since the log file currently gets sent with each picture, but is updated when each picture is written, it is actually sometimes more updated than the pics in the folder. That is, if 30 pictures are created by the camera function, and those are immediately added to the log file, the log file is sent with the first of those 30, and it contains all 30 of them even though only one has been sent
 - Better image classifier architecture
-- Better labeled image dataset (32x32 is tiny )
+- Better labeled image dataset (32x32 is*tiny*)
 - Sliding windows over detected images
 
 Smell ya later!
