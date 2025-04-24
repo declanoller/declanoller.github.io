@@ -26,7 +26,7 @@ I think it's fair to say that the majority of research on RL algorithms is looki
 
 For example, the PG theorem gives you:
 
-$\nabla_\theta J = \mathbb E_\pi[G^\pi \nabla_\theta \textrm{ln} \pi_\theta(s, a)]$
+$$\nabla_\theta J = \mathbb E_\pi[G^\pi \nabla_\theta \log  \pi_\theta(s, a)]$$
 
 Where I'm just using $G^\pi$ to represent whatever voodoo type of return you're using (there are a bunch of variants). The main point here is that that $\pi (s, a)$ (dropping the $\theta$) is the probability of the agent choosing action $a$, when in state $s$. In a discrete action space, this is typically done with a NN architecture where the state $s$ is the input to the NN, and it outputs a vector $\pi (s, a)$, where each entry corresponds to a different $a$. A softmax is typically applied last before the NN output, so it's actually outputting a vector of probabilities that sum to 1. So to get the $\pi (s, a)$ that you use with the PG theorem, you choose one of the actions with the probability weights the NN gave for that $s$, and then just use the vector entry $\pi (s, a)$ corresponding to that action.
 
@@ -38,7 +38,7 @@ The entropy (more on that below) is similarly calculated; since it's essentially
 
 That's the way some continuous action space algorithms work, by just parameterizing a distribution which actions get selected from. However, one of the ones I used here is a little different, the Deep Deterministic Policy Gradient (DDPG) algorithm. [The main paper was from 2015.](https://arxiv.org/abs/1509.02971) It's still an actor-critic algorithm, but optimizes for a different term. Like DQN, it also uses an experience replay buffer, and uses a target NN for both its actor and critic NNs. It updates the target ones with a "soft update" technique where instead of periodically copying the whole thing over, it makes the target update all its weights with 99% its own current weights, and 1% the weights of the learned NN. Like the name suggests, the biggest difference is that actions aren't stochastically selected from a distribution, it's deterministic: a definite number is given. It's really interesting, because in contrast to the classic PG theorem above, the Deterministic PG theorem is:
 
-$\nabla_\theta J = \mathbb E_\mu[\nabla_\theta Q(s, \mu_\theta(s)]$
+$$\nabla_\theta J = \mathbb E_\mu[\nabla_\theta Q(s, \mu_\theta(s)]$$
 
 I.e., instead of doing gradient ascent of $J$ by following the gradient of well performing actions scaled by the returns they're responsible for (a handwavy explanation of the regular PG theorem), here it follows only the gradient of $Q$, but *with respect to the policy parameters* $\theta$. This is actually pretty easy to do with PyTorch due to how it calculates gradients.
 

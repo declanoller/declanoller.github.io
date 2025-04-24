@@ -77,9 +77,9 @@ So, that works, but has two major problems. There are 3 options for each element
 
 ![](/assets/images/naive.png)
 
-You can see that the generation time is probably negligible, but the sort time explodes. I also plotted the "theory time", which was my guess for what it would take. Since a decent sorting algorithm goes as $O(K) \sim K \textrm{log}(K)$ ("big K notation" :P) for a list of length $K$, and for us $N$ is actually the length of the tuples to produce, our list size is $K = 3^N$ and the sorting should take $(3^N) \textrm{log}(3^N)$. That's what I plotted and I was surprised to find it actually match so well! It clearly needed to be scaled, so I just kind of eyeballed it and found a constant factor of 4 worked well.
+You can see that the generation time is probably negligible, but the sort time explodes. I also plotted the "theory time", which was my guess for what it would take. Since a decent sorting algorithm goes as $O(K) \sim K \log (K)$ ("big K notation" :P) for a list of length $K$, and for us $N$ is actually the length of the tuples to produce, our list size is $K = 3^N$ and the sorting should take $(3^N) \log (3^N)$. That's what I plotted and I was surprised to find it actually match so well! It clearly needed to be scaled, so I just kind of eyeballed it and found a constant factor of 4 worked well.
 
-(You can see that it's actually a little different. I'm guessing some clever internal python optimization stuff makes it a little faster than $O(K) \sim K \textrm{log}(K)$, like $O(K) \sim 0.9 K \textrm{log}(K)$ or something. Another aspect is that as $N$ gets bigger, maybe the <code>key=lambda x: np.sum(np.abs(x))</code> isn't negligible, or something.)
+(You can see that it's actually a little different. I'm guessing some clever internal python optimization stuff makes it a little faster than $O(K) \sim K \log (K)$, like $O(K) \sim 0.9 K \log (K)$ or something. Another aspect is that as $N$ gets bigger, maybe the <code>key=lambda x: np.sum(np.abs(x))</code> isn't negligible, or something.)
 
 Anyway, so $N = 14$ is about as high as I had the patience to wait for, and $3^{40}$ is the comically absurd 12157665459056928801. And, aside from time issue, if you do it by sorting a list, you also have to store that list in  memory!
 

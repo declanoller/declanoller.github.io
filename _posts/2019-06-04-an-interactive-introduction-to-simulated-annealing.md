@@ -29,9 +29,9 @@ Free again! You can see the dot wobble a little at the second little valley, whe
 
 So this is the basic idea: always accept a better solution offered, but also sometimes accept a worse one. The classic way of determining that "sometimes" is by calling your current height $E$, the height you're considering going to $E_{new}$, choosing a "temperature" $T$, and calculating:
 
-$p = e^{\frac{E_{new} - E}{T}}$
+$$p = e^{\frac{E_{new} - E}{T}}$$
 
-which represents the probability that you'll take a step that takes you from $E$ to $E_{new}$. So for $E_{new} > E$, $p > 1$, for which we just take the step (so if you want to be precise, $p = \textrm{min}(e^{\frac{E_{new} - E}{T}}, 1)$), but if $E_{new} < E$, we only take the step with probability $p < 1$.
+which represents the probability that you'll take a step that takes you from $E$ to $E_{new}$. So for $E_{new} > E$, $p > 1$, for which we just take the step (so if you want to be precise, $p = \min(e^{\frac{E_{new} - E}{T}}, 1)$), but if $E_{new} < E$, we only take the step with probability $p < 1$.
 
 Note two significant aspects of this form: 1) it allows you to take worse steps, but the worse the step, the less likely you'll take that step, and 2) $T$ acts as a multiplier to this effect; if $T \gg 1$, then $p \sim e^0 = 1$, meaning *it will accept anything, even if* $E_{new}$ *is much worse*. Conversely, if $T \ll 1$, it makes any $E_{new} - E$ difference huge, and therefore it'll *only* accept steps that are better... which is exactly what we were doing originally! As you'll see below, this is really important.
 

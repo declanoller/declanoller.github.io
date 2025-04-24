@@ -55,6 +55,10 @@ from bs4 import BeautifulSoup, NavigableString, Comment
 PYTHON_KEYWORDS = ["def ", "import ", "class ", "print(", "in range("]
 
 
+def print_info(msg: str) -> None:
+    print(f"\033[92m{msg} \033[0m")
+
+
 def print_warning(msg: str) -> None:
     print(f"\033[93m{msg} \033[0m")
 
@@ -63,12 +67,22 @@ def print_error(msg: str) -> None:
     print(f"\033[91m{msg} \033[0m")
 
 
-def is_math_expression(text: str) -> bool:
+def is_inline_math_expression(text: str) -> bool:
     """
     Determine whether the given text appears to be a LaTeX/MathJax math expression.
     We consider it math if it starts and ends with a '$'.
     """
     if text.startswith("$") and text.endswith("$"):
+        return True
+    return False
+
+
+def is_block_math_expression(text: str) -> bool:
+    """
+    Determine whether the given text appears to be a LaTeX/MathJax math expression.
+    We consider it math if it starts and ends with a '$$'.
+    """
+    if text.startswith("$$") and text.endswith("$$"):
         return True
     return False
 
@@ -232,15 +246,41 @@ def convert_html_to_markdown(html_text: str) -> Tuple[str, Set[str]]:
     # Otherwise, convert the paragraph normally.
     for p in soup.find_all("p"):
         text = p.get_text(strip=True)
-        if is_math_expression(text):
+        if is_block_math_expression(text):
+            print_info(f"\nIs block math expr: {text}")
             eq = text.strip("$").strip()
             eq = eq.replace(
                 "|", " \\mid "
             )  # Replace vertical bar with " \mid " (with spaces)
-            eq = eq.replace("\\mathrm{log}", "\\log ")  # Replace \mathrm{log} with \log
+
+            new_text = f"$${eq}$$\n"
+            print_info(f"Converted to: {new_text}\n")
+        elif is_inline_math_expression(text):
+            print_info(f"\nIs inline math expr: {text}")
+            eq = text.strip("$").strip()
+            eq = eq.replace(
+                "|", " \\mid "
+            )  # Replace vertical bar with " \mid " (with spaces)
+
             new_text = f"${eq}$\n"
+            print_info(f"Converted to: {new_text}\n")
         else:
             new_text = "".join(str(child) for child in p.contents).strip() + "\n\n"
+
+        # Replace these here so they'll target any inline equations that aren't their own paragraph:
+        new_text = new_text.replace(
+            "\\mathrm{log}", "\\log "
+        )  # Replace \mathrm{log} with \log
+        new_text = new_text.replace(
+            "\\textrm{log}", "\\log "
+        )  # Replace \textrm{ln} with \log
+        new_text = new_text.replace(
+            "\\textrm{ln}", "\\log "
+        )  # Replace \textrm{ln} with \log
+        new_text = new_text.replace("\\textrm{argmax}", "\\arg\\max")
+        new_text = new_text.replace("\\textrm{max}", "\\max")
+        new_text = new_text.replace("\\textrm{min}", "\\min")
+
         p.replace_with(NavigableString(new_text))
 
     # Check for any remaining (unhandled) HTML tags (excluding common inline tags like <br>).

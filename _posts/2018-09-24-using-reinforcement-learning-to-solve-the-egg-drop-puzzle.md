@@ -83,7 +83,7 @@ Here are the important steps:
 
 Results! How does it do?
 
-Not great, at first. Let's first just mention what we'd *like* to see, if it was working nicely. We'd like to be able to plot the argmax over all actions for each state, $\textrm{argmax}_a(Q(s,a))$, which would tell us the best action to take in each state. If you look at my last post, this would mean taking action 0 (i.e., dropping on floor 1) for all the 1e states, and action int(sqrt(f)) for all 2e states with f floors remaining. When you have 1 egg left, you have to scan from the bottom, meaning dropping on floor 1 each time until you have 1 floor left. If you have 2 eggs, sqrt(f) gives you the best balance of skipping floors and minimizing the risk of breaking.
+Not great, at first. Let's first just mention what we'd *like* to see, if it was working nicely. We'd like to be able to plot the argmax over all actions for each state, $\arg\max_a(Q(s,a))$, which would tell us the best action to take in each state. If you look at my last post, this would mean taking action 0 (i.e., dropping on floor 1) for all the 1e states, and action int(sqrt(f)) for all 2e states with f floors remaining. When you have 1 egg left, you have to scan from the bottom, meaning dropping on floor 1 each time until you have 1 floor left. If you have 2 eggs, sqrt(f) gives you the best balance of skipping floors and minimizing the risk of breaking.
 
 So, here's what we get for $\epsilon$ = 0.05, decaying by 0.999 each episode, $\gamma$ = $\lambda$ = 0.99, $N_{floors}$ = 25, 20000 episodes.
 
