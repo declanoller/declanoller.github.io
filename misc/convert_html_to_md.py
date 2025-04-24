@@ -152,6 +152,12 @@ def convert_html_to_markdown(html_text: str) -> Tuple[str, Set[str]]:
                 md_heading = f"##### {heading_text}\n\n"
                 p.replace_with(NavigableString(md_heading))
 
+    # Convert any <span style="text-decoration: underline;">...</span> to Markdown bold
+    for span in soup.find_all("span"):
+        if span.has_attr("style") and "text-decoration: underline" in span["style"]:
+            bold_text = f"**{span.get_text(strip=True)}**"
+            span.replace_with(NavigableString(bold_text))
+
     # Convert heading tags (<h2> to <h6>) to Markdown header syntax.
     for level in range(2, 7):
         for header in soup.find_all(f"h{level}"):
