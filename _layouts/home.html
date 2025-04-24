@@ -1,0 +1,26 @@
+---
+layout: default
+---
+
+<h1>{{ site.title | escape }}</h1>
+
+<ul class="post-list">
+    {% for post in site.posts %}
+    <li>
+        <article>
+            <h2>
+                <a href="{{ post.url | relative_url }}">{{ post.title | escape }}</a>
+            </h2>
+
+            {% if post.thumbnail %}
+            <a href="{{ post.url | relative_url }}">
+                <img src="{{ post.thumbnail | relative_url }}" alt="Thumbnail for {{ post.title }}"
+                    style="max-width: 200px; height: auto;" />
+            </a>
+            {% endif %}
+
+            <p><time datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: "%B %d, %Y" }}</time></p>
+        </article>
+    </li>
+    {% endfor %}
+</ul>
