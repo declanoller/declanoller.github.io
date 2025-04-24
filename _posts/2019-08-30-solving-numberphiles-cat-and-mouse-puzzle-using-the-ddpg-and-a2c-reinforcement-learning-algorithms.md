@@ -1,7 +1,7 @@
 ---
 date: 2019-08-30 22:54:09-04:00
-header-img: feat_imgs/cat_mouse_RL.png
 layout: post
+thumbnail: /assets/images/thumbnails/cat_mouse_RL.png
 title: Solving Numberphile's Cat and Mouse puzzle using the DDPG and A2C reinforcement
   learning algorithms
 ---

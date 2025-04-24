@@ -1,7 +1,7 @@
 ---
 date: 2019-01-25 18:03:56-05:00
-header-img: feat_imgs/neat_openai.png
 layout: post
+thumbnail: /assets/images/thumbnails/neat_openai.png
 title: 'Beating OpenAI games with neuroevolution agents: pretty NEAT!'
 ---
 

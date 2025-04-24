@@ -55,6 +55,14 @@ from bs4 import BeautifulSoup, NavigableString, Comment
 PYTHON_KEYWORDS = ["def ", "import ", "class ", "print(", "in range("]
 
 
+def print_warning(msg: str) -> None:
+    print(f"\033[93m{msg} \033[0m")
+
+
+def print_error(msg: str) -> None:
+    print(f"\033[91m{msg} \033[0m")
+
+
 def is_math_expression(text: str) -> bool:
     """
     Determine whether the given text appears to be a LaTeX/MathJax math expression.
@@ -78,7 +86,7 @@ def parse_front_matter(text: str) -> Tuple[dict, str]:
         try:
             data = yaml.safe_load(fm_text)
         except yaml.YAMLError as e:
-            print("Error parsing YAML front matter:", e)
+            print_error(f"\nError parsing YAML front matter: {e}")
             data = {}
         # Keep only the desired fields.
         keys_to_keep = ["layout", "title", "date", "header-img"]
@@ -223,7 +231,7 @@ def convert_html_to_markdown(html_text: str) -> Tuple[str, Set[str]]:
     # Check for any remaining (unhandled) HTML tags (excluding common inline tags like <br>).
     unhandled_tags = {tag.name for tag in soup.find_all() if tag.name not in ["br"]}
     if unhandled_tags:
-        print(
+        print_warning(
             f"\n\tWarning: The following HTML tags were not explicitly handled: {', '.join(unhandled_tags)}"
         )
 
@@ -273,10 +281,10 @@ def process_images(
                     shutil.copy2(src_path, tgt_path)
                     print(f"\tCopied image: {filename} to target directory.")
                 except Exception as e:
-                    print(f"Error copying {filename}: {e}")
+                    print_error(f"Error copying {filename}: {e}")
             # else: image already exists in target directory; no action needed.
         else:
-            print(f"Warning: Image {filename} not found in source directory.")
+            print_warning(f"Warning: Image {filename} not found in source directory.")
 
 
 def process_file(
@@ -284,19 +292,43 @@ def process_file(
     output_path: str,
     source_image_path: Optional[Path] = None,
     target_image_path: Optional[Path] = None,
+    source_thumbnail_path: Optional[Path] = None,
+    target_thumbnail_path: Optional[Path] = None,
 ) -> Set[str]:
     print(f"\n\nConverting: {input_path} -> {output_path} ...")
     with open(input_path, "r", encoding="utf-8") as f:
         content = f.read()
 
     front_matter, html_content = parse_front_matter(content)
+
+    # Handle header-img -> thumbnail processing
+    input_filename = os.path.basename(input_path)
+    if "header-img" in front_matter:
+        img_filename = os.path.basename(front_matter["header-img"])
+        front_matter["thumbnail"] = f"/assets/images/thumbnails/{img_filename}"
+        del front_matter["header-img"]
+        if source_thumbnail_path and target_thumbnail_path:
+            src_thumb_path = source_thumbnail_path / img_filename
+            tgt_thumb_path = target_thumbnail_path / img_filename
+            if src_thumb_path.exists():
+                tgt_thumb_path.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(src_thumb_path, tgt_thumb_path)
+                print(
+                    f"\tCopied thumbnail: {img_filename} to target thumbnail directory."
+                )
+            else:
+                print_warning(
+                    f"header-img {img_filename} not found for file {input_filename}"
+                )
+    else:
+        print_warning(f"no header-img field in file {input_filename}")
+
     markdown_body, unhandled_tags = convert_html_to_markdown(html_content)
     final_md = build_markdown(front_matter, markdown_body)
 
     if source_image_path and target_image_path:
         process_images(final_md, source_image_path, target_image_path)
 
-    # Ensure the output directory exists.
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(final_md)
@@ -309,6 +341,8 @@ def process_directory(
     output_dir: str,
     source_image_path: Optional[Path] = None,
     target_image_path: Optional[Path] = None,
+    source_thumbnail_path: Optional[Path] = None,
+    target_thumbnail_path: Optional[Path] = None,
 ) -> None:
     input_dir_path = Path(input_dir)
     output_dir_path = Path(output_dir)
@@ -318,7 +352,12 @@ def process_directory(
         if file.suffix.lower() == ".html":
             output_file = output_dir_path / (file.stem + ".md")
             unhandled_tags = process_file(
-                str(file), str(output_file), source_image_path, target_image_path
+                str(file),
+                str(output_file),
+                source_image_path,
+                target_image_path,
+                source_thumbnail_path,
+                target_thumbnail_path,
             )
             all_unhandled_tags.update(unhandled_tags)
 
@@ -356,6 +395,12 @@ def main() -> None:
     parser.add_argument(
         "--target-image-path", help="Target image directory", default=None
     )
+    parser.add_argument(
+        "--source-thumbnail-path", help="Source thumbnail image directory", default=None
+    )
+    parser.add_argument(
+        "--target-thumbnail-path", help="Target thumbnail image directory", default=None
+    )
     args = parser.parse_args()
 
     source_image_path: Optional[Path] = (
@@ -364,16 +409,30 @@ def main() -> None:
     target_image_path: Optional[Path] = (
         Path(args.target_image_path) if args.target_image_path else None
     )
+    source_thumbnail_path: Optional[Path] = (
+        Path(args.source_thumbnail_path) if args.source_thumbnail_path else None
+    )
+    target_thumbnail_path: Optional[Path] = (
+        Path(args.target_thumbnail_path) if args.target_thumbnail_path else None
+    )
 
     if target_image_path:
         target_image_path.mkdir(parents=True, exist_ok=True)
+
+    if target_thumbnail_path:
+        target_thumbnail_path.mkdir(parents=True, exist_ok=True)
 
     input_path = Path(args.input)
     output_path = Path(args.output)
 
     if input_path.is_dir():
         process_directory(
-            str(input_path), str(output_path), source_image_path, target_image_path
+            str(input_path),
+            str(output_path),
+            source_image_path,
+            target_image_path,
+            source_thumbnail_path,
+            target_thumbnail_path,
         )
     elif input_path.is_file():
         if output_path.is_dir():
@@ -381,7 +440,12 @@ def main() -> None:
         else:
             output_file = output_path
         process_file(
-            str(input_path), str(output_file), source_image_path, target_image_path
+            str(input_path),
+            str(output_file),
+            source_image_path,
+            target_image_path,
+            source_thumbnail_path,
+            target_thumbnail_path,
         )
     else:
         print("Invalid input path.")

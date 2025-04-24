@@ -1,5 +1,9 @@
 ---
+date: 2019-11-15 22:56:11-05:00
 layout: post
+thumbnail: /assets/images/thumbnails/haskell_vae.png
+title: 'Variational Autoencoders in Haskell, or: How I Learned to Stop Worrying and
+  Turn My Friends Into Dogs'
 ---
 
 If you frequently wander down the dark alleys of the computer science neighborhood of the internet, it won't be too
