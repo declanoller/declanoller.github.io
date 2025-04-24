@@ -161,7 +161,7 @@ The reason it's part of a larger mystery to me is that another very successful a
 
 Well, that's all for now. I have some other ideas to improve these parts, which I'm sure I'll write about soon. Below are some details, so check those out if you want to see the nitty gritty. Thanks for reading!
 
-****Details:****
+##### Details:
 
 Here are some interesting details I've left for the bottom, because talk about learning rates and hyperparameters is a lot less exciting that flashy gifs! Read on if you're interested.
 

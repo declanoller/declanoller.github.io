@@ -166,6 +166,25 @@ def convert_html_to_markdown(html_text: str) -> Tuple[str, Set[str]]:
                 md_heading = f"##### {heading_text}\n\n"
                 p.replace_with(NavigableString(md_heading))
 
+    # In a few instances we have: <p><strong><span style="text-decoration: underline;">...</span></strong></p>
+    # convert this to Markdown H5 headings.
+    for p in soup.find_all("p"):
+        children = list(p.children)
+        if len(children) == 1 and children[0].name == "strong":
+            strong = children[0]
+            children = list(strong.children)
+            if len(children) == 1 and children[0].name == "span":
+                span = children[0]
+                print_info(f"\nFound instance: {strong}")
+                if (
+                    span.has_attr("style")
+                    and "text-decoration: underline" in span["style"]
+                ):
+                    heading_text = span.get_text(strip=True)
+                    md_heading = f"##### {heading_text}\n\n"
+                    print_info(f"\tConverted to: {md_heading}\n")
+                    p.replace_with(NavigableString(md_heading))
+
     # Convert any <span style="text-decoration: underline;">...</span> to Markdown bold
     for span in soup.find_all("span"):
         if span.has_attr("style") and "text-decoration: underline" in span["style"]:
@@ -254,7 +273,7 @@ def convert_html_to_markdown(html_text: str) -> Tuple[str, Set[str]]:
             )  # Replace vertical bar with " \mid " (with spaces)
 
             new_text = f"$${eq}$$\n"
-            print_info(f"Converted to: {new_text}\n")
+            print_info(f"\tConverted to: {new_text}\n")
         elif is_inline_math_expression(text):
             print_info(f"\nIs inline math expr: {text}")
             eq = text.strip("$").strip()
@@ -263,7 +282,7 @@ def convert_html_to_markdown(html_text: str) -> Tuple[str, Set[str]]:
             )  # Replace vertical bar with " \mid " (with spaces)
 
             new_text = f"${eq}$\n"
-            print_info(f"Converted to: {new_text}\n")
+            print_info(f"\tConverted to: {new_text}\n")
         else:
             new_text = "".join(str(child) for child in p.contents).strip() + "\n\n"
 
