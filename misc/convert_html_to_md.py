@@ -66,9 +66,9 @@ def print_error(msg: str) -> None:
 def is_math_expression(text: str) -> bool:
     """
     Determine whether the given text appears to be a LaTeX/MathJax math expression.
-    We consider it math if it starts or ends with a '$'.
+    We consider it math if it starts and ends with a '$'.
     """
-    if text.startswith("$") or text.endswith("$"):
+    if text.startswith("$") and text.endswith("$"):
         return True
     return False
 

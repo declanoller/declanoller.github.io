@@ -134,7 +134,7 @@ You can see that they're not doing anything crazy, for some reason tanh is just 
 
 **Epsilon exploration**
 
-$\epsilon$-greediness means that, some small percent of the time, the agent will take a random action instead of the greedy one. People often either keep a small random element during the whole episode (maybe 5%), or they "anneal" by starting off with $\epsilon$ and "decaying" periodically by multiplying it with some other constant that's less than 1. This will make it decay to 0 over some time period. People also sometimes use an exponential plus a constant term, so they can have it decay to a finite, nonzero value, but I didn't do that here.$
+$\epsilon$-greediness means that, some small percent of the time, the agent will take a random action instead of the greedy one. People often either keep a small random element during the whole episode (maybe 5%), or they "anneal" by starting off with $\epsilon$ and "decaying" periodically by multiplying it with some other constant that's less than 1. This will make it decay to 0 over some time period. People also sometimes use an exponential plus a constant term, so they can have it decay to a finite, nonzero value, but I didn't do that here.
 
 I compared three strategies here: greedy, constant small exploration, and large initial epsilon, decaying to 0. Since this was run with $10^5$ steps, for the decaying one, $\epsilon \sim 0.006$ by step $10^4$, for example.
 

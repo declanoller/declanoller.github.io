@@ -237,13 +237,13 @@ Ooof. That is *terrible*. Honestly, I'm not sure why, either. This "true averag
 
 I'll briefly show two more things. The first is what the "inspect" plots look for two different alphas, 0.1 and 1.1. Remember from above, it seems like $\alpha$ = 1.1 should be the better choice. For each of these, I first run the whole thing with 200,000 episodes, then inspect state (2e, 22f) (randomly chosen high floor, so more likely to change its state with more samples). I inspect that state for 1,000 extra drops (starting from it), and then 10,000 immediately following, to see the short and long term effects if there are any.
 
-$\alpha$ = 1.1:$
+$\alpha$ = 1.1:
 
 ![](/assets/images/noavg_randomdrop2e_25f_alpha1.10_gamma1.00_lambda0.00_200000trials_11-27-37_whole.png)![](/assets/images/noavg_randomdrop2e_25f_alpha1.1_gamma1.0_lambda0.0_1000trials_11-27-37_inspect21f.png)![](/assets/images/noavg_randomdrop2e_25f_alpha1.1_gamma1.0_lambda0.0_10000trials_11-27-37_inspect21f.png)
 
 You can see that the argmax tends to be more stable, but also has a pretty big range (~5). It only switches once in the extended "inspection".
 
-$\alpha$ = 0.1:$
+$\alpha$ = 0.1:
 
 ![](/assets/images/noavg_randomdrop2e_25f_alpha0.10_gamma1.00_lambda0.00_200000trials_11-28-53_whole.png)![](/assets/images/noavg_randomdrop2e_25f_alpha0.1_gamma1.0_lambda0.0_1000trials_11-28-53_inspect21f.png)![](/assets/images/noavg_randomdrop2e_25f_alpha0.1_gamma1.0_lambda0.0_10000trials_11-28-53_inspect21f.png)
 

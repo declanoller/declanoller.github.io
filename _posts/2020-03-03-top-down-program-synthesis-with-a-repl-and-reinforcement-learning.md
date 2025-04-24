@@ -90,17 +90,17 @@ So the spec canvas is input to $\pi_{op}$ every step , and the operation to do i
 
 ![](/assets/images/policy_op.png)
 
-$\pi_{op}$ takes a spec canvas and returns a vector of softmax'd weights and a value function for that spec canvas. Because it's choosing a discrete action from a finite list, it just samples from a categorical distribution using the weights output by $\pi_{op}$.$
+$\pi_{op}$ takes a spec canvas and returns a vector of softmax'd weights and a value function for that spec canvas. Because it's choosing a discrete action from a finite list, it just samples from a categorical distribution using the weights output by $\pi_{op}$.
 
 ![](/assets/images/policy_params.png)
 
-$\pi_{params}$ is used if the operation sampled from $\pi_{op}$ was a primitive operation. In that case, the same spec canvas is given to $\pi_{params}$, which outputs 4 values $(x, y, w, h)$, corresponding to the center $(x, y)$ coordinates, as well as the width and height of the rectangle to be placed. They go through a sigmoid before being output, so they're all in the range $[0, 1]$. These are transformed into the parameters for a Beta distribution, so the sampled values of the Beta distribution will be restricted to $[0, 1]$. The $(x, y, w, h)$ coordinates are all scaled to the canvas size so that 0 is the left or bottom, and 1 is the right or top, and $w$ and $h$ are the full width/height of the canvas.$
+$\pi_{params}$ is used if the operation sampled from $\pi_{op}$ was a primitive operation. In that case, the same spec canvas is given to $\pi_{params}$, which outputs 4 values $(x, y, w, h)$, corresponding to the center $(x, y)$ coordinates, as well as the width and height of the rectangle to be placed. They go through a sigmoid before being output, so they're all in the range $[0, 1]$. These are transformed into the parameters for a Beta distribution, so the sampled values of the Beta distribution will be restricted to $[0, 1]$. The $(x, y, w, h)$ coordinates are all scaled to the canvas size so that 0 is the left or bottom, and 1 is the right or top, and $w$ and $h$ are the full width/height of the canvas.
 
 When the rectangle is created, it's rounded to the nearest canvas coordinates, so it's discretized. Additionally, if the rectangle would go off the canvas area (by having a large $w$ and an $x$ near the edge, for example), it's clipped to only the section that is on the canvas.
 
 ![](/assets/images/policy_canv_1.png)
 
-$\pi_{canv 1}$ takes the spec canvas as well as a OHE vector of the sampled action, and outputs a 2D matrix of $\mu$ values in $[0, 1]$ corresponding to the probability of each pixel being "on" in the first argument of the action. To get a sample, a Bernoulli distribution is used (although I also experimented with using a Beta distribution, which required outputting a $\sigma$ for each pixel as well).$
+$\pi_{canv 1}$ takes the spec canvas as well as a OHE vector of the sampled action, and outputs a 2D matrix of $\mu$ values in $[0, 1]$ corresponding to the probability of each pixel being "on" in the first argument of the action. To get a sample, a Bernoulli distribution is used (although I also experimented with using a Beta distribution, which required outputting a $\sigma$ for each pixel as well).
 
 ![](/assets/images/policy_canv_2.png)
 
@@ -172,13 +172,13 @@ Let's go back to the PT curves again. Note that I've made it autoscale the y axe
 
 What's happening here? I made a function that looks out for and saves samples with a log probability below a specified threshold so we can inspect them.
 
-$\pi_{op}$:$
+$\pi_{op}$:
 
 ![](/assets/images/inspect_op_grid_PT_subset.png)
 
 The top row is the spec canv that was actually given to the policy, and the bottom row is the ideal one (before noise was added). You can see that it's almost entirely due to $\pi_{op}$ choosing to do rect when it should technically be a union, but it often happens with canvases that are only a couple pixels different than a rectangle anyway.
 
-$\pi_{params}$:$
+$\pi_{params}$:
 
 ![](/assets/images/inspect_params_grid_PT_subset.png)
 
