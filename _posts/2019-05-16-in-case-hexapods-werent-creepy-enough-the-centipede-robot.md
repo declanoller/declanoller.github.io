@@ -5,7 +5,6 @@ thumbnail: /assets/images/thumbnails/robot_centi.png
 title: 'In case hexapods weren''t creepy enough: the centipede robot!'
 ---
 
-[latexpage]<br/>
 Similar to...most of? my ideas, I don't remember why I thought of this. I think after I made the reinforcement learning robot, I was on a robot kick, and came up with this. [Hexapods](https://en.wikipedia.org/wiki/Hexapod_(robotics)) are of course a robot classic, but I don't think I had ever seen a centipede robot.
 
 Why a centipede? Well... I can make up a few "practical" reasons: because of its length, it could potentially bridge gaps, or bend "upwards" to have height, or possibly even climb. But the real reason is because they haven't been done that much and I thought it would be cool, funny, and creepy.

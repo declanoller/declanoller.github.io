@@ -5,7 +5,6 @@ thumbnail: /assets/images/thumbnails/eggdrop.png
 title: Using Reinforcement Learning to solve the Egg drop puzzle
 ---
 
-[latexpage]<br/>
 So last time, I solved the [egg drop puzzle](http://declanoller.com/2018/09/03/the-egg-drop-puzzle-brute-force-dynamic-programming-and-markov-decision-processes/) in a few ways. One of them was using a recent learn, Markov Decision Processes (MDP). It worked, which got me really stoked about them, because it was such a cool new method to me.
 
 However, it's kind of a baby process that's mostly used as a basis to learn about more advanced techniques. In that solution to the problem, I defined the reward matrix $R_{s,a}$ and the transition probability matrix $P_{a,s,s'}$, and then used them explicitly to iteratively solve for the value function v and the policy p. This works, but isn't very useful for the real world, because in practice you don't *know* $R$ and $P$, you just get to try stuff and learn the best strategy through experience. So the real challenge would be letting my program try a bunch of actual egg drops, and have it learn the value function and policy from them.

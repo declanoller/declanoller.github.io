@@ -5,7 +5,6 @@ thumbnail: /assets/images/thumbnails/neat_openai.png
 title: 'Beating OpenAI games with neuroevolution agents: pretty NEAT!'
 ---
 
-[latexpage]<br/>
 Let's start with a fun gif!
 
 ![](/assets/images/COMBINED_3x3_25-01-2019_13-11-24.gif)

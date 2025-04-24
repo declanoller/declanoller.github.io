@@ -133,6 +133,14 @@ def convert_html_to_markdown(html_text: str) -> Tuple[str, Set[str]]:
     if first_p and first_p.get_text(strip=True) == "[latexpage]":
         first_p.decompose()
 
+    # Remove [latexpage]<br /> at the very beginning of a <p> tag and keep the rest
+    for p in soup.find_all("p"):
+        if p.contents and isinstance(p.contents[0], NavigableString):
+            if "[latexpage]" in p.contents[0]:
+                p.contents[0].replace_with(p.contents[0].replace("[latexpage]", ""))
+        for br in p.find_all("br"):
+            br.extract()
+
     # Convert underlined text created with <p><span style="text-decoration: underline;">...</span></p>
     # to Markdown H5 headings.
     for p in soup.find_all("p"):

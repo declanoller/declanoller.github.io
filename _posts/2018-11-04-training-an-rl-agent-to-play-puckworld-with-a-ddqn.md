@@ -5,7 +5,6 @@ thumbnail: /assets/images/thumbnails/puckworld.png
 title: Training an RL agent to play Puckworld with a DDQN
 ---
 
-[latexpage]<br/>
 Last time [I messed around with RL](http://declanoller.com/2018/10/03/mountain-car-q-learning-and-experience-replay-with-pytorch/), I solved the classic Mountain Car problem using Q-learning and Experience Replay (ER).
 
 However, it was very basic in a lot of ways:

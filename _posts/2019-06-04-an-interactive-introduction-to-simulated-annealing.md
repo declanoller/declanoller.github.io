@@ -61,7 +61,7 @@ You could try using a large T instead, so you won't get stuck up there. Here it 
 
 Well... you explore more and get a better overall score, so that's good! ...but you also never more thoroughly explore the area around the true maximum, because you're so willing to accept anything. So the max height you reach is closer to, but not the true maximum.
 
-So you can probably see the problem and a potential solution. You need a large $T$ at the beginning to accept worse steps to get out of local maxima, but you need a small temperature at the end to only accept better probabilities. This is what simulated annealing does: start with a high $T$ and slowly lower it, so the willingness to accept worse steps, $p$, goes down over time. You can decrease it in all sorts of ways, but a simple one is doing: $T_{i+1} = \lambda T_i$, where you can choose some $\lambda < 1$ to make $T$ start at some value and decrease to ~0 by the time you want to be done.<br/>
+So you can probably see the problem and a potential solution. You need a large $T$ at the beginning to accept worse steps to get out of local maxima, but you need a small temperature at the end to only accept better probabilities. This is what simulated annealing does: start with a high $T$ and slowly lower it, so the willingness to accept worse steps, $p$, goes down over time. You can decrease it in all sorts of ways, but a simple one is doing: $T_{i+1} = \lambda T_i$, where you can choose some $\lambda < 1$ to make $T$ start at some value and decrease to ~0 by the time you want to be done.
 Let's try the nasty problem again with this! Here it is with $T_{init} = 80$, and $\lambda = (0.01)^{1/1600}$, because I'm doing 1600 iterations:
 
 {{CODE_texture_3}}
