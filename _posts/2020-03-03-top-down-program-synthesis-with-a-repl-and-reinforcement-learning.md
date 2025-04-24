@@ -120,6 +120,9 @@ $$
 
 $J = \mathbb{E}_\pi [R \log (\pi_\theta(a  \mid  s))]$
 
+$J = \mathbb{E} [R \log (\pi_\theta(a  \mid  s))]$
+
+
 However, part of the difficulty is that it needs many samples to figure out that the rewards it's getting from one action (in a given state even, not even counting other states) are more than the rewards from other actions, i.e., that it's the best action for that state. On the other hand, if you have the ground-truth best action $a_{true}$, you don't need to muddy the waters by sampling, and you can just maximize the log probability of that action:
 
 $L = \mathbb{E} [\log (\pi_\theta(a_{true}  \mid  s))]$
