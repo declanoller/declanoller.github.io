@@ -112,11 +112,11 @@ Like the REPL paper, I did PT before the RL part. Because it's important, I'll b
 
 While RL relies on returned rewards to figure out the right behavior, for PT we optimize the policy by directly maximizing the log probability of the correct actions. The PT optimization objective is almost the same as the RL objective, though the way we go about it is different. To be a bit handwavy, policy gradient RL is basically maximizing the expected accumulated reward by sampling actions from the policy and maximizing the log probability of the actions taken, scaled by their corresponding rewards (or returns, advantages, etc):
 
-$\nabla_\theta J = \mathbb{E}_\pi [R \nabla_\theta \mathrm{log}(\pi_\theta(a  \mid  s))]$
+$\nabla_\theta J = \mathbb{E}_\pi [R \nabla_\theta \log (\pi_\theta(a  \mid  s))]$
 
 However, part of the difficulty is that it needs many samples to figure out that the rewards it's getting from one action (in a given state even, not even counting other states) are more than the rewards from other actions, i.e., that it's the best action for that state. On the other hand, if you have the ground-truth best action $a_{true}$, you don't need to muddy the waters by sampling, and you can just maximize the log probability of that action:
 
-$L = \mathbb{E} [\mathrm{log}(\pi_\theta(a_{true}  \mid  s))]$
+$L = \mathbb{E} [\log (\pi_\theta(a_{true}  \mid  s))]$
 
 (Note that while the policy gradient objective uses the expectation over $\pi$, I left the $\pi$ out of this one; the $\pi$ is in the PG expectation because the policy $\pi$ influences the distribution of samples it sees, but for PT, it's being given the same distribution of samples, no matter what the current state of $\pi$ is.)
 

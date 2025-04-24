@@ -223,6 +223,7 @@ def convert_html_to_markdown(html_text: str) -> Tuple[str, Set[str]]:
             eq = eq.replace(
                 "|", " \\mid "
             )  # Replace vertical bar with " \mid " (with spaces)
+            eq = eq.replace("\\mathrm{log}", "\\log ")  # Replace \mathrm{log} with \log
             new_text = f"${eq}$\n"
         else:
             new_text = "".join(str(child) for child in p.contents).strip() + "\n\n"
