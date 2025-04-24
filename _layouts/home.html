@@ -32,7 +32,7 @@ layout: base
                 {% endif %}
 
                 <div>
-                    <span class="post-meta">{{ post.date | date: date_format }}</span>
+                    <span class="post-meta">{{ post.date | date: "%Y %B %d" }}</span>
                     <h3 style="margin: 0;">
                         <a class="post-link" href="{{ post.url | relative_url }}">
                             {{ post.title | escape }}
