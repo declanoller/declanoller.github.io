@@ -1,7 +1,7 @@
 ---
 date: 2019-03-27 01:48:00-04:00
-header-img: feat_imgs/robot_car.png
 layout: post
+thumbnail: /assets/images/thumbnails/robot_car.png
 title: Training a real robot to play Puckworld with reinforcement learning
 ---
 
@@ -205,6 +205,6 @@ Anyway, I think that's all for now! A few random closing thoughts:
 
 - I started this project on a whim thinking it would be dinky and easy, but it ended up actually being a huge learn. There were lots of baffling moments and pulling-out-hair debugging, but it was really satisfying to make a large system with a bunch of separate parts all work together.
 - So, so much can go wrong with physical projects (not to say purely software things can't be nightmares too!). It actually felt like a real life example of "reward hacking", where I want the robot to do the goal of learning successfully, but it feels like the robot is pathologically exploring all the ways it can make something go wrong and break itself (just a vague analogy). To abuse the analogy a little more, it feels like what you see people do with reward shaping, where it's a game of trying to "plug all the leaks" until there are no more. I'll do a post in the future covering the million details I had to learn and fix.
-- Along the same line, I found that long term robustness is a very different game. I've worked on tons of projects before, but I'd say the majority of them were things where you'd use it sporadically and "actively". On the other hand, this both had to run continuously for days on end , and pretty much without my supervision.
+- Along the same line, I found that long term robustness is a very different game. I've worked on tons of projects before, but I'd say the majority of them were things where you'd use it sporadically and "actively". On the other hand, this both had to run continuously for*days on end*, and pretty much without my supervision.
 
 Later!

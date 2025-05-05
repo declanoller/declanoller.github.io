@@ -1,7 +1,7 @@
 ---
 date: 2019-08-30 22:54:09-04:00
-header-img: feat_imgs/cat_mouse_RL.png
 layout: post
+thumbnail: /assets/images/thumbnails/cat_mouse_RL.png
 title: Solving Numberphile's Cat and Mouse puzzle using the DDPG and A2C reinforcement
   learning algorithms
 ---
@@ -10,7 +10,7 @@ A while ago, [this Numberphile video](https://www.youtube.com/watch?v=vF_-ob9vse
 
 It's not hard to solve if you think about it for a few minutes, but my first thought was that I wanted to do it with reinforcement learning (RL). There are obviously lots of ways you can go about it, but here's what I did!
 
-**Overview**
+##### Overview
 
 Very briefly, here's how I set up the mechanics of the problem: The cat is at the edge of the circle, which always has radius 1.0. The mouse always starts in the center of the circle, but the cat starts at a random position on the circumference. The mouse's speed is defined by the distance it goes in a time step, and I define that distance as some fraction of the circle's radius. The cat's speed is defined as a multiple of the mouse's speed, so I'll talk about $v_{cat}$, that multiple. Every iteration, the mouse takes a step in some direction to its new position. If it's not outside the radius, the cat goes in the direction around the circle that gets it closest to the mouse's new position, and the step is done. If it is outside the radius, we check if the angular difference between it and the cat's angle is less than or equal to the angular distance the cat can go in one step. If it is, the cat caught it and the episode is over. If it isn't, it escaped and the episode is also over!
 
@@ -20,13 +20,13 @@ I set up the reward structure so the mouse gets a reward of +1.0 if it escapes, 
 
 This is actually a pretty tricky RL problem, for a few reasons. One is that the rewards are "sparse", meaning that the agent doesn't get a positive reward until it reaches a specific goal, after many actions, as opposed to getting rewards earlier/frequently that can "guide" it towards the better rewards. It's tempting to say that it's qualitatively more difficult than MountainCar due to its "dynamic" nature of the cat chasing the mouse, but it might actually be the same as a higher dimensional MountainCar. The state-action space certainly has a different shape than MC, but I'm talking about the sparsity aspect. I've thought about it a bit and I'm not sure!
 
-**Continuous action space RL algorithms**
+##### Continuous action space RL algorithms
 
 I think it's fair to say that the majority of research on RL algorithms is looking at, or at least testing, discrete action spaces. This is probably because most (simple) video games and strategy games are naturally discrete, and if you have the choice, discrete is usually simpler. However, most policy gradient algorithms don't actually specify that they only work with discrete action spaces; the theory works just as well with continuous action spaces. Here, I'm looking at some version of A2C, which is basically a vanilla Actor Critic algorithm that uses an "advantage" for the return, which has the effect of minimizing variance. There are a million ways to do this, but I'm just subtracting the value function from the discounted returns.
 
 For example, the PG theorem gives you:
 
-$\nabla_\theta J = \mathbb E_\pi[G^\pi \nabla_\theta \textrm{ln} \pi_\theta(s, a)]$
+$$\nabla_\theta J = \mathbb E_\pi[G^\pi \nabla_\theta \log  \pi_\theta(s, a)]$$
 
 Where I'm just using $G^\pi$ to represent whatever voodoo type of return you're using (there are a bunch of variants). The main point here is that that $\pi (s, a)$ (dropping the $\theta$) is the probability of the agent choosing action $a$, when in state $s$. In a discrete action space, this is typically done with a NN architecture where the state $s$ is the input to the NN, and it outputs a vector $\pi (s, a)$, where each entry corresponds to a different $a$. A softmax is typically applied last before the NN output, so it's actually outputting a vector of probabilities that sum to 1. So to get the $\pi (s, a)$ that you use with the PG theorem, you choose one of the actions with the probability weights the NN gave for that $s$, and then just use the vector entry $\pi (s, a)$ corresponding to that action.
 
@@ -38,13 +38,13 @@ The entropy (more on that below) is similarly calculated; since it's essentially
 
 That's the way some continuous action space algorithms work, by just parameterizing a distribution which actions get selected from. However, one of the ones I used here is a little different, the Deep Deterministic Policy Gradient (DDPG) algorithm. [The main paper was from 2015.](https://arxiv.org/abs/1509.02971) It's still an actor-critic algorithm, but optimizes for a different term. Like DQN, it also uses an experience replay buffer, and uses a target NN for both its actor and critic NNs. It updates the target ones with a "soft update" technique where instead of periodically copying the whole thing over, it makes the target update all its weights with 99% its own current weights, and 1% the weights of the learned NN. Like the name suggests, the biggest difference is that actions aren't stochastically selected from a distribution, it's deterministic: a definite number is given. It's really interesting, because in contrast to the classic PG theorem above, the Deterministic PG theorem is:
 
-$\nabla_\theta J = \mathbb E_\mu[\nabla_\theta Q(s, \mu_\theta(s)]$
+$$\nabla_\theta J = \mathbb E_\mu[\nabla_\theta Q(s, \mu_\theta(s)]$$
 
 I.e., instead of doing gradient ascent of $J$ by following the gradient of well performing actions scaled by the returns they're responsible for (a handwavy explanation of the regular PG theorem), here it follows only the gradient of $Q$, but *with respect to the policy parameters* $\theta$. This is actually pretty easy to do with PyTorch due to how it calculates gradients.
 
 Those are the main points of the algorithms I tried out here. I'll mention some of the finer points specific to each of them below when I talk about them.
 
-**Results**
+##### Results
 
 Enough talk! Let's see some results. For all of these, the mouse's step size is a fifth of the circle's radius, so the fastest it can ever get out of the circle is 5 or 6 steps.
 

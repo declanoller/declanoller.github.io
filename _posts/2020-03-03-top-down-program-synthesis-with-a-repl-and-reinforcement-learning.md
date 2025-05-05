@@ -1,7 +1,7 @@
 ---
 date: 2020-03-03 17:35:37-05:00
-header-img: feat_imgs/top_down_repl.png
 layout: post
+thumbnail: /assets/images/thumbnails/top_down_repl.png
 title: Top-down program synthesis with a REPL and reinforcement learning
 ---
 
@@ -11,10 +11,10 @@ I came to it in a roundabout way, but I wish I had found it earlier. What immedi
 
 From my reading of the literature, Program Synthesis (PS) seems to be having a bit of a revival right now, where people are leveraging powerful, yet somewhat theory-light "general solver" methods like deep learning, reinforcement learning, etc, with the more theory-backed, math-based PS ideas (traditional PS has lots of overlap with areas like optimization, search methods, type systems, and constraint satisfaction problems). I've read a bunch of papers in this area that really struck a chord with me. Here are a few favorites:
 
-- Write, Execute, Assess: Program Synthesis with a REPL
-- Execution-Guided Neural Program Synthesis
-- Program Synthesis Through Reinforcement Learning Guided Tree Search
-- Learning Libraries of Subroutines for Neurally–Guided Bayesian Program Induction
+- [Write, Execute, Assess: Program Synthesis with a REPL](https://arxiv.org/abs/1906.04604)
+- [Execution-Guided Neural Program Synthesis](https://openreview.net/pdf?id=H1gfOiAqYm)
+- [Program Synthesis Through Reinforcement Learning Guided Tree Search](https://arxiv.org/abs/1806.02932)
+- [Learning Libraries of Subroutines for Neurally–Guided Bayesian Program Induction](https://papers.nips.cc/paper/8006-learning-libraries-of-subroutines-for-neurallyguided-bayesian-program-induction)
 
 ![](/assets/images/PT_tree_9-2.png)
 
@@ -58,7 +58,7 @@ Starting at a high level, the algorithm is as follows. The policy model, $\pi$, 
 Here is the algorithm for a single episode:
 
 1. A top-level spec canvas is given and is pushed into an empty evaluation queue.
-2. In a while loop, until the queue is empty: Pop the next queue element and feed it into the policy. If the policy chooses to create a primitive, it creates a primitive canvas to match the input canvas, and the iteration is done (i.e., it's a leaf node in the synthesis tree). If the policy chooses to do an operation like Union, it produces "child" canvases that are the arguments of that action. The child canvases are concretely specified but not built from primitives, so they too must be synthesized from primitives. Therefore, each child canvas is pushed to the queue.
+2. In a while loop, until the queue is empty:Pop the next queue element and feed it into the policy.If the policy chooses to create a primitive, it creates a primitive canvas to match the input canvas, and the iteration is done (i.e., it's a leaf node in the synthesis tree).If the policy chooses to do an operation like Union, it produces "child" canvases that are the arguments of that action. The child canvases are concretely specified but not built from primitives, so they too must be synthesized from primitives. Therefore, each child canvas is pushed to the queue.
 3. When the queue is empty, the actual canvases created from primitives and actions can be constructed by "backing up" the tree, starting at the leaf nodes. Then, the actual canvases synthesized can be evaluated with respect to their spec canvases and rewards can be assigned.
 
 That's a little hard to understand without visualizing it, so here's an example episode of the algorithm, if the policy behaved perfectly:
@@ -90,17 +90,17 @@ So the spec canvas is input to $\pi_{op}$ every step , and the operation to do i
 
 ![](/assets/images/policy_op.png)
 
-$\pi_{op}$ takes a spec canvas and returns a vector of softmax'd weights and a value function for that spec canvas. Because it's choosing a discrete action from a finite list, it just samples from a categorical distribution using the weights output by $\pi_{op}$.$
+$\pi_{op}$ takes a spec canvas and returns a vector of softmax'd weights and a value function for that spec canvas. Because it's choosing a discrete action from a finite list, it just samples from a categorical distribution using the weights output by $\pi_{op}$.
 
 ![](/assets/images/policy_params.png)
 
-$\pi_{params}$ is used if the operation sampled from $\pi_{op}$ was a primitive operation. In that case, the same spec canvas is given to $\pi_{params}$, which outputs 4 values $(x, y, w, h)$, corresponding to the center $(x, y)$ coordinates, as well as the width and height of the rectangle to be placed. They go through a sigmoid before being output, so they're all in the range $[0, 1]$. These are transformed into the parameters for a Beta distribution, so the sampled values of the Beta distribution will be restricted to $[0, 1]$. The $(x, y, w, h)$ coordinates are all scaled to the canvas size so that 0 is the left or bottom, and 1 is the right or top, and $w$ and $h$ are the full width/height of the canvas.$
+$\pi_{params}$ is used if the operation sampled from $\pi_{op}$ was a primitive operation. In that case, the same spec canvas is given to $\pi_{params}$, which outputs 4 values $(x, y, w, h)$, corresponding to the center $(x, y)$ coordinates, as well as the width and height of the rectangle to be placed. They go through a sigmoid before being output, so they're all in the range $[0, 1]$. These are transformed into the parameters for a Beta distribution, so the sampled values of the Beta distribution will be restricted to $[0, 1]$. The $(x, y, w, h)$ coordinates are all scaled to the canvas size so that 0 is the left or bottom, and 1 is the right or top, and $w$ and $h$ are the full width/height of the canvas.
 
 When the rectangle is created, it's rounded to the nearest canvas coordinates, so it's discretized. Additionally, if the rectangle would go off the canvas area (by having a large $w$ and an $x$ near the edge, for example), it's clipped to only the section that is on the canvas.
 
 ![](/assets/images/policy_canv_1.png)
 
-$\pi_{canv 1}$ takes the spec canvas as well as a OHE vector of the sampled action, and outputs a 2D matrix of $\mu$ values in $[0, 1]$ corresponding to the probability of each pixel being "on" in the first argument of the action. To get a sample, a Bernoulli distribution is used (although I also experimented with using a Beta distribution, which required outputting a $\sigma$ for each pixel as well).$
+$\pi_{canv 1}$ takes the spec canvas as well as a OHE vector of the sampled action, and outputs a 2D matrix of $\mu$ values in $[0, 1]$ corresponding to the probability of each pixel being "on" in the first argument of the action. To get a sample, a Bernoulli distribution is used (although I also experimented with using a Beta distribution, which required outputting a $\sigma$ for each pixel as well).
 
 ![](/assets/images/policy_canv_2.png)
 
@@ -112,11 +112,11 @@ Like the REPL paper, I did PT before the RL part. Because it's important, I'll b
 
 While RL relies on returned rewards to figure out the right behavior, for PT we optimize the policy by directly maximizing the log probability of the correct actions. The PT optimization objective is almost the same as the RL objective, though the way we go about it is different. To be a bit handwavy, policy gradient RL is basically maximizing the expected accumulated reward by sampling actions from the policy and maximizing the log probability of the actions taken, scaled by their corresponding rewards (or returns, advantages, etc):
 
-$\nabla_\theta J = \mathbb{E}_\pi [R \nabla_\theta \mathrm{log}(\pi_\theta(a  \mid  s))]$
+$$\nabla_\theta J = \mathbb{E}_\pi [R \nabla_\theta \log (\pi_\theta(a  \mid  s))]$$
 
 However, part of the difficulty is that it needs many samples to figure out that the rewards it's getting from one action (in a given state even, not even counting other states) are more than the rewards from other actions, i.e., that it's the best action for that state. On the other hand, if you have the ground-truth best action $a_{true}$, you don't need to muddy the waters by sampling, and you can just maximize the log probability of that action:
 
-$L = \mathbb{E} [\mathrm{log}(\pi_\theta(a_{true}  \mid  s))]$
+$$L = \mathbb{E} [\log (\pi_\theta(a_{true}  \mid  s))]$$
 
 (Note that while the policy gradient objective uses the expectation over $\pi$, I left the $\pi$ out of this one; the $\pi$ is in the PG expectation because the policy $\pi$ influences the distribution of samples it sees, but for PT, it's being given the same distribution of samples, no matter what the current state of $\pi$ is.)
 
@@ -172,13 +172,13 @@ Let's go back to the PT curves again. Note that I've made it autoscale the y axe
 
 What's happening here? I made a function that looks out for and saves samples with a log probability below a specified threshold so we can inspect them.
 
-$\pi_{op}$:$
+$\pi_{op}$:
 
 ![](/assets/images/inspect_op_grid_PT_subset.png)
 
 The top row is the spec canv that was actually given to the policy, and the bottom row is the ideal one (before noise was added). You can see that it's almost entirely due to $\pi_{op}$ choosing to do rect when it should technically be a union, but it often happens with canvases that are only a couple pixels different than a rectangle anyway.
 
-$\pi_{params}$:$
+$\pi_{params}$:
 
 ![](/assets/images/inspect_params_grid_PT_subset.png)
 
@@ -282,7 +282,7 @@ That said, it seems like a pretty small gain overall. *That* said, I didn't expe
 
 Anyway, that's all for now. There are about a thousand other details and experiments that I didn't get into here because it's already monstrously long. Here are some things I might look at in the future:
 
-- All the policies here were made from fully connected NNs, which are obviously pretty inefficient in terms of computation and number of weights used. I used conv NN's for a bit, which are the natural NN architecture for this project because the policy inputs are all images. They performed really well for $\pi_{op}$ and $\pi_{params}$, but were worse for $\pi_{canv 1}$ and $\pi_{canv 2}$. This is because while $\pi_{op}$ is doing classification, $\pi_{params}$ is doing something slightly different (but in the same ballpark), $\pi_{canv 1}$ and $\pi_{canv 2}$ have to output full canvases; they're basically doing image segmentation. There's of course a large literature on this, but I wanted to focus more on the algorithm and RL for this problem. In the future, I'd like to try using a Fully Convolutional Network or something.
+- All the policies here were made from fully connected NNs, which are obviously pretty inefficient in terms of computation and number of weights used. I used conv NN's for a bit, which are the natural NN architecture for this project because the policy inputs are all images. They performed really well for $\pi_{op}$ and $\pi_{params}$, but were worse for $\pi_{canv 1}$ and $\pi_{canv 2}$. This is because while $\pi_{op}$ is doing classification, $\pi_{params}$ is doing something slightly different (but in the same ballpark), $\pi_{canv 1}$ and $\pi_{canv 2}$ have to output full canvases; they're basically doing image segmentation. There's of course a large literature on this, but I wanted to focus more on the algorithm and RL for this problem. In the future, I'd like to try using a[Fully Convolutional Network](https://people.eecs.berkeley.edu/~jonlong/long_shelhamer_fcn.pdf)or something.
 - I only used rectangle primitives here, but I'd like to have other shapes. I actually already built the machinery for this into the policies (which take an operation OHE input), but didn't end up doing it. One big reason is that a circle would have such low resolution on these grids that I suspect it would be difficult for the policy to reasonably recognize when one would be optimal to use. So this is related to the first point, where ideally I'd use a ~100 x 100 grid, where more detailed primitives could make sense.
 - Similarly, other actions: subtract, XOR, negate, etc.
 - Higher order operations, like duplicate/map.

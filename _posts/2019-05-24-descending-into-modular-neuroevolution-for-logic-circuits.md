@@ -1,7 +1,7 @@
 ---
 date: 2019-05-24 14:05:27-04:00
-header-img: feat_imgs/neat_gd.png
 layout: post
+thumbnail: /assets/images/thumbnails/neat_gd.png
 title: Descending into modular neuroevolution for logic circuits
 ---
 
@@ -52,7 +52,7 @@ an AND gate:
 
 There are a few things you might notice. One is that the NN's are wayyy more complicated than they theoretically need to be. This has to do with the hyperparameters used to construct them; in general, you can make it proceed more slowly, and it will end up with simpler NN's (more on this below). Another thing is that some of them look a little unbelievable. For example, an OR gate is symmetrical with respect to its two inputs x and y, but the final NN above is distinctly *asymmetric*. When I first saw it, I thought, hey, that can't be right. But do the math out (using tanh at the outputs of the purple nodes), and you'll see that it does!
 
-Let's also compare this to the previous method (GD-free), doing the same task of building a NAND gate. Here, I'm comparing the FF of each with respect to the <span style="text-decoration: underline;">total wall time</span> because the methods require very different hyperparameters and it would be meaningless to compare the FF vs generations. Further, because there's a decent amount of variance in how long a full evolution takes (for both methods), I run them each for 30 full evolutions and plot a histogram of their run times.
+Let's also compare this to the previous method (GD-free), doing the same task of building a NAND gate. Here, I'm comparing the FF of each with respect to the **total wall time** because the methods require very different hyperparameters and it would be meaningless to compare the FF vs generations. Further, because there's a decent amount of variance in how long a full evolution takes (for both methods), I run them each for 30 full evolutions and plot a histogram of their run times.
 
 GD-free:
 
@@ -161,7 +161,7 @@ The reason it's part of a larger mystery to me is that another very successful a
 
 Well, that's all for now. I have some other ideas to improve these parts, which I'm sure I'll write about soon. Below are some details, so check those out if you want to see the nitty gritty. Thanks for reading!
 
-**Details:**
+##### Details:
 
 Here are some interesting details I've left for the bottom, because talk about learning rates and hyperparameters is a lot less exciting that flashy gifs! Read on if you're interested.
 

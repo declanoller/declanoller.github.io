@@ -1,7 +1,7 @@
 ---
 date: 2018-09-03 14:04:22-04:00
-header-img: feat_imgs/eggdrop.png
 layout: post
+thumbnail: /assets/images/thumbnails/eggdrop.png
 title: 'The egg drop puzzle: brute force, Dynamic Programming, and Markov Decision
   Processes'
 ---

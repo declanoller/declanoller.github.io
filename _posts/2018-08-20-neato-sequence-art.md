@@ -1,7 +1,7 @@
 ---
 date: 2018-08-20 14:10:13-04:00
-header-img: feat_imgs/sequence_art.png
 layout: post
+thumbnail: /assets/images/thumbnails/sequence_art.png
 title: Neato sequence art
 ---
 

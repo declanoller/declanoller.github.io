@@ -55,12 +55,34 @@ from bs4 import BeautifulSoup, NavigableString, Comment
 PYTHON_KEYWORDS = ["def ", "import ", "class ", "print(", "in range("]
 
 
-def is_math_expression(text: str) -> bool:
+def print_info(msg: str) -> None:
+    print(f"\033[92m{msg} \033[0m")
+
+
+def print_warning(msg: str) -> None:
+    print(f"\033[93m{msg} \033[0m")
+
+
+def print_error(msg: str) -> None:
+    print(f"\033[91m{msg} \033[0m")
+
+
+def is_inline_math_expression(text: str) -> bool:
     """
     Determine whether the given text appears to be a LaTeX/MathJax math expression.
-    We consider it math if it starts or ends with a '$'.
+    We consider it math if it starts and ends with a '$'.
     """
-    if text.startswith("$") or text.endswith("$"):
+    if text.startswith("$") and text.endswith("$"):
+        return True
+    return False
+
+
+def is_block_math_expression(text: str) -> bool:
+    """
+    Determine whether the given text appears to be a LaTeX/MathJax math expression.
+    We consider it math if it starts and ends with a '$$'.
+    """
+    if text.startswith("$$") and text.endswith("$$"):
         return True
     return False
 
@@ -78,7 +100,7 @@ def parse_front_matter(text: str) -> Tuple[dict, str]:
         try:
             data = yaml.safe_load(fm_text)
         except yaml.YAMLError as e:
-            print("Error parsing YAML front matter:", e)
+            print_error(f"\nError parsing YAML front matter: {e}")
             data = {}
         # Keep only the desired fields.
         keys_to_keep = ["layout", "title", "date", "header-img"]
@@ -125,6 +147,14 @@ def convert_html_to_markdown(html_text: str) -> Tuple[str, Set[str]]:
     if first_p and first_p.get_text(strip=True) == "[latexpage]":
         first_p.decompose()
 
+    # Remove [latexpage]<br /> at the very beginning of a <p> tag and keep the rest
+    for p in soup.find_all("p"):
+        if p.contents and isinstance(p.contents[0], NavigableString):
+            if "[latexpage]" in p.contents[0]:
+                p.contents[0].replace_with(p.contents[0].replace("[latexpage]", ""))
+        for br in p.find_all("br"):
+            br.extract()
+
     # Convert underlined text created with <p><span style="text-decoration: underline;">...</span></p>
     # to Markdown H5 headings.
     for p in soup.find_all("p"):
@@ -135,6 +165,31 @@ def convert_html_to_markdown(html_text: str) -> Tuple[str, Set[str]]:
                 heading_text = span.get_text(strip=True)
                 md_heading = f"##### {heading_text}\n\n"
                 p.replace_with(NavigableString(md_heading))
+
+    # In a few instances we have: <p><strong><span style="text-decoration: underline;">...</span></strong></p>
+    # convert this to Markdown H5 headings.
+    for p in soup.find_all("p"):
+        children = list(p.children)
+        if len(children) == 1 and children[0].name == "strong":
+            strong = children[0]
+            children = list(strong.children)
+            if len(children) == 1 and children[0].name == "span":
+                span = children[0]
+                print_info(f"\nFound instance: {strong}")
+                if (
+                    span.has_attr("style")
+                    and "text-decoration: underline" in span["style"]
+                ):
+                    heading_text = span.get_text(strip=True)
+                    md_heading = f"##### {heading_text}\n\n"
+                    print_info(f"\tConverted to: {md_heading}\n")
+                    p.replace_with(NavigableString(md_heading))
+
+    # Convert any <span style="text-decoration: underline;">...</span> to Markdown bold
+    for span in soup.find_all("span"):
+        if span.has_attr("style") and "text-decoration: underline" in span["style"]:
+            bold_text = f"**{span.get_text(strip=True)}**"
+            span.replace_with(NavigableString(bold_text))
 
     # Convert heading tags (<h2> to <h6>) to Markdown header syntax.
     for level in range(2, 7):
@@ -150,24 +205,6 @@ def convert_html_to_markdown(html_text: str) -> Tuple[str, Set[str]]:
         md_blockquote = "\n".join(["> " + line for line in lines]) + "\n\n"
         blockquote.replace_with(NavigableString(md_blockquote))
 
-    # Convert unordered lists (<ul> with <li>) to Markdown bullet lists.
-    for ul in list(soup.find_all("ul")):
-        items = []
-        for li in ul.find_all("li", recursive=False):
-            li_text = li.get_text(separator=" ", strip=True)
-            items.append(f"- {li_text}")
-        md_ul = "\n".join(items) + "\n\n"
-        ul.replace_with(NavigableString(md_ul))
-
-    # Convert ordered lists (<ol> with <li>) to Markdown numbered lists.
-    for ol in list(soup.find_all("ol")):
-        items = []
-        for idx, li in enumerate(ol.find_all("li", recursive=False), start=1):
-            li_text = li.get_text(separator=" ", strip=True)
-            items.append(f"{idx}. {li_text}")
-        md_ol = "\n".join(items) + "\n\n"
-        ol.replace_with(NavigableString(md_ol))
-
     # Convert italic tags (<i> and <em>) to Markdown italics.
     for tag in list(soup.find_all(["i", "em"])):
         italic_text = tag.get_text()
@@ -179,6 +216,32 @@ def convert_html_to_markdown(html_text: str) -> Tuple[str, Set[str]]:
         strong_text = tag.get_text()
         md_strong = f"**{strong_text}**"
         tag.replace_with(NavigableString(md_strong))
+
+    # Convert unordered lists (<ul> with <li>) to Markdown bullet lists.
+    for ul in list(soup.find_all("ul")):
+        items = []
+        for li in ul.find_all("li", recursive=False):
+            for a in li.find_all("a"):
+                if a.has_attr("href"):
+                    markdown_link = f"[{a.get_text(strip=True)}]({a['href']})"
+                    a.replace_with(markdown_link)
+            li_text = li.get_text(separator="", strip=True)
+            items.append(f"- {li_text}")
+        md_ul = "\n".join(items) + "\n\n"
+        ul.replace_with(NavigableString(md_ul))
+
+    # Convert ordered lists (<ol> with <li>) to Markdown numbered lists.
+    for ol in list(soup.find_all("ol")):
+        items = []
+        for idx, li in enumerate(ol.find_all("li", recursive=False), start=1):
+            for a in li.find_all("a"):
+                if a.has_attr("href"):
+                    markdown_link = f"[{a.get_text(strip=True)}]({a['href']})"
+                    a.replace_with(markdown_link)
+            li_text = li.get_text(separator="", strip=True)
+            items.append(f"{idx}. {li_text}")
+        md_ol = "\n".join(items) + "\n\n"
+        ol.replace_with(NavigableString(md_ol))
 
     # Convert <pre> tags (code blocks).
     for pre in soup.find_all("pre"):
@@ -210,20 +273,47 @@ def convert_html_to_markdown(html_text: str) -> Tuple[str, Set[str]]:
     # Otherwise, convert the paragraph normally.
     for p in soup.find_all("p"):
         text = p.get_text(strip=True)
-        if is_math_expression(text):
+        if is_block_math_expression(text):
+            print_info(f"\nIs block math expr: {text}")
             eq = text.strip("$").strip()
             eq = eq.replace(
                 "|", " \\mid "
             )  # Replace vertical bar with " \mid " (with spaces)
+
+            new_text = f"$${eq}$$\n"
+            print_info(f"\tConverted to: {new_text}\n")
+        elif is_inline_math_expression(text):
+            print_info(f"\nIs inline math expr: {text}")
+            eq = text.strip("$").strip()
+            eq = eq.replace(
+                "|", " \\mid "
+            )  # Replace vertical bar with " \mid " (with spaces)
+
             new_text = f"${eq}$\n"
+            print_info(f"\tConverted to: {new_text}\n")
         else:
             new_text = "".join(str(child) for child in p.contents).strip() + "\n\n"
+
+        # Replace these here so they'll target any inline equations that aren't their own paragraph:
+        new_text = new_text.replace(
+            "\\mathrm{log}", "\\log "
+        )  # Replace \mathrm{log} with \log
+        new_text = new_text.replace(
+            "\\textrm{log}", "\\log "
+        )  # Replace \textrm{ln} with \log
+        new_text = new_text.replace(
+            "\\textrm{ln}", "\\log "
+        )  # Replace \textrm{ln} with \log
+        new_text = new_text.replace("\\textrm{argmax}", "\\arg\\max")
+        new_text = new_text.replace("\\textrm{max}", "\\max")
+        new_text = new_text.replace("\\textrm{min}", "\\min")
+
         p.replace_with(NavigableString(new_text))
 
     # Check for any remaining (unhandled) HTML tags (excluding common inline tags like <br>).
     unhandled_tags = {tag.name for tag in soup.find_all() if tag.name not in ["br"]}
     if unhandled_tags:
-        print(
+        print_warning(
             f"\n\tWarning: The following HTML tags were not explicitly handled: {', '.join(unhandled_tags)}"
         )
 
@@ -273,10 +363,10 @@ def process_images(
                     shutil.copy2(src_path, tgt_path)
                     print(f"\tCopied image: {filename} to target directory.")
                 except Exception as e:
-                    print(f"Error copying {filename}: {e}")
+                    print_error(f"Error copying {filename}: {e}")
             # else: image already exists in target directory; no action needed.
         else:
-            print(f"Warning: Image {filename} not found in source directory.")
+            print_warning(f"Warning: Image {filename} not found in source directory.")
 
 
 def process_file(
@@ -284,19 +374,43 @@ def process_file(
     output_path: str,
     source_image_path: Optional[Path] = None,
     target_image_path: Optional[Path] = None,
+    source_thumbnail_path: Optional[Path] = None,
+    target_thumbnail_path: Optional[Path] = None,
 ) -> Set[str]:
     print(f"\n\nConverting: {input_path} -> {output_path} ...")
     with open(input_path, "r", encoding="utf-8") as f:
         content = f.read()
 
     front_matter, html_content = parse_front_matter(content)
+
+    # Handle header-img -> thumbnail processing
+    input_filename = os.path.basename(input_path)
+    if "header-img" in front_matter:
+        img_filename = os.path.basename(front_matter["header-img"])
+        front_matter["thumbnail"] = f"/assets/images/thumbnails/{img_filename}"
+        del front_matter["header-img"]
+        if source_thumbnail_path and target_thumbnail_path:
+            src_thumb_path = source_thumbnail_path / img_filename
+            tgt_thumb_path = target_thumbnail_path / img_filename
+            if src_thumb_path.exists():
+                tgt_thumb_path.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(src_thumb_path, tgt_thumb_path)
+                print(
+                    f"\tCopied thumbnail: {img_filename} to target thumbnail directory."
+                )
+            else:
+                print_warning(
+                    f"header-img {img_filename} not found for file {input_filename}"
+                )
+    else:
+        print_warning(f"no header-img field in file {input_filename}")
+
     markdown_body, unhandled_tags = convert_html_to_markdown(html_content)
     final_md = build_markdown(front_matter, markdown_body)
 
     if source_image_path and target_image_path:
         process_images(final_md, source_image_path, target_image_path)
 
-    # Ensure the output directory exists.
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(final_md)
@@ -309,6 +423,8 @@ def process_directory(
     output_dir: str,
     source_image_path: Optional[Path] = None,
     target_image_path: Optional[Path] = None,
+    source_thumbnail_path: Optional[Path] = None,
+    target_thumbnail_path: Optional[Path] = None,
 ) -> None:
     input_dir_path = Path(input_dir)
     output_dir_path = Path(output_dir)
@@ -318,7 +434,12 @@ def process_directory(
         if file.suffix.lower() == ".html":
             output_file = output_dir_path / (file.stem + ".md")
             unhandled_tags = process_file(
-                str(file), str(output_file), source_image_path, target_image_path
+                str(file),
+                str(output_file),
+                source_image_path,
+                target_image_path,
+                source_thumbnail_path,
+                target_thumbnail_path,
             )
             all_unhandled_tags.update(unhandled_tags)
 
@@ -356,6 +477,12 @@ def main() -> None:
     parser.add_argument(
         "--target-image-path", help="Target image directory", default=None
     )
+    parser.add_argument(
+        "--source-thumbnail-path", help="Source thumbnail image directory", default=None
+    )
+    parser.add_argument(
+        "--target-thumbnail-path", help="Target thumbnail image directory", default=None
+    )
     args = parser.parse_args()
 
     source_image_path: Optional[Path] = (
@@ -364,16 +491,30 @@ def main() -> None:
     target_image_path: Optional[Path] = (
         Path(args.target_image_path) if args.target_image_path else None
     )
+    source_thumbnail_path: Optional[Path] = (
+        Path(args.source_thumbnail_path) if args.source_thumbnail_path else None
+    )
+    target_thumbnail_path: Optional[Path] = (
+        Path(args.target_thumbnail_path) if args.target_thumbnail_path else None
+    )
 
     if target_image_path:
         target_image_path.mkdir(parents=True, exist_ok=True)
+
+    if target_thumbnail_path:
+        target_thumbnail_path.mkdir(parents=True, exist_ok=True)
 
     input_path = Path(args.input)
     output_path = Path(args.output)
 
     if input_path.is_dir():
         process_directory(
-            str(input_path), str(output_path), source_image_path, target_image_path
+            str(input_path),
+            str(output_path),
+            source_image_path,
+            target_image_path,
+            source_thumbnail_path,
+            target_thumbnail_path,
         )
     elif input_path.is_file():
         if output_path.is_dir():
@@ -381,7 +522,12 @@ def main() -> None:
         else:
             output_file = output_path
         process_file(
-            str(input_path), str(output_file), source_image_path, target_image_path
+            str(input_path),
+            str(output_file),
+            source_image_path,
+            target_image_path,
+            source_thumbnail_path,
+            target_thumbnail_path,
         )
     else:
         print("Invalid input path.")

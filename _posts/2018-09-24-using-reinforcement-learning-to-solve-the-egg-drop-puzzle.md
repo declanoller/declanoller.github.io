@@ -1,11 +1,10 @@
 ---
 date: 2018-09-24 14:08:16-04:00
-header-img: feat_imgs/eggdrop.png
 layout: post
+thumbnail: /assets/images/thumbnails/eggdrop.png
 title: Using Reinforcement Learning to solve the Egg drop puzzle
 ---
 
-[latexpage]<br/>
 So last time, I solved the [egg drop puzzle](http://declanoller.com/2018/09/03/the-egg-drop-puzzle-brute-force-dynamic-programming-and-markov-decision-processes/) in a few ways. One of them was using a recent learn, Markov Decision Processes (MDP). It worked, which got me really stoked about them, because it was such a cool new method to me.
 
 However, it's kind of a baby process that's mostly used as a basis to learn about more advanced techniques. In that solution to the problem, I defined the reward matrix $R_{s,a}$ and the transition probability matrix $P_{a,s,s'}$, and then used them explicitly to iteratively solve for the value function v and the policy p. This works, but isn't very useful for the real world, because in practice you don't *know* $R$ and $P$, you just get to try stuff and learn the best strategy through experience. So the real challenge would be letting my program try a bunch of actual egg drops, and have it learn the value function and policy from them.
@@ -80,11 +79,11 @@ Here are the important steps:
 - Choose the starting state (the default is the top floor, but I add the option (see below why) to start at any state)
 - Get the action from that state (greedily or $\epsilon$-greedily)
 - Generate the episode from self.env (the environment)
-- Repeatedly: If in a terminal state (s=0 or s=1), return the ending state and total reward if not, performAction(S,A), get R,S' get next action A' update E and Q set S,A to be S',A', moving the "current state" forward
+- Repeatedly:If in a terminal state (s=0 or s=1), return the ending state and total rewardif not, performAction(S,A), get R,S'get next action A'update E and Qset S,A to be S',A', moving the "current state" forward
 
 Results! How does it do?
 
-Not great, at first. Let's first just mention what we'd *like* to see, if it was working nicely. We'd like to be able to plot the argmax over all actions for each state, $\textrm{argmax}_a(Q(s,a))$, which would tell us the best action to take in each state. If you look at my last post, this would mean taking action 0 (i.e., dropping on floor 1) for all the 1e states, and action int(sqrt(f)) for all 2e states with f floors remaining. When you have 1 egg left, you have to scan from the bottom, meaning dropping on floor 1 each time until you have 1 floor left. If you have 2 eggs, sqrt(f) gives you the best balance of skipping floors and minimizing the risk of breaking.
+Not great, at first. Let's first just mention what we'd *like* to see, if it was working nicely. We'd like to be able to plot the argmax over all actions for each state, $\arg\max_a(Q(s,a))$, which would tell us the best action to take in each state. If you look at my last post, this would mean taking action 0 (i.e., dropping on floor 1) for all the 1e states, and action int(sqrt(f)) for all 2e states with f floors remaining. When you have 1 egg left, you have to scan from the bottom, meaning dropping on floor 1 each time until you have 1 floor left. If you have 2 eggs, sqrt(f) gives you the best balance of skipping floors and minimizing the risk of breaking.
 
 So, here's what we get for $\epsilon$ = 0.05, decaying by 0.999 each episode, $\gamma$ = $\lambda$ = 0.99, $N_{floors}$ = 25, 20000 episodes.
 
@@ -237,13 +236,13 @@ Ooof. That is *terrible*. Honestly, I'm not sure why, either. This "true averag
 
 I'll briefly show two more things. The first is what the "inspect" plots look for two different alphas, 0.1 and 1.1. Remember from above, it seems like $\alpha$ = 1.1 should be the better choice. For each of these, I first run the whole thing with 200,000 episodes, then inspect state (2e, 22f) (randomly chosen high floor, so more likely to change its state with more samples). I inspect that state for 1,000 extra drops (starting from it), and then 10,000 immediately following, to see the short and long term effects if there are any.
 
-$\alpha$ = 1.1:$
+$\alpha$ = 1.1:
 
 ![](/assets/images/noavg_randomdrop2e_25f_alpha1.10_gamma1.00_lambda0.00_200000trials_11-27-37_whole.png)![](/assets/images/noavg_randomdrop2e_25f_alpha1.1_gamma1.0_lambda0.0_1000trials_11-27-37_inspect21f.png)![](/assets/images/noavg_randomdrop2e_25f_alpha1.1_gamma1.0_lambda0.0_10000trials_11-27-37_inspect21f.png)
 
 You can see that the argmax tends to be more stable, but also has a pretty big range (~5). It only switches once in the extended "inspection".
 
-$\alpha$ = 0.1:$
+$\alpha$ = 0.1:
 
 ![](/assets/images/noavg_randomdrop2e_25f_alpha0.10_gamma1.00_lambda0.00_200000trials_11-28-53_whole.png)![](/assets/images/noavg_randomdrop2e_25f_alpha0.1_gamma1.0_lambda0.0_1000trials_11-28-53_inspect21f.png)![](/assets/images/noavg_randomdrop2e_25f_alpha0.1_gamma1.0_lambda0.0_10000trials_11-28-53_inspect21f.png)
 

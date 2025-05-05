@@ -1,11 +1,10 @@
 ---
 date: 2018-11-04 18:08:39-05:00
-header-img: feat_imgs/puckworld.png
 layout: post
+thumbnail: /assets/images/thumbnails/puckworld.png
 title: Training an RL agent to play Puckworld with a DDQN
 ---
 
-[latexpage]<br/>
 Last time [I messed around with RL](http://declanoller.com/2018/10/03/mountain-car-q-learning-and-experience-replay-with-pytorch/), I solved the classic Mountain Car problem using Q-learning and Experience Replay (ER).
 
 However, it was very basic in a lot of ways:
@@ -27,7 +26,7 @@ To break up the wall of text, here's a little gif I made of one agent after trai
 
 You can [see a great interactive demo of it here, on Karpathy's website](https://cs.stanford.edu/people/karpathy/reinforcejs/puckworld.html), I guess from back when he was at Stanford. It's very cool and was pretty helpful for me while doing this. As an aside, while Mountain Car is one of the most characterized RL problems, there's surprisingly little info about Puckworld out there, unless I missed all of it in my Googlin'. So maybe this can help anyone else who tries doing it. Also notice that he adds an enemy that chases the puck and gives it negative reward, which is really cool (maybe I'll add that in the future!).
 
-<span style="text-decoration: underline;">Reward shapin</span>g<span style="text-decoration: underline;"> and reward hacking</span>
+**Reward shapin**g**and reward hacking**
 
 One difference though, is that he does his reward function differently. This is actually a pretty big deal in RL, so I'll briefly take about it. In [this very famous blog post on RL](https://www.alexirpan.com/2018/02/14/rl-hard.html), the author talks about "reward shaping". The idea is this. The agent learns its behavior via the rewards it gets. You just want it to solve a problem in the best way, so the most straightforward thing to do would be to give it a positive reward for solving the problem (i.e., getting to the target, or getting to the top of the hill in MC) and no (or a small negative, for taking time) reward for not solving it. This is called a "sparse reward". It's good in that it usually really encourages exactly what you want, but also means it might take a long time to find it and therefore learn. Imagine searching a 100 dimensional continuous space for a reward that's in one tiny volume of it: it's basically a random search.
 
@@ -94,7 +93,7 @@ Alright! All that said, there are lots of details I learned while doing this, wh
 
 ##### DDQN: probably not necessary for this problem
 
-Double DQNs (DDQN) were introduced [in yet another Deepmind paper](https://arxiv.org/abs/1509.06461). The idea is that, in the original DQN formulation, the TD target is $R + \gamma \textrm{max}_a Q(s, a, \theta^-)$, where that max of $Q$ over actions $a$ is calculated using the target network (hence the $\theta^-$). Apparently, this tends to overestimate values, and they found that a fix was to split the max up into evaluating the function at the argmax (which would usually be equivalent to the max). However, they instead used the fixed network to get which action is the argmax, and then use the target network to actually evaluate the $Q$ value with this action. So, the TD target ends up being $R +  \gamma Q(s, \textrm{argmax}_a Q(s, a, \theta), \theta^-)$.
+Double DQNs (DDQN) were introduced [in yet another Deepmind paper](https://arxiv.org/abs/1509.06461). The idea is that, in the original DQN formulation, the TD target is $R + \gamma \max_a Q(s, a, \theta^-)$, where that max of $Q$ over actions $a$ is calculated using the target network (hence the $\theta^-$). Apparently, this tends to overestimate values, and they found that a fix was to split the max up into evaluating the function at the argmax (which would usually be equivalent to the max). However, they instead used the fixed network to get which action is the argmax, and then use the target network to actually evaluate the $Q$ value with this action. So, the TD target ends up being $R +  \gamma Q(s, \arg\max_a Q(s, a, \theta), \theta^-)$.
 
 If I'm honest, I get the idea but still don't have a great intuitive grasp of just why this works. It ends up feeling like the whole "extra frozen target network" thing was a tweak of the TD target to get stability/convergence, and then this DDQN solution is a *really similar* tweak to the TD target. So maybe I'll think about why this works more thoroughly sometime, because most of the stuff I see using it on the internet just say "it prevents overestimation of the $Q$ values" in a very handwavy way.
 
@@ -134,7 +133,7 @@ You can see that they're not doing anything crazy, for some reason tanh is just 
 
 **Epsilon exploration**
 
-$\epsilon$-greediness means that, some small percent of the time, the agent will take a random action instead of the greedy one. People often either keep a small random element during the whole episode (maybe 5%), or they "anneal" by starting off with $\epsilon$ and "decaying" periodically by multiplying it with some other constant that's less than 1. This will make it decay to 0 over some time period. People also sometimes use an exponential plus a constant term, so they can have it decay to a finite, nonzero value, but I didn't do that here.$
+$\epsilon$-greediness means that, some small percent of the time, the agent will take a random action instead of the greedy one. People often either keep a small random element during the whole episode (maybe 5%), or they "anneal" by starting off with $\epsilon$ and "decaying" periodically by multiplying it with some other constant that's less than 1. This will make it decay to 0 over some time period. People also sometimes use an exponential plus a constant term, so they can have it decay to a finite, nonzero value, but I didn't do that here.
 
 I compared three strategies here: greedy, constant small exploration, and large initial epsilon, decaying to 0. Since this was run with $10^5$ steps, for the decaying one, $\epsilon \sim 0.006$ by step $10^4$, for example.
 

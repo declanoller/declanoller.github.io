@@ -1,5 +1,9 @@
 ---
+date: 2019-11-15 22:56:11-05:00
 layout: post
+thumbnail: /assets/images/thumbnails/haskell_vae.png
+title: 'Variational Autoencoders in Haskell, or: How I Learned to Stop Worrying and
+  Turn My Friends Into Dogs'
 ---
 
 If you frequently wander down the dark alleys of the computer science neighborhood of the internet, it won't be too
@@ -445,8 +449,8 @@ See ya next time!
 
 Resources:
 
-- Auto-Encoding Variational Bayes
-- Autoencoder
-      tutorial people love on the internet
-- Everything on Rui's blog
-- Tutorial on Variational Autoencoders
+- [Auto-Encoding Variational Bayes](https://arxiv.org/abs/1312.6114)
+- [Autoencoder
+      tutorial people love on the internet](https://jaan.io/what-is-variational-autoencoder-vae-tutorial/?source=post_page-----77fd3a8dd368----------------------)
+- [Everything on Rui's blog](http://ruishu.io/2018/03/14/vae/)
+- [Tutorial on Variational Autoencoders](https://arxiv.org/pdf/1606.05908.pdf)
