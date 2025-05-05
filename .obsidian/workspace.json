@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "test_posts/2017-07-25-manual-acking-with-the-nrf24l01.md",
+                "file": "_posts/2019-05-24-descending-into-modular-neuroevolution-for-logic-circuits.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "2017-07-25-manual-acking-with-the-nrf24l01"
+              "title": "2019-05-24-descending-into-modular-neuroevolution-for-logic-circuits"
             }
           }
         ]
@@ -170,6 +170,9 @@
   },
   "active": "22e74f5debdd6dd0",
   "lastOpenFiles": [
+    "_posts/2019-11-15-variational-autoencoders-in-haskell-or-how-i-learned-to-stop-worrying-and-turn-my-friends-into-dogs.md",
+    "_posts/2020-03-03-top-down-program-synthesis-with-a-repl-and-reinforcement-learning.md",
+    "_posts/2025-04-10-testing-equations.md",
     "assets/images/full_withturb-1024x491.png",
     "test_posts/2017-07-25-manual-acking-with-the-nrf24l01.md",
     "_posts/2025-04-06-and_another.md",
@@ -194,8 +197,6 @@
     "test_posts/2018-07-24-word-clouds-for-slack.md",
     "test_posts/2018-10-08-genetic-algorithms-part-2.md",
     "test_posts/2018-05-31-the-knapsack-problem-discrete-optimization-week-2.md",
-    "test_posts/2018-11-04-training-an-rl-agent-to-play-puckworld-with-a-ddqn.md",
-    "test_posts/2019-05-24-descending-into-modular-neuroevolution-for-logic-circuits.md",
     "assets/images/eggdrop_MDP_100floor_bestmoves_14-56-20.png",
     "assets/images/eggdrop_MDP_100floor_v_14-56-20.png",
     "assets/images/eggdrop_MDP_10floor_bestmoves_14-48-46.png",
@@ -205,7 +206,6 @@
     "assets/images/eggdrop_DP_100floor_13-12-56.png",
     "assets/images/eggdrop_geo_1000.png",
     "assets/images/eggdrop_geo_100.png",
-    "assets/images/eggdrop_scan_1000_fine.png",
     "assets/images/txrx_timing1.png?w=1200",
     "misc/convert_html_to_md.py",
     "misc",
