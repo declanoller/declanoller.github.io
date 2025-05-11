@@ -20,8 +20,9 @@ layout: base
     {%- if page.list_title -%}
     <h2 class="post-list-heading">{{ page.list_title }}</h2>
     {%- endif -%}
+    
     <ul class="post-list">
-        {%- for post in posts -%}
+        {%- for post in paginator.posts -%}
         <li style="margin-bottom: 2em;">
             <div style="display: flex; gap: 1em; align-items: center;">
                 {% if post.thumbnail %}
