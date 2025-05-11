@@ -1,6 +1,7 @@
 ---
 date: 2020-11-14 06:06:45-05:00
 layout: post
+thumbnail: /assets/images/thumbnails/PXL_20201113_005234845_feat.jpg
 title: Back to the MPCNC!
 ---
 

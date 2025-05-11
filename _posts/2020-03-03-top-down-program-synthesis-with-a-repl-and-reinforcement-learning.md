@@ -1,6 +1,7 @@
 ---
 date: 2020-03-03 17:35:37-05:00
 layout: post
+thumbnail: /assets/images/thumbnails/top_down_feat_img2.png
 title: Top-down program synthesis with a REPL and reinforcement learning
 ---
 

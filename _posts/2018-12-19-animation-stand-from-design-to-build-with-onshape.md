@@ -1,6 +1,7 @@
 ---
 date: 2018-12-19 04:15:07-05:00
 layout: post
+thumbnail: /assets/images/thumbnails/both.png
 title: 'Animation stand: from design to build with Onshape'
 ---
 

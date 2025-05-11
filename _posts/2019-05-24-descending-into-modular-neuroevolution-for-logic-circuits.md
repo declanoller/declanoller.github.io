@@ -1,6 +1,7 @@
 ---
 date: 2019-05-24 14:05:27-04:00
 layout: post
+thumbnail: /assets/images/thumbnails/blog_NE_GD_cover_small.png
 title: Descending into modular neuroevolution for logic circuits
 ---
 

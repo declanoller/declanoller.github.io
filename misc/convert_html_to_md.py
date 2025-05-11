@@ -47,13 +47,62 @@ import re
 import sys
 import shutil
 from pathlib import Path
-from typing import Optional, Tuple, Set
+from typing import Any, Optional, Tuple, Set
+import xml.etree.ElementTree as ET
 
 import yaml
 from bs4 import BeautifulSoup, NavigableString, Comment, Doctype
+import requests
 
 # Define Python keywords for code detection.
 PYTHON_KEYWORDS = ["def ", "import ", "class ", "print(", "in range("]
+WORDPRESS_EXPORT_MEDIA_XML_FILE = Path(
+    "/home/declan/Documents/code/wordpress_site_export/wordpress_export_media.xml"
+)
+
+
+def xml_to_dict(elem):
+    d = {elem.tag: {}}
+    # Add attributes
+    d[elem.tag].update(elem.attrib)
+
+    # Add children or text
+    children = list(elem)
+    if children:
+        child_dict = {}
+        for child in children:
+            child_result = xml_to_dict(child)
+            for key, value in child_result.items():
+                if key in child_dict:
+                    if not isinstance(child_dict[key], list):
+                        child_dict[key] = [child_dict[key]]
+                    child_dict[key].append(value)
+                else:
+                    child_dict[key] = value
+        d[elem.tag].update(child_dict)
+    else:
+        text = elem.text.strip() if elem.text else ""
+        if text:
+            d[elem.tag] = text if not d[elem.tag] else {"_text": text, **d[elem.tag]}
+
+    return d
+
+
+def parse_xml_file(file_path):
+    tree = ET.parse(file_path)
+    root = tree.getroot()
+    return xml_to_dict(root)
+
+
+WORDPRESS_EXPORT_MEDIA_XML_ITEM_DICT_LIST = parse_xml_file(
+    WORDPRESS_EXPORT_MEDIA_XML_FILE
+)["rss"]["channel"]["item"]
+POST_ID_KEY = "{http://wordpress.org/export/1.2/}post_id"
+WORDPRESS_POST_ID_TO_THUMBNAIL_NAME = {
+    int(d[POST_ID_KEY]): d["guid"]["_text"]
+    for d in WORDPRESS_EXPORT_MEDIA_XML_ITEM_DICT_LIST
+    if POST_ID_KEY in d and "guid" in d and "_text" in d["guid"]
+}
 
 
 def print_info(msg: str) -> None:
@@ -88,7 +137,7 @@ def is_block_math_expression(text: str) -> bool:
     return False
 
 
-def parse_front_matter(text: str) -> Tuple[dict, str]:
+def parse_front_matter(text: str) -> Tuple[dict[str, Any], str]:
     """
     Extract YAML front matter from text if present.
     Returns a tuple: (front_matter_dict, content_without_front_matter)
@@ -447,6 +496,136 @@ def process_images(
     """
 
 
+def process_thumbnail(
+    input_path: str,
+    html_content: str,
+    front_matter: dict[str, Any],
+    source_thumbnail_path: Optional[Path] = None,
+    target_thumbnail_path: Optional[Path] = None,
+) -> None | str:
+    thumbnail_error = None
+
+    if not (source_thumbnail_path and target_thumbnail_path):
+        return thumbnail_error
+
+    target_thumbnail_path.mkdir(parents=True, exist_ok=True)
+    input_filename = os.path.basename(input_path)
+    if "header-img" in front_matter:
+        # First try to find the thumbnail in the front matter.
+        img_filename = os.path.basename(front_matter["header-img"])
+        front_matter["thumbnail"] = f"/assets/images/thumbnails/{img_filename}"
+        del front_matter["header-img"]
+        src_thumb_path = source_thumbnail_path / img_filename
+        tgt_thumb_path = target_thumbnail_path / img_filename
+        if src_thumb_path.exists():
+            tgt_thumb_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(src_thumb_path, tgt_thumb_path)
+            print_info(
+                f"\tCopied thumbnail: {img_filename} to target thumbnail directory."
+            )
+        else:
+            thumbnail_error = (
+                f"header-img {img_filename} not found for file {input_filename}"
+            )
+            print_warning(f"\t\t{thumbnail_error}")
+    elif "meta" in front_matter and "_thumbnail_id" in front_matter["meta"]:
+        # Next, try to find the thumbnail ID in the meta field.
+        thumbnail_id = front_matter["meta"]["_thumbnail_id"]
+        if isinstance(thumbnail_id, str) and thumbnail_id.isdigit():
+            thumbnail_id = int(thumbnail_id)
+        print_info(
+            f"\tFound thumbnail ID: {thumbnail_id} in meta field for file {input_filename}"
+        )
+
+        # Check if the thumbnail ID exists in the WordPress export XML.
+        if thumbnail_id in WORDPRESS_POST_ID_TO_THUMBNAIL_NAME:
+            thumbnail_name = WORDPRESS_POST_ID_TO_THUMBNAIL_NAME[thumbnail_id]
+            print_info(
+                f"\tFound thumbnail name: {thumbnail_name} for ID {thumbnail_id} in WordPress export XML."
+            )
+            img_filename = os.path.basename(thumbnail_name)
+            tgt_thumb_path = target_thumbnail_path / img_filename
+            front_matter["thumbnail"] = f"/assets/images/thumbnails/{img_filename}"
+            if tgt_thumb_path.exists():
+                print_info(
+                    f"\t\tThumbnail {img_filename} already exists in target directory, skipping"
+                )
+                return None
+
+            # First try to copy the local file
+            src_thumb_path = source_thumbnail_path / img_filename
+            if src_thumb_path.exists():
+                shutil.copy2(src_thumb_path, tgt_thumb_path)
+                print_info(
+                    f"\tCopied thumbnail: {img_filename} to target thumbnail directory."
+                )
+                return None
+            elif thumbnail_name.startswith("https://www.declanoller.com/"):
+                # In this case, we try to download it from the website, this once
+                try:
+                    response = requests.get(thumbnail_name, stream=True)
+                    if response.status_code == 200:
+                        with open(tgt_thumb_path, "wb") as f:
+                            shutil.copyfileobj(response.raw, f)
+                        print_info(
+                            f"\tDownloaded thumbnail: {img_filename} to target thumbnail directory."
+                        )
+                        return None
+                    else:
+                        thumbnail_error = f"Failed to download thumbnail {thumbnail_name} for file {input_filename}"
+                        print_error(f"\t\t{thumbnail_error}")
+                except Exception as e:
+                    thumbnail_error = (
+                        f"Error downloading thumbnail {thumbnail_name}: {e}"
+                    )
+                    print_error(f"\t\t{thumbnail_error}")
+            else:
+                thumbnail_error = f"Thumbnail image {img_filename} not found for file {input_filename}"
+                print_warning(f"\t\t{thumbnail_error}")
+        else:
+            thumbnail_error = f"Thumbnail ID {thumbnail_id} not found in WordPress export XML for file {input_filename}"
+            print_warning(f"\t\t{thumbnail_error}")
+
+        # If the thumbnail ID is not found in the XML, check the HTML content.
+        # Search for the thumbnail ID in the <img> tags
+        found_thumbnail = False
+        soup = BeautifulSoup(html_content, "html.parser")
+        for img in soup.find_all("img"):
+            img_class = img.get("class", [])
+            if any(f"wp-image-{thumbnail_id}" in cls for cls in img_class):
+                src = img.get("src", "")
+                img_filename = os.path.basename(src)
+                front_matter["thumbnail"] = f"/assets/images/thumbnails/{img_filename}"
+                found_thumbnail = True
+                src_thumb_path = None
+                for root, _, files in os.walk(source_thumbnail_path):
+                    if img_filename in files:
+                        src_thumb_path = Path(root) / img_filename
+                        break
+
+                tgt_thumb_path = target_thumbnail_path / img_filename
+                if src_thumb_path is not None:
+                    shutil.copy2(src_thumb_path, tgt_thumb_path)
+                    print_info(
+                        f"\tCopied thumbnail: {img_filename} to target thumbnail directory."
+                    )
+                else:
+                    thumbnail_error = f"Thumbnail image {src_thumb_path} not found for file {input_filename}"
+                    print_error(f"\t\t{thumbnail_error}")
+                break
+
+        if not found_thumbnail:
+            thumbnail_error = f"Thumbnail with ID {thumbnail_id} not found in <img> tags for file {input_filename}"
+            print_error(f"\t{thumbnail_error}")
+    else:
+        thumbnail_error = (
+            f"no header-img or meta->_thumbnail_id field in file {input_filename}"
+        )
+        print_warning(f"\t{thumbnail_error}")
+
+    return thumbnail_error
+
+
 def process_file(
     input_path: str,
     output_path: str,
@@ -454,77 +633,20 @@ def process_file(
     target_image_path: Optional[Path] = None,
     source_thumbnail_path: Optional[Path] = None,
     target_thumbnail_path: Optional[Path] = None,
-) -> Set[str]:
+) -> dict[str, Any]:
     print(f"\n\nConverting: {input_path} -> {output_path} ...")
     with open(input_path, "r", encoding="utf-8") as f:
         content = f.read()
 
     front_matter, html_content = parse_front_matter(content)
 
-    # Handle header-img -> thumbnail processing
-    input_filename = os.path.basename(input_path)
-    if source_thumbnail_path and target_thumbnail_path:
-        if "header-img" in front_matter:
-            img_filename = os.path.basename(front_matter["header-img"])
-            front_matter["thumbnail"] = f"/assets/images/thumbnails/{img_filename}"
-            del front_matter["header-img"]
-            src_thumb_path = source_thumbnail_path / img_filename
-            tgt_thumb_path = target_thumbnail_path / img_filename
-            if src_thumb_path.exists():
-                tgt_thumb_path.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(src_thumb_path, tgt_thumb_path)
-                print_info(
-                    f"\tCopied thumbnail: {img_filename} to target thumbnail directory."
-                )
-            else:
-                print_warning(
-                    f"\t\theader-img {img_filename} not found for file {input_filename}"
-                )
-        elif "meta" in front_matter and "_thumbnail_id" in front_matter["meta"]:
-            thumbnail_id = front_matter["meta"]["_thumbnail_id"]
-            if isinstance(thumbnail_id, str) and thumbnail_id.isdigit():
-                thumbnail_id = int(thumbnail_id)
-            input_filename = os.path.basename(input_path)
-            found_thumbnail = False
-
-            # Search for the thumbnail ID in the <img> tags
-            soup = BeautifulSoup(html_content, "html.parser")
-            for img in soup.find_all("img"):
-                img_class = img.get("class", [])
-                if any(f"wp-image-{thumbnail_id}" in cls for cls in img_class):
-                    src = img.get("src", "")
-                    img_filename = os.path.basename(src)
-                    front_matter["thumbnail"] = (
-                        f"/assets/images/thumbnails/{img_filename}"
-                    )
-                    found_thumbnail = True
-                    src_thumb_path = None
-                    for root, _, files in os.walk(source_thumbnail_path):
-                        if img_filename in files:
-                            src_thumb_path = Path(root) / img_filename
-                            break
-
-                    tgt_thumb_path = target_thumbnail_path / img_filename
-                    if src_thumb_path is not None:
-                        tgt_thumb_path.parent.mkdir(parents=True, exist_ok=True)
-                        shutil.copy2(src_thumb_path, tgt_thumb_path)
-                        print_info(
-                            f"\tCopied thumbnail: {img_filename} to target thumbnail directory."
-                        )
-                    else:
-                        print_error(
-                            f"\t\tThumbnail image {src_thumb_path} not found for file {input_filename}"
-                        )
-                    break
-
-            if not found_thumbnail:
-                print_error(
-                    f"Thumbnail with ID {thumbnail_id} not found in <img> tags for file {input_filename}"
-                )
-        else:
-            print_warning(
-                f"\tno header-img or meta->_thumbnail_id field in file {input_filename}"
-            )
+    thumbnail_error = process_thumbnail(
+        input_path,
+        html_content,
+        front_matter,
+        source_thumbnail_path,
+        target_thumbnail_path,
+    )
 
     if "meta" in front_matter:
         del front_matter["meta"]
@@ -539,7 +661,10 @@ def process_file(
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(final_md)
     print(f"Converted: {input_path} -> {output_path}")
-    return unhandled_tags
+    return {
+        "unhandled_tags": unhandled_tags,
+        "thumbnail_error": thumbnail_error,
+    }
 
 
 def process_directory(
@@ -555,6 +680,8 @@ def process_directory(
     output_dir_path = Path(output_dir)
     output_dir_path.mkdir(parents=True, exist_ok=True)
     all_unhandled_tags = set()
+    processed_files_summary = {}
+
     for file in input_dir_path.iterdir():
         if file.suffix.lower() == ".html":
             if name_filter and name_filter not in file.name:
@@ -562,7 +689,7 @@ def process_directory(
                 continue
 
             output_file = output_dir_path / (file.stem + ".md")
-            unhandled_tags = process_file(
+            processed_file_info = process_file(
                 str(file),
                 str(output_file),
                 source_image_path,
@@ -570,9 +697,16 @@ def process_directory(
                 source_thumbnail_path,
                 target_thumbnail_path,
             )
-            all_unhandled_tags.update(unhandled_tags)
 
-    print(f"\nAll unhandled tags:\n{all_unhandled_tags}\n")
+            all_unhandled_tags.update(processed_file_info["unhandled_tags"])
+            processed_files_summary[file.name] = processed_file_info
+
+    for file_name, info in processed_files_summary.items():
+        if info["thumbnail_error"]:
+            print_warning(f"\nFile: {file_name}:")
+            print_error(f"\t{info['thumbnail_error']}")
+
+    print_warning(f"\nAll unhandled tags:\n{all_unhandled_tags}\n")
 
 
 def main() -> None:

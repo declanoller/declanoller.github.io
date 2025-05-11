@@ -1,7 +1,7 @@
 ---
 date: 2019-09-13 17:02:51-04:00
 layout: post
-thumbnail: /assets/images/thumbnails/full_withturb-1024x491.png
+thumbnail: /assets/images/thumbnails/full_withturb.png
 title: Making Sol LeWitt's colored bands interactive with d3.js
 ---
 

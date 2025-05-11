@@ -1,7 +1,7 @@
 ---
 date: 2019-04-30 02:11:29-04:00
 layout: post
-thumbnail: /assets/images/thumbnails/IMG_20190411_110755-1024x768.jpg
+thumbnail: /assets/images/thumbnails/IMG_20190411_110755.jpg
 title: 'Chile: hilly, Will-y, thrilly, and, uh...chilly'
 ---
 

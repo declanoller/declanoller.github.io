@@ -1,6 +1,7 @@
 ---
 date: 2018-11-04 18:08:39-05:00
 layout: post
+thumbnail: /assets/images/thumbnails/puckworld_featimage.png
 title: Training an RL agent to play Puckworld with a DDQN
 ---
 

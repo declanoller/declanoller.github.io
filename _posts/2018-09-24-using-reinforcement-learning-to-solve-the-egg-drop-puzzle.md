@@ -1,6 +1,7 @@
 ---
 date: 2018-09-24 14:08:16-04:00
 layout: post
+thumbnail: /assets/images/thumbnails/feat.png
 title: Using Reinforcement Learning to solve the Egg drop puzzle
 ---
 

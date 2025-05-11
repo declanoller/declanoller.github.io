@@ -1,6 +1,7 @@
 ---
 date: 2017-10-10 21:56:40-04:00
 layout: post
+thumbnail: /assets/images/thumbnails/bloodhead1.jpg
 title: A spooOOOOoooky project!
 ---
 
