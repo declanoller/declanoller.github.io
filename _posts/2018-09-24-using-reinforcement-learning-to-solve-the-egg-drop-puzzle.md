@@ -1,7 +1,6 @@
 ---
 date: 2018-09-24 14:08:16-04:00
 layout: post
-thumbnail: /assets/images/thumbnails/eggdrop.png
 title: Using Reinforcement Learning to solve the Egg drop puzzle
 ---
 
@@ -60,7 +59,7 @@ def learnEpisode(self,starting_state=None):
         #So above this line, you have the SA from SARS'A'.
         (self.R,self.s_next) = self.env.performAction(self.s,self.a)
         self.R_tot += self.R
-
+        
         self.a_next = self.getAction(self.s_next)
 
         #Increment E and update Q, and then decay E

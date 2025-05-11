@@ -1,12 +1,11 @@
 ---
 date: 2018-08-08 21:33:53-04:00
 layout: post
-thumbnail: /assets/images/thumbnails/genetic_nqueens.png
+thumbnail: /assets/images/thumbnails/30queens_sol1.png
 title: Fun with Genetic Algorithms and the N Queens Problem
 ---
 
 [Genetic Algorithms](https://en.wikipedia.org/wiki/Genetic_algorithm) are cool!
-
 I was recently skimming through [Russel and Norvig's AI: A Modern Approach](https://en.wikipedia.org/wiki/Artificial_Intelligence:_A_Modern_Approach) and came to the section on Genetic Algorithms (GA). Briefly, they're a type of algorithm inspired by genetics and evolution, in which you have a problem you'd like to solve and some initial attempts at solutions to the problem, and you combine those solutions (and randomly alter them slightly) to hopefully produce better solutions. It's cool for several reasons, but one really cool one is that they're often used to "evolve" to an optimal solution in things like design of objects (see the antenna in the Wikipedia article). So, that's kind of doing evolution on *objects* rather than living things. [Just take a look at the applications they're used for.](https://en.wikipedia.org/wiki/List_of_genetic_algorithm_applications)
 
 A lot of it makes more sense when you look at it in the context of evolution, because it's a pretty decent analogy. A GA "solution attempt" I mentioned above is called an "individual", like the individual of a species. It could be in many different formats (a string, a 2D array, etc), depending on the problem. You call the group of individuals you currently have the "population". For species in nature, the "problem" they're trying to solve is finding the best way to survive and pass on their genes, given the environment. For real evolution and genetics, the success of an individual is somewhat binary: does it pass on its genes, or not? (I guess you could actually also consider that there are grades of passing on your genes; i.e., it might be better to have 10 offspring than 1.) For GA, the success is measured by a "fitness function", which is a heuristic that you have to choose, depending on the problem.

@@ -1,7 +1,6 @@
 ---
 date: 2019-03-27 01:48:00-04:00
 layout: post
-thumbnail: /assets/images/thumbnails/robot_car.png
 title: Training a real robot to play Puckworld with reinforcement learning
 ---
 

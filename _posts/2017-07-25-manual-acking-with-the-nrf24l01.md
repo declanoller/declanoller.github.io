@@ -1,7 +1,6 @@
 ---
 date: 2017-07-25 16:54:28-04:00
 layout: post
-thumbnail: /assets/images/thumbnails/arduino_ack.jpg
 title: Manual ACKing with the nRF24L01
 ---
 

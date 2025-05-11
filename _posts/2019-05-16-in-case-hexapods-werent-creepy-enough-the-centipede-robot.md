@@ -1,7 +1,6 @@
 ---
 date: 2019-05-16 14:01:33-04:00
 layout: post
-thumbnail: /assets/images/thumbnails/robot_centi.png
 title: 'In case hexapods weren''t creepy enough: the centipede robot!'
 ---
 

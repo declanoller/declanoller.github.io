@@ -1,7 +1,7 @@
 ---
 date: 2018-08-20 14:10:13-04:00
 layout: post
-thumbnail: /assets/images/thumbnails/sequence_art.png
+thumbnail: /assets/images/thumbnails/ex_color_recaman_100terms_x00_2018-07-27_14-59-10.png
 title: Neato sequence art
 ---
 

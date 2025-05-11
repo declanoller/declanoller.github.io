@@ -1,7 +1,6 @@
 ---
 date: 2018-12-24 18:00:47-05:00
 layout: post
-thumbnail: /assets/images/thumbnails/brach.png
 title: Solving the Brachistochrone and a cool parallel between diversity in genetic
   algorithms and simulated annealing
 ---

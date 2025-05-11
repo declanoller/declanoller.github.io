@@ -1,7 +1,7 @@
 ---
 date: 2018-09-10 15:57:01-04:00
 layout: post
-thumbnail: /assets/images/thumbnails/skyscrapers.png
+thumbnail: /assets/images/thumbnails/ss_hard_77.png
 title: Skyscraper fun with OR-Tools!
 ---
 

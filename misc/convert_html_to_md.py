@@ -41,6 +41,7 @@ Dependencies:
 """
 
 import argparse
+import html
 import os
 import re
 import sys
@@ -49,7 +50,7 @@ from pathlib import Path
 from typing import Optional, Tuple, Set
 
 import yaml
-from bs4 import BeautifulSoup, NavigableString, Comment
+from bs4 import BeautifulSoup, NavigableString, Comment, Doctype
 
 # Define Python keywords for code detection.
 PYTHON_KEYWORDS = ["def ", "import ", "class ", "print(", "in range("]
@@ -103,7 +104,7 @@ def parse_front_matter(text: str) -> Tuple[dict, str]:
             print_error(f"\nError parsing YAML front matter: {e}")
             data = {}
         # Keep only the desired fields.
-        keys_to_keep = ["layout", "title", "date", "header-img"]
+        keys_to_keep = ["layout", "title", "date", "header-img", "meta"]
         front_matter = {k: v for k, v in data.items() if k in keys_to_keep}
         # Force the layout to always be "post"
         front_matter["layout"] = "post"
@@ -116,7 +117,9 @@ def update_image_src(src: str) -> str:
     Update the image source from the old template path to the new /assets/images/ folder.
     Example: '{{ site.baseurl }}/assets/special_9x9_ss.png' becomes '/assets/images/special_9x9_ss.png'
     """
-    new_src = re.sub(r"\{\{\s*site\.baseurl\s*\}\}/assets/", "/assets/images/", src)
+    # new_src = re.sub(r"\{\{\s*site\.baseurl\s*\}\}/assets/", "/assets/images/", src)
+    # Strip out anything after assets/ in the original src
+    new_src = re.sub(r"\{\{\s*site\.baseurl\s*\}\}/assets/.*/", "/assets/images/", src)
     return new_src
 
 
@@ -128,13 +131,59 @@ def is_probably_python(code_text: str) -> bool:
     return any(kw in code_text for kw in PYTHON_KEYWORDS)
 
 
+def clean_malformed_html(html_text: str) -> str:
+    """
+    Cleans malformed HTML with misplaced tags (e.g., <p> before <html>) and doctype issues.
+    Returns cleaned HTML string.
+    """
+
+    # Step 1: Remove DOCTYPEs, wherever they appear
+    html_text = re.sub(r"<!DOCTYPE[^>]*>", "", html_text, flags=re.IGNORECASE)
+
+    # Step 2: Remove anything before the first <html> tag
+    html_match = re.search(r"<html.*?>", html_text, flags=re.IGNORECASE)
+    if html_match:
+        html_text = html_text[html_match.start() :]
+    else:
+        # If there's no <html>, fallback to raw parse
+        pass
+
+    # Step 3: Parse with BeautifulSoup to allow structural cleanup
+    soup = BeautifulSoup(html_text, "html.parser")
+
+    # Step 4: Remove any <p> that wraps the <html> or comes after </html>
+    # Usually this happens because of improperly closed tags around <html>
+    for tag in soup.find_all("p"):
+        if tag.find("html") or tag.find("body"):
+            tag.unwrap()  # unwrap just removes the <p> tag, keeps contents
+
+    # Step 5: Optional — ensure only one <html> and <body> exists
+    # BeautifulSoup auto-nests oddly if malformed input has duplicates
+    # This step is light, since the earlier cleanup prevents the worst
+    # return soup.prettify()
+    return str(soup)
+
+
 def convert_html_to_markdown(html_text: str) -> Tuple[str, Set[str]]:
     """
     Convert the HTML content into Markdown.
     Also prints a warning (once per file) for any unhandled HTML tags.
     Returns a tuple of the Markdown text and a set of unhandled tag names.
     """
+
+    # Clean up malformed HTML, because there's some ugly stuff in the old HTML files.
+    html_text = clean_malformed_html(html_text)
+
     soup = BeautifulSoup(html_text, "html.parser")
+
+    # Remove the DOCTYPE declaration if it matches the specified HTML 4.0 Transitional DTD.
+    # <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd">
+    doctype = soup.find(
+        string=lambda text: isinstance(text, NavigableString)
+        and text.strip().startswith("<!DOCTYPE html")
+    )
+    if doctype and "-//W3C//DTD HTML 4.0 Transitional//EN" in doctype:
+        doctype.extract()
 
     # Remove entire <p> tags that contain WordPress-style comments.
     for comment in soup.find_all(string=lambda t: isinstance(t, Comment)):
@@ -341,8 +390,8 @@ def build_markdown(front_matter: dict, markdown_body: str) -> str:
 
 def process_images(
     markdown_text: str,
-    source_image_path: Optional[Path],
-    target_image_path: Optional[Path],
+    source_image_path: Path,
+    target_image_path: Path,
 ) -> None:
     """
     Process image links in the Markdown text. For each image link starting with '/assets/images/',
@@ -350,16 +399,44 @@ def process_images(
     If it exists and is not already in the target directory, copy it to the target directory.
     Otherwise, print a warning.
     """
+
+    target_image_path.mkdir(parents=True, exist_ok=True)
+
     pattern = r"!\[.*?\]\((/assets/images/[^)]+)\)"
     matches = re.findall(pattern, markdown_text)
+
+    matches_set = set([Path(m).name for m in matches])
+    image_locations = {}
+    for root, _, files in os.walk(source_image_path):
+        for file in files:
+            if file in matches_set:
+                file_path = Path(root) / file
+                if file in image_locations:
+                    print_warning(f"Warning: Duplicate image found: {file}")
+                image_locations[file] = file_path
+
+    print_info(f"\n\tFound {len(matches)} images in markdown file.")
+    print_info(f"\tFound {len(image_locations)} source/target image pairs to process.")
+
+    for img_name, src_path in image_locations.items():
+        tgt_path = target_image_path / img_name
+        if not tgt_path.exists():
+            try:
+                shutil.copy2(src_path, tgt_path)
+                print(f"\t\tCopied image: {img_name} to target directory.")
+            except Exception as e:
+                print_error(f"Error copying {img_name}: {e}")
+        else:
+            print_warning(f"\t\tImage {img_name} already in target directory.")
+
+    """
     for img_path in matches:
         filename = os.path.basename(img_path)
-        src_path = source_image_path / filename if source_image_path else None
-        tgt_path = target_image_path / filename if target_image_path else None
-        if src_path and src_path.exists():
-            if tgt_path and not tgt_path.exists():
+        src_path = source_image_path / filename
+        tgt_path = target_image_path / filename
+        if src_path.exists():
+            if not tgt_path.exists():
                 try:
-                    tgt_path.parent.mkdir(parents=True, exist_ok=True)
                     shutil.copy2(src_path, tgt_path)
                     print(f"\tCopied image: {filename} to target directory.")
                 except Exception as e:
@@ -367,6 +444,7 @@ def process_images(
             # else: image already exists in target directory; no action needed.
         else:
             print_warning(f"Warning: Image {filename} not found in source directory.")
+    """
 
 
 def process_file(
@@ -385,30 +463,76 @@ def process_file(
 
     # Handle header-img -> thumbnail processing
     input_filename = os.path.basename(input_path)
-    if "header-img" in front_matter:
-        img_filename = os.path.basename(front_matter["header-img"])
-        front_matter["thumbnail"] = f"/assets/images/thumbnails/{img_filename}"
-        del front_matter["header-img"]
-        if source_thumbnail_path and target_thumbnail_path:
+    if source_thumbnail_path and target_thumbnail_path:
+        if "header-img" in front_matter:
+            img_filename = os.path.basename(front_matter["header-img"])
+            front_matter["thumbnail"] = f"/assets/images/thumbnails/{img_filename}"
+            del front_matter["header-img"]
             src_thumb_path = source_thumbnail_path / img_filename
             tgt_thumb_path = target_thumbnail_path / img_filename
             if src_thumb_path.exists():
                 tgt_thumb_path.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(src_thumb_path, tgt_thumb_path)
-                print(
+                print_info(
                     f"\tCopied thumbnail: {img_filename} to target thumbnail directory."
                 )
             else:
                 print_warning(
-                    f"header-img {img_filename} not found for file {input_filename}"
+                    f"\t\theader-img {img_filename} not found for file {input_filename}"
                 )
-    else:
-        print_warning(f"no header-img field in file {input_filename}")
+        elif "meta" in front_matter and "_thumbnail_id" in front_matter["meta"]:
+            thumbnail_id = front_matter["meta"]["_thumbnail_id"]
+            if isinstance(thumbnail_id, str) and thumbnail_id.isdigit():
+                thumbnail_id = int(thumbnail_id)
+            input_filename = os.path.basename(input_path)
+            found_thumbnail = False
+
+            # Search for the thumbnail ID in the <img> tags
+            soup = BeautifulSoup(html_content, "html.parser")
+            for img in soup.find_all("img"):
+                img_class = img.get("class", [])
+                if any(f"wp-image-{thumbnail_id}" in cls for cls in img_class):
+                    src = img.get("src", "")
+                    img_filename = os.path.basename(src)
+                    front_matter["thumbnail"] = (
+                        f"/assets/images/thumbnails/{img_filename}"
+                    )
+                    found_thumbnail = True
+                    src_thumb_path = None
+                    for root, _, files in os.walk(source_thumbnail_path):
+                        if img_filename in files:
+                            src_thumb_path = Path(root) / img_filename
+                            break
+
+                    tgt_thumb_path = target_thumbnail_path / img_filename
+                    if src_thumb_path is not None:
+                        tgt_thumb_path.parent.mkdir(parents=True, exist_ok=True)
+                        shutil.copy2(src_thumb_path, tgt_thumb_path)
+                        print_info(
+                            f"\tCopied thumbnail: {img_filename} to target thumbnail directory."
+                        )
+                    else:
+                        print_error(
+                            f"\t\tThumbnail image {src_thumb_path} not found for file {input_filename}"
+                        )
+                    break
+
+            if not found_thumbnail:
+                print_error(
+                    f"Thumbnail with ID {thumbnail_id} not found in <img> tags for file {input_filename}"
+                )
+        else:
+            print_warning(
+                f"\tno header-img or meta->_thumbnail_id field in file {input_filename}"
+            )
+
+    if "meta" in front_matter:
+        del front_matter["meta"]
 
     markdown_body, unhandled_tags = convert_html_to_markdown(html_content)
     final_md = build_markdown(front_matter, markdown_body)
 
-    if source_image_path and target_image_path:
+    if source_image_path is not None and target_image_path is not None:
         process_images(final_md, source_image_path, target_image_path)
 
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
@@ -425,6 +549,7 @@ def process_directory(
     target_image_path: Optional[Path] = None,
     source_thumbnail_path: Optional[Path] = None,
     target_thumbnail_path: Optional[Path] = None,
+    name_filter: Optional[str] = None,
 ) -> None:
     input_dir_path = Path(input_dir)
     output_dir_path = Path(output_dir)
@@ -432,6 +557,10 @@ def process_directory(
     all_unhandled_tags = set()
     for file in input_dir_path.iterdir():
         if file.suffix.lower() == ".html":
+            if name_filter and name_filter not in file.name:
+                # print(f"Skipping {file.name} (does not match filter '{name_filter}')")
+                continue
+
             output_file = output_dir_path / (file.stem + ".md")
             unhandled_tags = process_file(
                 str(file),
@@ -483,6 +612,9 @@ def main() -> None:
     parser.add_argument(
         "--target-thumbnail-path", help="Target thumbnail image directory", default=None
     )
+    parser.add_argument(
+        "--name-filter", help="Filter by filename contains", default=None, type=str
+    )
     args = parser.parse_args()
 
     source_image_path: Optional[Path] = (
@@ -515,6 +647,7 @@ def main() -> None:
             target_image_path,
             source_thumbnail_path,
             target_thumbnail_path,
+            name_filter=args.name_filter,
         )
     elif input_path.is_file():
         if output_path.is_dir():

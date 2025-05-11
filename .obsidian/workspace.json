@@ -4,21 +4,21 @@
     "type": "split",
     "children": [
       {
-        "id": "5dbd82c9606afa45",
+        "id": "47a1c623262ad800",
         "type": "tabs",
         "children": [
           {
-            "id": "22e74f5debdd6dd0",
+            "id": "1790e3e406339beb",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "_posts/2019-05-24-descending-into-modular-neuroevolution-for-logic-circuits.md",
+                "file": "_posts/2018-06-05-squall-moan-small-clone-clone.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "2019-05-24-descending-into-modular-neuroevolution-for-logic-circuits"
+              "title": "2018-06-05-squall-moan-small-clone-clone"
             }
           }
         ]
@@ -168,12 +168,29 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "22e74f5debdd6dd0",
+  "active": "1790e3e406339beb",
   "lastOpenFiles": [
-    "_posts/2019-11-15-variational-autoencoders-in-haskell-or-how-i-learned-to-stop-worrying-and-turn-my-friends-into-dogs.md",
+    "_posts/2017-07-22-orange-ya-glad-first-chassis-design.md",
+    "assets/images/thumbnails/squallmoan-1024x682.jpg",
+    "assets/images/thumbnails/orangeyaglad.jpg",
+    "_posts/2018-06-05-squall-moan-small-clone-clone.md",
     "_posts/2020-03-03-top-down-program-synthesis-with-a-repl-and-reinforcement-learning.md",
+    "_posts/2017-07-22-servo-controller-box.md",
+    "assets/images/caster_wheel-300x284.jpg",
+    "assets/images/IMG_20190302_124624-225x300.jpg",
+    "assets/images/IMG_20190302_124032-1024x768.jpg",
+    "assets/images/jst-300x300.png",
+    "assets/images/bad_motors-300x300.jpg",
+    "assets/images/ball_caster.jpeg",
+    "assets/images/IMG_20190216_130940-768x1024.jpg",
+    "assets/images/tele_wire-300x201.jpg",
+    "assets/images/img_20161127_175851992.jpg?w=516&h=398",
+    "assets/images/full.jpg?w=462&h=491",
+    "assets/images/fe4ee3f1ce8e028da5bd4219c9dc7fc2216543e4",
+    "assets/images/img_20161216_102651178.jpg?w=504",
+    "_posts/2019-05-24-descending-into-modular-neuroevolution-for-logic-circuits.md",
+    "_posts/2019-11-15-variational-autoencoders-in-haskell-or-how-i-learned-to-stop-worrying-and-turn-my-friends-into-dogs.md",
     "_posts/2025-04-10-testing-equations.md",
-    "assets/images/full_withturb-1024x491.png",
     "test_posts/2017-07-25-manual-acking-with-the-nrf24l01.md",
     "_posts/2025-04-06-and_another.md",
     "test_posts/2018-09-03-the-egg-drop-puzzle-brute-force-dynamic-programming-and-markov-decision-processes.md",
@@ -192,20 +209,6 @@
     "test_posts/2018-12-24-solving-the-brachistochrone-and-a-cool-parallel-between-diversity-in-genetic-algorithms-and-simulated-annealing.md",
     "test_posts/2019-08-30-solving-numberphiles-cat-and-mouse-puzzle-using-the-ddpg-and-a2c-reinforcement-learning-algorithms.md",
     "test_posts/2017-08-10-low-power-arduino-experiments-part-1.md",
-    "test_posts/2019-09-13-making-sol-lewitts-colored-bands-interactive-with-d3-js.md",
-    "test_posts/2019-11-15-variational-autoencoders-in-haskell-or-how-i-learned-to-stop-worrying-and-turn-my-friends-into-dogs.md",
-    "test_posts/2018-07-24-word-clouds-for-slack.md",
-    "test_posts/2018-10-08-genetic-algorithms-part-2.md",
-    "test_posts/2018-05-31-the-knapsack-problem-discrete-optimization-week-2.md",
-    "assets/images/eggdrop_MDP_100floor_bestmoves_14-56-20.png",
-    "assets/images/eggdrop_MDP_100floor_v_14-56-20.png",
-    "assets/images/eggdrop_MDP_10floor_bestmoves_14-48-46.png",
-    "assets/images/eggdrop_MDP_10floor_v_14-50-36.png",
-    "assets/images/pi.png",
-    "assets/images/Rsa.png",
-    "assets/images/eggdrop_DP_100floor_13-12-56.png",
-    "assets/images/eggdrop_geo_1000.png",
-    "assets/images/eggdrop_geo_100.png",
     "assets/images/txrx_timing1.png?w=1200",
     "misc/convert_html_to_md.py",
     "misc",
