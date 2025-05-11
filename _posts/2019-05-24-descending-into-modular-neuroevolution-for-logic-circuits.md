@@ -6,7 +6,7 @@ thumbnail: /assets/images/thumbnails/blog_NE_GD_cover_small.png
 title: Descending into modular neuroevolution for logic circuits
 ---
 
-A while ago, I did [a post on beating OpenAI games using neuroevolution]({{ site.baseurl }}/2019-01-25-beating-openai-games-with-neuroevolution-agents-pretty-neat/) (NE). Go read that if you're interested, but here's the gist: a typical strategy for training an agent to beat those games is to have a neural network (NN) play the games a bunch, and then improve the weights of the NN using a reinforcement learning algorithm that uses [gradient descent](https://en.wikipedia.org/wiki/Gradient_descent) (GD), and it of course works pretty well.
+A while ago, I did [a post on beating OpenAI games using neuroevolution]({{ site.baseurl }}/2019-01-25-beating-openai-games-with-neuroevolution-agents-pretty-neat) (NE). Go read that if you're interested, but here's the gist: a typical strategy for training an agent to beat those games is to have a neural network (NN) play the games a bunch, and then improve the weights of the NN using a reinforcement learning algorithm that uses [gradient descent](https://en.wikipedia.org/wiki/Gradient_descent) (GD), and it of course works pretty well.
 
 However, an alternative to those methods is to use a gradient free method (which I'll call "GD-free"), like I did in that post: you try a bunch of random changes to the NN's weights, and only keep the resulting NNs that play the game well. That's the "evolutionary" aspect of it, and using methods like that to create NNs is often called ["neuroevolution"](https://en.wikipedia.org/wiki/Neuroevolution) (NE).
 

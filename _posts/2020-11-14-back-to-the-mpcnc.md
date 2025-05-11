@@ -8,7 +8,7 @@ title: Back to the MPCNC!
 
 DAMN it's been a while, for both the MPCNC and blog posts in general. But I live!
 
-Back on the horse. I made [a post about the MPCNC]({{ site.baseurl }}/2019-05-10-the-mostly-printed-cnc-mpcnc-mostly/) ages ago, after my friends and I first put it together. And we carved out a few fancy little things!
+Back on the horse. I made [a post about the MPCNC]({{ site.baseurl }}/2019-05-10-the-mostly-printed-cnc-mpcnc-mostly) ages ago, after my friends and I first put it together. And we carved out a few fancy little things!
 
 However, storm clouds were on the horizon. Our workflow was pretty bad: I think we used some crappy online service to make the tool paths from SVG files we found. We tried making something we actually wanted to using Onshape, and a plugin called Kiri:Moto, which kiiiind of worked, but was pretty clunky and limited. Lastly, when we tried to actually carve one of our designs, it was... macabre. This is where our monkey games took a hiatus, but it seemed at a glance like it was doing the design waaay faster and too large, causing the tool to slam into the side, cut through the wood too much and cause smoke, and make the stepper motors skip and make scary noises.
 

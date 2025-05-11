@@ -6,7 +6,7 @@ thumbnail: /assets/images/thumbnails/robo_blog_cover_small.png
 title: Training a real robot to play Puckworld with reinforcement learning
 ---
 
-After I [trained an agent to play "puckworld" using Q-learning]({{ site.baseurl }}/2018-11-04-training-an-rl-agent-to-play-puckworld-with-a-ddqn/), I thought "hey, maybe I should make a real robot that learns this. It can't be that hard, right?"
+After I [trained an agent to play "puckworld" using Q-learning]({{ site.baseurl }}/2018-11-04-training-an-rl-agent-to-play-puckworld-with-a-ddqn), I thought "hey, maybe I should make a real robot that learns this. It can't be that hard, right?"
 
 *Hooooooooo boy.* I did not appreciate how much harder problems in the physical world can be. Examples of amateurs doing Reinforcement Learning (RL) projects are all over the place on the internet, and robotics are certainly touted as one of the main applications for RL, but in my experience, I've only found a few examples of someone actually using RL to train a robot. Here's a (very abridged!) overview of my adventure getting a robot to learn to play a game called puckworld.
 
@@ -48,7 +48,7 @@ The Raspberry Pi that controlled it:
 
 ![](/assets/images/IMG_20181227_173156_1-225x300.jpg)
 
-I also used a MPU9250 IMU module to find the current angle (from its compass). To get distance data, I used three VL53L0X TOF modules (that I designed and 3D printed the mount for [in this post]({{ site.baseurl }}/2019-01-06-first-project-with-the-new-3d-printer-a-tof-sensor-mount/)):
+I also used a MPU9250 IMU module to find the current angle (from its compass). To get distance data, I used three VL53L0X TOF modules (that I designed and 3D printed the mount for [in this post]({{ site.baseurl }}/2019-01-06-first-project-with-the-new-3d-printer-a-tof-sensor-mount)):
 
 ![](/assets/images/IMG_20190305_153402-237x300.jpg)
 
@@ -94,7 +94,7 @@ The IR sensors went to an [ESP8266](https://en.wikipedia.org/wiki/ESP8266) (kind
 
 ##### The program
 
-There were a million moving parts and details, but I'll just mention the main pieces here. I have an <code>Agent</code> class that does the actual Q-learning, saves the experiences, has the Q-network, etc. I wrote about how [Agent does Q-learning here]({{ site.baseurl }}/2018-11-04-training-an-rl-agent-to-play-puckworld-with-a-ddqn/), so check it out if you're curious. It's basically standard Q-learning, using a NN with one hidden layer and experience replay, using pytorch with [Adam](https://arxiv.org/abs/1412.6980) to update the weights.
+There were a million moving parts and details, but I'll just mention the main pieces here. I have an <code>Agent</code> class that does the actual Q-learning, saves the experiences, has the Q-network, etc. I wrote about how [Agent does Q-learning here]({{ site.baseurl }}/2018-11-04-training-an-rl-agent-to-play-puckworld-with-a-ddqn), so check it out if you're curious. It's basically standard Q-learning, using a NN with one hidden layer and experience replay, using pytorch with [Adam](https://arxiv.org/abs/1412.6980) to update the weights.
 
 The <code>Agent</code> class takes another more specific agent class as an argument, for whatever game/environment I want it to learn, and creates a <code>self.agent</code> object of that class. It reads <code>self.agent.N_states</code> and <code>self.agent.N_actions</code> from the specific agent class to get an idea of the NN architecture it should create. To do the Q-learning episode, it just calls <code>self.agent.iterate()</code>, which every specific agent class needs to have (in addition to a few other functions like <code>resetStateValues()</code> and <code>initEpisode()</code>).
 

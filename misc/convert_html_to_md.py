@@ -237,7 +237,7 @@ def maybe_convert_declanoller_url_to_permalink(url: str) -> str:
         match = re.search(r"declanoller\.com/(\d{4}/\d{2}/\d{2}/.+)", url)
         if match:
             permalink = match.group(1).replace("/", "-", 3).rstrip("/")
-            return f"{{{{ site.baseurl }}}}/{permalink}/"
+            return f"{{{{ site.baseurl }}}}/{permalink}"
 
     return url
 

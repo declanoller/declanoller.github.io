@@ -7,7 +7,7 @@ title: The trials and tribulations of training a physical robot with reinforceme
   learning
 ---
 
-This is a follow up to my article ["Training a real robot to play Puckworld with reinforcement learning"]({{ site.baseurl }}/2019-03-27-training-a-real-robot-to-play-puckworld-with-reinforcement-learning/). In that one, to make it a little punchier, I showed the overview and end results of the project, but left out the insane number of little hurdles and decisions I had to figure out.
+This is a follow up to my article ["Training a real robot to play Puckworld with reinforcement learning"]({{ site.baseurl }}/2019-03-27-training-a-real-robot-to-play-puckworld-with-reinforcement-learning). In that one, to make it a little punchier, I showed the overview and end results of the project, but left out the insane number of little hurdles and decisions I had to figure out.
 
 So this article will be about those details instead, partly for me to justify the pain, but maybe more charitably to show that for any project with a neat (hopefully?) presentation, there's probably a harrowing saga of hair-pulling roadblocks behind it. Here, it's roughly in the order I encountered things. There are lots I'm leaving out too.
 
@@ -245,7 +245,7 @@ I grabbed them and never looked back. They're so much more solid and powerful. A
 
 ##### The miracle of 3D printing
 
-I'll get to them in a minute, but the wheels weren't actually the first thing I 3D printed for this project. I actually got a 3D printer during the course of this project, and since I knew I was using the TOF's by that point, [my first practical project was building some mounts]({{ site.baseurl }}/2019-01-06-first-project-with-the-new-3d-printer-a-tof-sensor-mount/) for them:
+I'll get to them in a minute, but the wheels weren't actually the first thing I 3D printed for this project. I actually got a 3D printer during the course of this project, and since I knew I was using the TOF's by that point, [my first practical project was building some mounts]({{ site.baseurl }}/2019-01-06-first-project-with-the-new-3d-printer-a-tof-sensor-mount) for them:
 
 ![](/assets/images/IMG_20190305_153402-237x300.jpg)
 

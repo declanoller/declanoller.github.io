@@ -6,7 +6,7 @@ thumbnail: /assets/images/thumbnails/puckworld_featimage.png
 title: Training an RL agent to play Puckworld with a DDQN
 ---
 
-Last time [I messed around with RL]({{ site.baseurl }}/2018-10-03-mountain-car-q-learning-and-experience-replay-with-pytorch/), I solved the classic Mountain Car problem using Q-learning and Experience Replay (ER).
+Last time [I messed around with RL]({{ site.baseurl }}/2018-10-03-mountain-car-q-learning-and-experience-replay-with-pytorch), I solved the classic Mountain Car problem using Q-learning and Experience Replay (ER).
 
 However, it was very basic in a lot of ways:
 
@@ -206,7 +206,7 @@ The specific agent is also responsible for its own graphics; for example, in the
 
 **The physics of it**
 
-In [my mountain car post]({{ site.baseurl }}/2018-10-03-mountain-car-q-learning-and-experience-replay-with-pytorch/), I talked a bit about how the physics could be important, because you don't want it automatically gaining energy, when that's the goal. Here, that's not so important, so I used a plain ol' Euler-Cromer integration. I'm sure there are lots of ways to do this, but for the environment, I gave it a decent amount of drag, which will slow it down and prevent it from going to fast. It also has an "acceleration" term that determines the impulse when it chooses an action.
+In [my mountain car post]({{ site.baseurl }}/2018-10-03-mountain-car-q-learning-and-experience-replay-with-pytorch), I talked a bit about how the physics could be important, because you don't want it automatically gaining energy, when that's the goal. Here, that's not so important, so I used a plain ol' Euler-Cromer integration. I'm sure there are lots of ways to do this, but for the environment, I gave it a decent amount of drag, which will slow it down and prevent it from going to fast. It also has an "acceleration" term that determines the impulse when it chooses an action.
 
 One thing I wondered about is, if you made the acceleration too high (and the drag not able to cancel it out), would it be able to learn? It seems like if it was basically uncontrollable, it shouldn't be able to. On the other hand, if there was no drag and it could speed up infinitely, and it still bounces off the walls bounce elastically, a great strategy could be to gain as much speed as possible, and bounce at a slight angle from the horizontal. This would make it essentially "scan" the whole space, and be sure to hit any target much more quickly than if it had to stop and change direction each time. Does it?
 

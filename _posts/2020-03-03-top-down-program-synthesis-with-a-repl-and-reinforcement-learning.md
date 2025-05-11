@@ -8,7 +8,7 @@ title: Top-down program synthesis with a REPL and reinforcement learning
 
 Program synthesis is cool!
 
-I came to it in a roundabout way, but I wish I had found it earlier. What immediately appealed to me when I started learning about machine learning were ideas of how to scale things up and build more complex structures from simpler ones. A while ago [I did a couple projects with Genetic Algorithms]({{ site.baseurl }}/2018-12-24-solving-the-brachistochrone-and-a-cool-parallel-between-diversity-in-genetic-algorithms-and-simulated-annealing/) (which can leverage modularity through schemas), before becoming interested in explicit modularity and [trying a couple things with neuroevolution]({{ site.baseurl }}/2019-05-24-descending-into-modular-neuroevolution-for-logic-circuits/). I've read a bunch of recent papers about creating and reusing modules (usually, smaller NNs suited for specific tasks, "mixture of experts" systems, etc). However, these felt like they were missing the mark for me.
+I came to it in a roundabout way, but I wish I had found it earlier. What immediately appealed to me when I started learning about machine learning were ideas of how to scale things up and build more complex structures from simpler ones. A while ago [I did a couple projects with Genetic Algorithms]({{ site.baseurl }}/2018-12-24-solving-the-brachistochrone-and-a-cool-parallel-between-diversity-in-genetic-algorithms-and-simulated-annealing) (which can leverage modularity through schemas), before becoming interested in explicit modularity and [trying a couple things with neuroevolution]({{ site.baseurl }}/2019-05-24-descending-into-modular-neuroevolution-for-logic-circuits). I've read a bunch of recent papers about creating and reusing modules (usually, smaller NNs suited for specific tasks, "mixture of experts" systems, etc). However, these felt like they were missing the mark for me.
 
 From my reading of the literature, Program Synthesis (PS) seems to be having a bit of a revival right now, where people are leveraging powerful, yet somewhat theory-light "general solver" methods like deep learning, reinforcement learning, etc, with the more theory-backed, math-based PS ideas (traditional PS has lots of overlap with areas like optimization, search methods, type systems, and constraint satisfaction problems). I've read a bunch of papers in this area that really struck a chord with me. Here are a few favorites:
 
@@ -249,7 +249,7 @@ Clearly, doing PT is huge. In fact, in the REPL paper, they even say they do "fi
 
 #### How necessary is doing PT with added noise?
 
-When I [did a project on VAEs in Haskell]({{ site.baseurl }}/2019-11-15-variational-autoencoders-in-haskell-or-how-i-learned-to-stop-worrying-and-turn-my-friends-into-dogs/), I briefly experimented with Denoising VAEs. I tried a similar thing here: when doing PT, instead of optimizing for inputs of perfect, clean canvases, I add random noise to the canvas in the form of removing a random mask of pixels, and adding another mask. Here's a typical example:
+When I [did a project on VAEs in Haskell]({{ site.baseurl }}/2019-11-15-variational-autoencoders-in-haskell-or-how-i-learned-to-stop-worrying-and-turn-my-friends-into-dogs), I briefly experimented with Denoising VAEs. I tried a similar thing here: when doing PT, instead of optimizing for inputs of perfect, clean canvases, I add random noise to the canvas in the form of removing a random mask of pixels, and adding another mask. Here's a typical example:
 
 ![](/assets/images/noise_ex.png)
 
