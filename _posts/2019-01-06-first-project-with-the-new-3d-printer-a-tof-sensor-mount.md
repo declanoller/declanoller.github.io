@@ -1,7 +1,7 @@
 ---
 date: 2019-01-06 21:17:08-05:00
 layout: post
-thumbnail: /assets/images/thumbnails/TOF_mount_sensor1-1024x707.png
+thumbnail: /assets/images/thumbnails/TOF_mount_sensor1.png
 title: 'First project with the new 3D printer: a TOF sensor mount'
 ---
 

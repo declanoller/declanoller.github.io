@@ -560,7 +560,8 @@ def process_thumbnail(
                     f"\tCopied thumbnail: {img_filename} to target thumbnail directory."
                 )
                 return None
-            elif thumbnail_name.startswith("https://www.declanoller.com/"):
+            # elif thumbnail_name.startswith("https://www.declanoller.com/"):
+            elif thumbnail_name.startswith("http"):
                 # In this case, we try to download it from the website, this once
                 try:
                     response = requests.get(thumbnail_name, stream=True)
@@ -580,7 +581,7 @@ def process_thumbnail(
                     )
                     print_error(f"\t\t{thumbnail_error}")
             else:
-                thumbnail_error = f"Thumbnail image {img_filename} not found for file {input_filename}"
+                thumbnail_error = f"Thumbnail image {img_filename} (ID {thumbnail_id} from export XML) not found for file {input_filename}"
                 print_warning(f"\t\t{thumbnail_error}")
         else:
             thumbnail_error = f"Thumbnail ID {thumbnail_id} not found in WordPress export XML for file {input_filename}"
@@ -609,6 +610,7 @@ def process_thumbnail(
                     print_info(
                         f"\tCopied thumbnail: {img_filename} to target thumbnail directory."
                     )
+                    return None
                 else:
                     thumbnail_error = f"Thumbnail image {src_thumb_path} not found for file {input_filename}"
                     print_error(f"\t\t{thumbnail_error}")
@@ -701,6 +703,7 @@ def process_directory(
             all_unhandled_tags.update(processed_file_info["unhandled_tags"])
             processed_files_summary[file.name] = processed_file_info
 
+    print_error("\nSummary of problems with thumbnails:\n")
     for file_name, info in processed_files_summary.items():
         if info["thumbnail_error"]:
             print_warning(f"\nFile: {file_name}:")

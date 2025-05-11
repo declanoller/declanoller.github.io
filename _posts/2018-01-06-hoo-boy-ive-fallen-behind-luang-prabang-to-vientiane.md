@@ -1,7 +1,7 @@
 ---
 date: 2018-01-06 18:02:46-05:00
 layout: post
-thumbnail: /assets/images/thumbnails/IMG_6124-1024x683.jpg
+thumbnail: /assets/images/thumbnails/IMG_6124.jpg
 title: 'Hoo boy, I''ve fallen behind: Luang Prabang to Vientiane'
 ---
 

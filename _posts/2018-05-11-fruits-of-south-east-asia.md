@@ -1,7 +1,7 @@
 ---
 date: 2018-05-11 16:15:17-04:00
 layout: post
-thumbnail: /assets/images/thumbnails/IMG_3787-1024x683.jpg
+thumbnail: /assets/images/thumbnails/IMG_3787.jpg
 title: Fruits of south east asia!
 ---
 

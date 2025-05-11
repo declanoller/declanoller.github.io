@@ -1,7 +1,7 @@
 ---
 date: 2018-07-12 15:43:46-04:00
 layout: post
-thumbnail: /assets/images/thumbnails/IMG_1860-683x1024.jpg
+thumbnail: /assets/images/thumbnails/IMG_1860.jpg
 title: Snackin my way across Viet-nom nom nom
 ---
 

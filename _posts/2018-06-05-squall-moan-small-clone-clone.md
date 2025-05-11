@@ -1,7 +1,7 @@
 ---
 date: 2018-06-05 20:19:28-04:00
 layout: post
-thumbnail: /assets/images/thumbnails/squallmoan-1024x682.jpg
+thumbnail: /assets/images/thumbnails/squallmoan.jpg
 title: 'Squall Moan: Small Clone clone'
 ---
 

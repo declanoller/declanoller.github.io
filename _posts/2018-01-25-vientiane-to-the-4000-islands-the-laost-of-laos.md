@@ -1,7 +1,7 @@
 ---
 date: 2018-01-25 02:59:02-05:00
 layout: post
-thumbnail: /assets/images/thumbnails/IMG_6989-1024x683.jpg
+thumbnail: /assets/images/thumbnails/IMG_6989.jpg
 title: Vientiane to the 4000 Islands, the La(o)st of Laos
 ---
 

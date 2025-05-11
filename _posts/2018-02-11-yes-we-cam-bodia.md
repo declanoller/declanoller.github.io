@@ -1,7 +1,7 @@
 ---
 date: 2018-02-11 15:47:51-05:00
 layout: post
-thumbnail: /assets/images/thumbnails/IMG_8079-1024x683.jpg
+thumbnail: /assets/images/thumbnails/IMG_8079.jpg
 title: Yes we Cam..bodia
 ---
 

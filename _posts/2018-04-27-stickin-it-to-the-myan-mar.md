@@ -1,7 +1,7 @@
 ---
 date: 2018-04-27 18:58:16-04:00
 layout: post
-thumbnail: /assets/images/thumbnails/IMG_0331-1024x683.jpg
+thumbnail: /assets/images/thumbnails/IMG_0331.jpg
 title: Stickin it to the Myan-mar
 ---
 
