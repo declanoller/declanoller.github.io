@@ -1,6 +1,7 @@
 ---
 date: 2018-07-20 14:01:57-04:00
 layout: post
+permalink: /2018/07/20/motion-detection-with-the-raspberry-pi-part-2/
 thumbnail: /assets/images/thumbnails/2018-07-01_14-41-57.642_0.jpg
 title: Motion detection with the Raspberry Pi, part 2
 ---
@@ -9,7 +10,7 @@ Hi hi!
 
 In this post, I'm really just going to concentrate on building the whole pipeline. It's going to be rife with inefficiencies, inaccuracies, and stuff I 100% plan on fixing, but I think it's good to get a working product, even if it's very flawed. Someone I once worked for told me that projects in the US gov't kind of work that way: there was high emphasis on getting a product out the door, even if it was hacky and awful (though hopefully not). I think that makes sense a lot of the time. It's probably more motivating to see a project that does *something* to completion, even if it's crappy, than a project that is partly carefully done, but still very incomplete. A crappy car is cooler than a really nice wheel. Also, it seems like iterative, smaller fixes are relatively easy.
 
-ANYWAY, that said, [last time I left off](http://declanoller.com/2018/06/25/motion-detection-with-the-raspberry-pi-part-1/), I said that the things that needed to be done were:
+ANYWAY, that said, [last time I left off]({{ site.baseurl }}/2018-06-25-motion-detection-with-the-raspberry-pi-part-1/), I said that the things that needed to be done were:
 
 - Fix the sending thing to do in parallel
 - Make monitoring program on other side that adds the files, etc to a CSV file to be analyzed with pandas

@@ -53,12 +53,20 @@ import xml.etree.ElementTree as ET
 import yaml
 from bs4 import BeautifulSoup, NavigableString, Comment, Doctype
 import requests
+import subprocess
 
 # Define Python keywords for code detection.
 PYTHON_KEYWORDS = ["def ", "import ", "class ", "print(", "in range("]
 WORDPRESS_EXPORT_MEDIA_XML_FILE = Path(
     "/home/declan/Documents/code/wordpress_site_export/wordpress_export_media.xml"
 )
+
+BASE_SITE_PATH = Path("/home/declan/Documents/code/declanoller.github.io")
+BASE_ASSETS_PATH = BASE_SITE_PATH / "assets"
+IMAGE_ASSETS_PATH = BASE_ASSETS_PATH / "images"
+VIDEO_ASSETS_PATH = BASE_ASSETS_PATH / "videos"
+IMAGE_ASSETS_PATH.mkdir(parents=True, exist_ok=True)
+VIDEO_ASSETS_PATH.mkdir(parents=True, exist_ok=True)
 
 
 def xml_to_dict(elem):
@@ -153,7 +161,7 @@ def parse_front_matter(text: str) -> Tuple[dict[str, Any], str]:
             print_error(f"\nError parsing YAML front matter: {e}")
             data = {}
         # Keep only the desired fields.
-        keys_to_keep = ["layout", "title", "date", "header-img", "meta"]
+        keys_to_keep = ["layout", "title", "date", "header-img", "meta", "permalink"]
         front_matter = {k: v for k, v in data.items() if k in keys_to_keep}
         # Force the layout to always be "post"
         front_matter["layout"] = "post"
@@ -211,6 +219,72 @@ def clean_malformed_html(html_text: str) -> str:
     # This step is light, since the earlier cleanup prevents the worst
     # return soup.prettify()
     return str(soup)
+
+
+def maybe_convert_declanoller_url_to_permalink(url: str) -> str:
+    """
+    Convert a URL containing 'declanoller.com' to a Jekyll permalink format.
+    """
+    if "declanoller.com" in url:
+        # Extract the part after the domain
+        match = re.search(r"declanoller\.com/(\d{4}/\d{2}/\d{2}/.+)", url)
+        if match:
+            permalink = match.group(1).replace("/", "-", 3).rstrip("/")
+            return f"{{{{ site.baseurl }}}}/{permalink}/"
+
+    return url
+
+
+def download_and_convert_video_to_gif(video_url: str) -> str:
+    """
+    Downloads a video from a URL, converts it to a GIF using ffmpeg, and returns the path to the GIF.
+
+    Args:
+        video_url (str): The URL of the video to download.
+        video_target_dir (str): The directory to save the downloaded video.
+        gif_target_dir (str): The directory to save the converted GIF.
+
+    Returns:
+        str: The path to the converted GIF.
+    """
+
+    # Download the video
+    video_filename = video_url.split("/")[-1]
+    video_path = VIDEO_ASSETS_PATH / video_filename
+
+    if video_path.exists():
+        print_info(f"\tVideo file {video_path} already exists; skipping download")
+    else:
+        print_info(f"\tDownloading video {video_url} ...")
+        response = requests.get(video_url, stream=True)
+        if response.status_code == 200:
+            with open(video_path, "wb") as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    f.write(chunk)
+        else:
+            raise Exception(f"Failed to download video from {video_url}")
+
+    # Convert the video to a GIF using ffmpeg
+    gif_filename = video_path.stem + ".gif"
+    gif_path = IMAGE_ASSETS_PATH / gif_filename
+
+    if gif_path.exists():
+        print_info(f"\tConverted gif {gif_path} already exists; skipping conversion")
+    else:
+        print_info(f"\tConverting {video_path} to gif...")
+        ffmpeg_command = [
+            "ffmpeg",
+            "-i",
+            str(video_path),
+            "-vf",
+            "fps=10,scale=320:-1:flags=lanczos",
+            "-c:v",
+            "gif",
+            str(gif_path),
+        ]
+        subprocess.run(ffmpeg_command, check=True)
+
+    return str(gif_path)
 
 
 def convert_html_to_markdown(html_text: str) -> Tuple[str, Set[str]]:
@@ -361,6 +435,7 @@ def convert_html_to_markdown(html_text: str) -> Tuple[str, Set[str]]:
     for a in soup.find_all("a"):
         href = a.get("href", "")
         link_text = a.text
+        href = maybe_convert_declanoller_url_to_permalink(href)
         md_link = f"[{link_text}]({href})"
         a.replace_with(NavigableString(md_link))
 
@@ -407,6 +482,22 @@ def convert_html_to_markdown(html_text: str) -> Tuple[str, Set[str]]:
         new_text = new_text.replace("\\textrm{min}", "\\min")
 
         p.replace_with(NavigableString(new_text))
+
+    # Process video blocks and convert them to GIFs
+    for video_tag in soup.find_all(string=re.compile(r"\[video.*?\[/video\]")):
+        video_match = re.search(r'mp4="([^"]+)"', video_tag)
+        if video_match:
+            video_url = video_match.group(1)
+            print_info(f"\n\tFound video URL: {video_url}")
+            try:
+                gif_path = download_and_convert_video_to_gif(
+                    video_url,
+                )
+                gif_filename = Path(gif_path).name
+                markdown_image = f"![](/assets/images/{gif_filename})\n\n"
+                video_tag.replace_with(NavigableString(markdown_image))
+            except Exception as e:
+                print_error(f"\n\t\tError processing video {video_url}: {e}")
 
     # Check for any remaining (unhandled) HTML tags (excluding common inline tags like <br>).
     unhandled_tags = {tag.name for tag in soup.find_all() if tag.name not in ["br"]}

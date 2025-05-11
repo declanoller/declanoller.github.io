@@ -1,6 +1,7 @@
 ---
 date: 2018-04-27 18:58:16-04:00
 layout: post
+permalink: /2018/04/27/stickin-it-to-the-myan-mar/
 thumbnail: /assets/images/thumbnails/IMG_0331.jpg
 title: Stickin it to the Myan-mar
 ---
@@ -147,7 +148,7 @@ Because it's kind of a bummer not being around friends on New Years Eve (right a
 
 Anyway, because I didn't really want to be there, I went back to my old hostel in Nyaung Oo after one night. Since a bunch of friends I had met there also didn't have plans for that night, we decided to throw our own party. It was tons of fun and had a really good vibe. The hostel owner joined in with us, and around midnight, when we were counting down, he shoved this *enormous* roman candle into my hands. I lit it as people were counting down and *SOMEHOW* managed to time it perfectly to start firing as the clock struck 12! I was only about 70% sure I had it facing the right way, so it was extra terrifying. I'll have to track down the video my friend April took... edit: found it!
 
-[video width="800" height="640" mp4="http://declanoller.com/wp-content/uploads/2018/04/rotated_fireworks.mp4"][/video]
+![](/assets/images/rotated_fireworks.gif)
 
 We ended up going to bed around 1 or 2, but that's because several of us decided to wake up for sunrise the next morning. What a hilarious but fun trainwreck that would turn out to be. First of all, it was cloudy and lightly raining (which we knew would probably happen), but we had all pinky promised to get up, which was extra hard because we had only gone to bed ~3 hours before. Nevertheless, we all got up and headed to the bike rental place we had before in the dark, around 5AM. Aaaaaand...it was closed. I don't know because of new year or the weather or what (definitely not the hour though, cause that was the normal time for people to rent bikes for sunrise), but it seemed hopeless. There was a taxi truck parked right out in front of the place though, and we noticed that it wasn't empty, but the driver was sleeping in it. Normally we wouldn't have woken someone, but we were desperate and also figured he'd probably be happy to charge us extra for the weird hour. So, we tapped on the window, he woke up immediately, and...we quickly realized that he spoke zero English. So we figured we were back to square one, until a Myanmar guy in a car pulled up and offered to help. He spoke enough English, and we managed to convey that we wanted to get to a certain temple by sunrise. The guy agreed, and we were off! It was kind of amazing that it actually worked out. We got there, the weather very foggy but not quite raining, and climbed the temple in very little light.
 

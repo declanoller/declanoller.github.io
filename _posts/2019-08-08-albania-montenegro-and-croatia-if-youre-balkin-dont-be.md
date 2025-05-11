@@ -1,6 +1,7 @@
 ---
 date: 2019-08-08 16:45:16-04:00
 layout: post
+permalink: /2019/08/08/albania-montenegro-and-croatia-if-youre-balkin-dont-be/
 thumbnail: /assets/images/thumbnails/IMG_20190801_130422.jpg
 title: 'Albania, Montenegro, and Croatia: if you''re balkin'', don''t be!'
 ---

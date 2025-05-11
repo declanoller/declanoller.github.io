@@ -1,6 +1,7 @@
 ---
 date: 2020-05-05 05:40:39-04:00
 layout: post
+permalink: /2020/05/05/an-interactive-arxiv-reference-graph/
 thumbnail: /assets/images/thumbnails/arxiv_feat.png
 title: An interactive arXiV reference graph
 ---

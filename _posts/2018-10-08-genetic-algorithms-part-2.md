@@ -1,11 +1,12 @@
 ---
 date: 2018-10-08 18:05:47-04:00
 layout: post
+permalink: /2018/10/08/genetic-algorithms-part-2/
 thumbnail: /assets/images/thumbnails/evolve_BoardUnconstrained__pop20__gen2000__N30__00-30-09.png
 title: Genetic Algorithms, part 2
 ---
 
-Last time, [in case you missed it, I left off with a laundry list of things](http://declanoller.com/2018/08/08/fun-with-genetic-algorithms-and-the-n-queens-problem/) I wanted to expand on with Genetic Algorithms (GA). Let's see which of those I can do this time!
+Last time, [in case you missed it, I left off with a laundry list of things]({{ site.baseurl }}/2018-08-08-fun-with-genetic-algorithms-and-the-n-queens-problem/) I wanted to expand on with Genetic Algorithms (GA). Let's see which of those I can do this time!
 
 This is pretty wordy and kind of dry, since I was just messing around and figuring stuff out, but I promise the next one will have some cool visuals.
 

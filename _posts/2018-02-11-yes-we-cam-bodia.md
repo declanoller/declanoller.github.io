@@ -1,6 +1,7 @@
 ---
 date: 2018-02-11 15:47:51-05:00
 layout: post
+permalink: /2018/02/11/yes-we-cam-bodia/
 thumbnail: /assets/images/thumbnails/IMG_8079.jpg
 title: Yes we Cam..bodia
 ---

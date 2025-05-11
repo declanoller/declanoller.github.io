@@ -1,6 +1,7 @@
 ---
 date: 2019-05-10 13:48:46-04:00
 layout: post
+permalink: /2019/05/10/the-mostly-printed-cnc-mpcnc-mostly/
 thumbnail: /assets/images/thumbnails/MPCNC_feat_small.png
 title: The Mostly Printed CNC (MPCNC), mostly
 ---
@@ -61,19 +62,19 @@ We used a spare RAMPS board Phil had to control it. We had to change the setting
 
 We hooked it up and first used Repetier to control it and make it move around. I expected we'd have to do a bunch of adjustments, but to be honest we just slowed down the speed a little and off it went!
 
-[video width="540" height="640" mp4="https://www.declanoller.com/wp-content/uploads/2019/05/moving_out.mp4" loop="true" autoplay="true"][/video]
+![](/assets/images/moving_out.gif)
 
 We first strapped a pencil to it, just to make sure it doing the right contours:
 
 ![](/assets/images/IMG_20190504_200806-934x1024.jpg)
 
-[video width="540" height="640" mp4="https://www.declanoller.com/wp-content/uploads/2019/05/drawing_out.mp4" loop="true" autoplay="true"][/video]
+![](/assets/images/drawing_out.gif)
 
 In case you do this, Repetier is actually in the Ubuntu repos (as "repetier-host"), but it wasn't working totally, because it's a much older version. Instead, I went on the Repetier website, where they have Linux versions for free that are the newest.
 
 The next thing was to try and cut a pattern! This is part we still have to figure out better, so here's our current workaround. We used [jscut](http://jscut.org/index.html) to turn an SVG file into gcode. I'm not going to look a free gift horse in the mouth, but the tool's use could be more clear. We loaded the gcode, and...!
 
-[video width="540" height="800" mp4="https://www.declanoller.com/wp-content/uploads/2019/05/dog_out.mp4" loop="true" autoplay="true"][/video]
+![](/assets/images/dog_out.gif)
 
 Ahhhhhhhhhh I swear I got a shiver the first time I saw it cutting something on its own.
 
@@ -96,7 +97,7 @@ One annoying aspect of jscut is that it seems to place the object way off center
 
 Anyway, one more cut:
 
-[video width="400" height="600" mp4="https://www.declanoller.com/wp-content/uploads/2019/05/horse_out.mp4" loop="true" autoplay="true"][/video]
+![](/assets/images/horse_out.gif)
 
 ![](/assets/images/IMG_20190504_213815-827x1024.jpg)
 

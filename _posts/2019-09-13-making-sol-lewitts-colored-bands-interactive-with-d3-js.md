@@ -1,13 +1,14 @@
 ---
 date: 2019-09-13 17:02:51-04:00
 layout: post
+permalink: /2019/09/13/making-sol-lewitts-colored-bands-interactive-with-d3-js/
 thumbnail: /assets/images/thumbnails/full_withturb.png
 title: Making Sol LeWitt's colored bands interactive with d3.js
 ---
 
 [Skip to the full page interactive version](https://www.declanoller.com/wp-content/uploads/2019/09/bands_1.html) if you don't want to read!
 
-[I made a post a while ago about recreating a Sol LeWitt piece using d3.js](https://www.declanoller.com/2019/06/21/programmatically-recreating-sol-lewitts-all-two-part-combinations-of-arcs-from-corners-and-sides-and-straight-not-straight-and-broken-lines-with-d3-js/), and making it interactive. I had a lot of fun doing that one, and it wasn't even my favorite of his stuff that I saw! So, I knew I'd be back.
+[I made a post a while ago about recreating a Sol LeWitt piece using d3.js]({{ site.baseurl }}/2019-06-21-programmatically-recreating-sol-lewitts-all-two-part-combinations-of-arcs-from-corners-and-sides-and-straight-not-straight-and-broken-lines-with-d3-js/), and making it interactive. I had a lot of fun doing that one, and it wasn't even my favorite of his stuff that I saw! So, I knew I'd be back.
 
 In some of his exhibits, he uses color in really great ways. The one I recreated previously didn't have a lot of color, so I wanted to do a really colorful one this time. It seemed like of the ones at MASS MoCA, the colorful ones could be divided into two categories: either *really* bold, primary and second colors, like:
 

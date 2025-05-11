@@ -1,12 +1,13 @@
 ---
 date: 2019-06-12 14:23:03-04:00
 layout: post
+permalink: /2019/06/12/the-trials-and-tribulations-of-training-a-physical-robot-with-reinforcement-learning/
 thumbnail: /assets/images/thumbnails/cover_pic_robo2_small.png
 title: The trials and tribulations of training a physical robot with reinforcement
   learning
 ---
 
-This is a follow up to my article ["Training a real robot to play Puckworld with reinforcement learning"](https://www.declanoller.com/2019/03/27/training-a-real-robot-to-play-puckworld-with-reinforcement-learning/). In that one, to make it a little punchier, I showed the overview and end results of the project, but left out the insane number of little hurdles and decisions I had to figure out.
+This is a follow up to my article ["Training a real robot to play Puckworld with reinforcement learning"]({{ site.baseurl }}/2019-03-27-training-a-real-robot-to-play-puckworld-with-reinforcement-learning/). In that one, to make it a little punchier, I showed the overview and end results of the project, but left out the insane number of little hurdles and decisions I had to figure out.
 
 So this article will be about those details instead, partly for me to justify the pain, but maybe more charitably to show that for any project with a neat (hopefully?) presentation, there's probably a harrowing saga of hair-pulling roadblocks behind it. Here, it's roughly in the order I encountered things. There are lots I'm leaving out too.
 
@@ -180,7 +181,7 @@ So I realized I'd either have to do lots of recharging batteries (no) or power i
 
 But you can probably see that it also can't just be anchored to the frame, because the robot has to turn, and that would cause it to tangle over long periods. So, I rigged a cheapo little (what I would later come to find was called) slip ring:
 
-[video width="480" height="360" mp4="https://www.declanoller.com/wp-content/uploads/2019/04/output_slipring-1.mp4"][/video]
+![](/assets/images/output_slipring-1.gif)
 
 It actually worked not completely terribly. But after a while, I was finding that I'd still come back to it after several hours and find that it hadn't let it rotate enough, the wire was all tangled up, and the robot was on one end, futilely trying to move in a Sisyphean hell. I don't know why it stopped working, but it seemed hard to get the right balance between having it tight enough that it made constant electrical contact, but loose enough to easily swivel.
 
@@ -244,7 +245,7 @@ I grabbed them and never looked back. They're so much more solid and powerful. A
 
 ##### The miracle of 3D printing
 
-I'll get to them in a minute, but the wheels weren't actually the first thing I 3D printed for this project. I actually got a 3D printer during the course of this project, and since I knew I was using the TOF's by that point, [my first practical project was building some mounts](https://www.declanoller.com/2019/01/06/first-project-with-the-new-3d-printer-a-tof-sensor-mount/) for them:
+I'll get to them in a minute, but the wheels weren't actually the first thing I 3D printed for this project. I actually got a 3D printer during the course of this project, and since I knew I was using the TOF's by that point, [my first practical project was building some mounts]({{ site.baseurl }}/2019-01-06-first-project-with-the-new-3d-printer-a-tof-sensor-mount/) for them:
 
 ![](/assets/images/IMG_20190305_153402-237x300.jpg)
 

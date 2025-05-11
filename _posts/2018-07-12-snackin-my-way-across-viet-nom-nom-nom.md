@@ -1,6 +1,7 @@
 ---
 date: 2018-07-12 15:43:46-04:00
 layout: post
+permalink: /2018/07/12/snackin-my-way-across-viet-nom-nom-nom/
 thumbnail: /assets/images/thumbnails/IMG_1860.jpg
 title: Snackin my way across Viet-nom nom nom
 ---
@@ -141,7 +142,7 @@ The bus was a sleeper bus that would get in at some absurd hour like 4AM, which 
 
 ![](/assets/images/IMG_2182-1024x683.jpg)
 
-At 5 or 6AM, Ben and I went searching for food places that were opening. Then we began to figure out our plan. Initially, I actually wanted to get my friends to do a trek, since I had recently had such a great time on them in [Myanmar](http://declanoller.com/2018/04/27/stickin-it-to-the-myan-mar/). I thought they'd really like seeing some village life and getting into the jungle if possible, but my internet searches hadn't turned up a *ton* in terms of trekking in Ha Giang. We talked to a few locals who said they could arrange it, but from what they showed us, it seemed more like a day hike in the woods, rather than staying in remote places, etc.
+At 5 or 6AM, Ben and I went searching for food places that were opening. Then we began to figure out our plan. Initially, I actually wanted to get my friends to do a trek, since I had recently had such a great time on them in [Myanmar]({{ site.baseurl }}/2018-04-27-stickin-it-to-the-myan-mar/). I thought they'd really like seeing some village life and getting into the jungle if possible, but my internet searches hadn't turned up a *ton* in terms of trekking in Ha Giang. We talked to a few locals who said they could arrange it, but from what they showed us, it seemed more like a day hike in the woods, rather than staying in remote places, etc.
 
 So, we decided to rent some scooters and do the loop instead, and holy hell, I'm glad the trek thing didn't work out. Pretty much immediately, we were confronted with insane views. Most of the loop is going up and down these massive valleys, often shrouded in fog.
 

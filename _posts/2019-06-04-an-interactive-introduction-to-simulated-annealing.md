@@ -1,6 +1,7 @@
 ---
 date: 2019-06-04 12:11:50-04:00
 layout: post
+permalink: /2019/06/04/an-interactive-introduction-to-simulated-annealing/
 thumbnail: /assets/images/thumbnails/sim_anneal_cover_small.png
 title: An interactive introduction to Simulated Annealing!
 ---
@@ -39,7 +40,7 @@ Here's a plot of $p$ for a few values of $T$, as a function of $E_{new} - E$:
 
 ![](/assets/images/T_curves.png)
 
-We'll come back to this, but here's an example you can try out yourself to get a feel for it. [In a previous article](https://www.declanoller.com/2018/12/24/solving-the-brachistochrone-and-a-cool-parallel-between-diversity-in-genetic-algorithms-and-simulated-annealing/), I solved the Brachistochrone problem with a genetic algorithm. Briefly, the Brachistochrone is the curve between two points such that if you released a bead from the higher point and it was constrained to that curve, with force of gravity on it, it would take the shortest time to reach the lower point (see the article for details).
+We'll come back to this, but here's an example you can try out yourself to get a feel for it. [In a previous article]({{ site.baseurl }}/2018-12-24-solving-the-brachistochrone-and-a-cool-parallel-between-diversity-in-genetic-algorithms-and-simulated-annealing/), I solved the Brachistochrone problem with a genetic algorithm. Briefly, the Brachistochrone is the curve between two points such that if you released a bead from the higher point and it was constrained to that curve, with force of gravity on it, it would take the shortest time to reach the lower point (see the article for details).
 
 Here's an interactive example of it. Try dragging the points around to make a bad initial solution, and then hit Run to try and solve it!
 

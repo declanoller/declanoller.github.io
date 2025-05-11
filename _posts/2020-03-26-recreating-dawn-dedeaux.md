@@ -1,11 +1,12 @@
 ---
 date: 2020-03-26 14:59:36-04:00
 layout: post
+permalink: /2020/03/26/recreating-dawn-dedeaux/
 thumbnail: /assets/images/thumbnails/euler_smeared-4.jpg
 title: Recreating Dawn DeDeaux
 ---
 
-I've done [several](https://www.declanoller.com/2019/09/13/making-sol-lewitts-colored-bands-interactive-with-d3-js/) little [projects](https://www.declanoller.com/2019/06/21/programmatically-recreating-sol-lewitts-all-two-part-combinations-of-arcs-from-corners-and-sides-and-straight-not-straight-and-broken-lines-with-d3-js/) previously about recreating art I saw at MASS MoCA, but they were Sol LeWitt pieces. His definitely stood out to me the most, but some other ones really caught my eye too.
+I've done [several]({{ site.baseurl }}/2019-09-13-making-sol-lewitts-colored-bands-interactive-with-d3-js/) little [projects]({{ site.baseurl }}/2019-06-21-programmatically-recreating-sol-lewitts-all-two-part-combinations-of-arcs-from-corners-and-sides-and-straight-not-straight-and-broken-lines-with-d3-js/) previously about recreating art I saw at MASS MoCA, but they were Sol LeWitt pieces. His definitely stood out to me the most, but some other ones really caught my eye too.
 
 One of them was the artist Dawn DeDeaux's "The Vanquished Series: G-Force #1 and #2". Here are a few pics I took:
 

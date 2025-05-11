@@ -1,6 +1,7 @@
 ---
 date: 2019-06-21 18:16:55-04:00
 layout: post
+permalink: /2019/06/21/programmatically-recreating-sol-lewitts-all-two-part-combinations-of-arcs-from-corners-and-sides-and-straight-not-straight-and-broken-lines-with-d3-js/
 thumbnail: /assets/images/thumbnails/SL_cover_small.png
 title: Programmatically recreating Sol LeWitt's "All two-part combinations of arcs
   from corners and sides, and straight, not straight and broken lines" with d3.js
