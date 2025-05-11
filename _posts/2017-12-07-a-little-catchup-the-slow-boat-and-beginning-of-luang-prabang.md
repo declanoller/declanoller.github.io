@@ -1,7 +1,7 @@
 ---
 date: 2017-12-07 23:34:13-05:00
 layout: post
-permalink: /2017/12/07/a-little-catchup-the-slow-boat-and-beginning-of-luang-prabang/
+permalink: 2017-12-07-a-little-catchup-the-slow-boat-and-beginning-of-luang-prabang
 thumbnail: /assets/images/thumbnails/IMG_5225.jpg
 title: 'A little catchup: the slow boat and beginning of Luang Prabang'
 ---

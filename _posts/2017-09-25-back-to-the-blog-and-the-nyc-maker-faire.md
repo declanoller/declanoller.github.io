@@ -1,7 +1,7 @@
 ---
 date: 2017-09-25 14:08:53-04:00
 layout: post
-permalink: /2017/09/25/back-to-the-blog-and-the-nyc-maker-faire/
+permalink: 2017-09-25-back-to-the-blog-and-the-nyc-maker-faire
 thumbnail: /assets/images/thumbnails/opilioneslarge.jpeg
 title: Back to the blog and the NYC Maker Faire
 ---

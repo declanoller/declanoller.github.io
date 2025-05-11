@@ -1,7 +1,7 @@
 ---
 date: 2017-07-25 16:54:28-04:00
 layout: post
-permalink: /2017/07/25/manual-acking-with-the-nrf24l01/
+permalink: 2017-07-25-manual-acking-with-the-nrf24l01
 thumbnail: /assets/images/thumbnails/img_20161127_175851992.jpg
 title: Manual ACKing with the nRF24L01
 ---

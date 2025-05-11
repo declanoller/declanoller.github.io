@@ -1,7 +1,7 @@
 ---
 date: 2018-10-03 02:59:39-04:00
 layout: post
-permalink: /2018/10/03/mountain-car-q-learning-and-experience-replay-with-pytorch/
+permalink: 2018-10-03-mountain-car-q-learning-and-experience-replay-with-pytorch
 thumbnail: /assets/images/thumbnails/TD0_coarse_13-27-00_ub3_x00.0_dt0.1_a0.98_alpha0.7_epsilon0.0_epsdecay1.0_lambda0.0_gamma1.0_Nd120_3000eps_VF.png
 title: Mountain car, Q-learning, and Experience Replay with Pytorch
 ---

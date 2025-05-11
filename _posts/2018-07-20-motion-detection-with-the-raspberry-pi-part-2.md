@@ -1,7 +1,7 @@
 ---
 date: 2018-07-20 14:01:57-04:00
 layout: post
-permalink: /2018/07/20/motion-detection-with-the-raspberry-pi-part-2/
+permalink: 2018-07-20-motion-detection-with-the-raspberry-pi-part-2
 thumbnail: /assets/images/thumbnails/2018-07-01_14-41-57.642_0.jpg
 title: Motion detection with the Raspberry Pi, part 2
 ---

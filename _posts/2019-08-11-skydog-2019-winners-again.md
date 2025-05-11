@@ -1,7 +1,7 @@
 ---
 date: 2019-08-11 21:21:01-04:00
 layout: post
-permalink: /2019/08/11/skydog-2019-winners-again/
+permalink: 2019-08-11-skydog-2019-winners-again
 thumbnail: /assets/images/thumbnails/IMG_20190810_121222_cover.jpg
 title: Skydog 2019, winners again!
 ---

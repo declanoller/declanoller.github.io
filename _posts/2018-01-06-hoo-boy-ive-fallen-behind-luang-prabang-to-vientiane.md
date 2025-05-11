@@ -1,7 +1,7 @@
 ---
 date: 2018-01-06 18:02:46-05:00
 layout: post
-permalink: /2018/01/06/hoo-boy-ive-fallen-behind-luang-prabang-to-vientiane/
+permalink: 2018-01-06-hoo-boy-ive-fallen-behind-luang-prabang-to-vientiane
 thumbnail: /assets/images/thumbnails/IMG_6124.jpg
 title: 'Hoo boy, I''ve fallen behind: Luang Prabang to Vientiane'
 ---

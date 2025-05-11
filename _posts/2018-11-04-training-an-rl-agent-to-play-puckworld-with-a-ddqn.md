@@ -1,7 +1,7 @@
 ---
 date: 2018-11-04 18:08:39-05:00
 layout: post
-permalink: /2018/11/04/training-an-rl-agent-to-play-puckworld-with-a-ddqn/
+permalink: 2018-11-04-training-an-rl-agent-to-play-puckworld-with-a-ddqn
 thumbnail: /assets/images/thumbnails/puckworld_featimage.png
 title: Training an RL agent to play Puckworld with a DDQN
 ---

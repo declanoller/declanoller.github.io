@@ -1,7 +1,7 @@
 ---
 date: 2019-01-25 18:03:56-05:00
 layout: post
-permalink: /2019/01/25/beating-openai-games-with-neuroevolution-agents-pretty-neat/
+permalink: 2019-01-25-beating-openai-games-with-neuroevolution-agents-pretty-neat
 thumbnail: /assets/images/thumbnails/featimg_NE1.png
 title: 'Beating OpenAI games with neuroevolution agents: pretty NEAT!'
 ---

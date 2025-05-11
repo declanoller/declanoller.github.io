@@ -1,7 +1,7 @@
 ---
 date: 2018-12-19 04:15:07-05:00
 layout: post
-permalink: /2018/12/19/animation-stand-from-design-to-build-with-onshape/
+permalink: 2018-12-19-animation-stand-from-design-to-build-with-onshape
 thumbnail: /assets/images/thumbnails/both.png
 title: 'Animation stand: from design to build with Onshape'
 ---

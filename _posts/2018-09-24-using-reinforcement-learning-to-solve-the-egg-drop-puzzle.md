@@ -1,7 +1,7 @@
 ---
 date: 2018-09-24 14:08:16-04:00
 layout: post
-permalink: /2018/09/24/using-reinforcement-learning-to-solve-the-egg-drop-puzzle/
+permalink: 2018-09-24-using-reinforcement-learning-to-solve-the-egg-drop-puzzle
 thumbnail: /assets/images/thumbnails/feat.png
 title: Using Reinforcement Learning to solve the Egg drop puzzle
 ---

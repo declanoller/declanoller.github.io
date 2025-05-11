@@ -165,6 +165,13 @@ def parse_front_matter(text: str) -> Tuple[dict[str, Any], str]:
         front_matter = {k: v for k, v in data.items() if k in keys_to_keep}
         # Force the layout to always be "post"
         front_matter["layout"] = "post"
+
+        # Convert to permalink style with dashes
+        front_matter["permalink"] = (
+            front_matter["permalink"].strip("/").replace("/", "-")
+            # front_matter["permalink"].replace("/", "-", 3).rstrip("/")
+        )
+
         text = text[match.end() :]
     return front_matter, text
 

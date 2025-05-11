@@ -1,7 +1,7 @@
 ---
 date: 2018-12-24 18:00:47-05:00
 layout: post
-permalink: /2018/12/24/solving-the-brachistochrone-and-a-cool-parallel-between-diversity-in-genetic-algorithms-and-simulated-annealing/
+permalink: 2018-12-24-solving-the-brachistochrone-and-a-cool-parallel-between-diversity-in-genetic-algorithms-and-simulated-annealing
 thumbnail: /assets/images/thumbnails/86.png
 title: Solving the Brachistochrone and a cool parallel between diversity in genetic
   algorithms and simulated annealing

@@ -1,7 +1,7 @@
 ---
 date: 2017-07-22 04:21:46-04:00
 layout: post
-permalink: /2017/07/22/servo-controller-box/
+permalink: 2017-07-22-servo-controller-box
 thumbnail: /assets/images/thumbnails/servobox.jpg
 title: Servo controller box
 ---

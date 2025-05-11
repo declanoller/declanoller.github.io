@@ -1,7 +1,7 @@
 ---
 date: 2019-05-24 14:05:27-04:00
 layout: post
-permalink: /2019/05/24/descending-into-modular-neuroevolution-for-logic-circuits/
+permalink: 2019-05-24-descending-into-modular-neuroevolution-for-logic-circuits
 thumbnail: /assets/images/thumbnails/blog_NE_GD_cover_small.png
 title: Descending into modular neuroevolution for logic circuits
 ---

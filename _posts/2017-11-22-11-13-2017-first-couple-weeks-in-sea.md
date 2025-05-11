@@ -1,7 +1,7 @@
 ---
 date: 2017-11-22 03:41:28-05:00
 layout: post
-permalink: /2017/11/22/11-13-2017-first-couple-weeks-in-sea/
+permalink: 2017-11-22-11-13-2017-first-couple-weeks-in-sea
 thumbnail: /assets/images/thumbnails/IMG_4223.jpg
 title: '11.13.2017: First couple weeks in SEA'
 ---

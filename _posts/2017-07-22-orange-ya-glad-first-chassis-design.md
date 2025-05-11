@@ -1,7 +1,7 @@
 ---
 date: 2017-07-22 03:10:39-04:00
 layout: post
-permalink: /2017/07/22/orange-ya-glad-first-chassis-design/
+permalink: 2017-07-22-orange-ya-glad-first-chassis-design
 thumbnail: /assets/images/thumbnails/orangeyaglad.jpg
 title: 'Orange Ya Glad: first chassis design'
 ---

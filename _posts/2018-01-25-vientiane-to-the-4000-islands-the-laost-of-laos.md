@@ -1,7 +1,7 @@
 ---
 date: 2018-01-25 02:59:02-05:00
 layout: post
-permalink: /2018/01/25/vientiane-to-the-4000-islands-the-laost-of-laos/
+permalink: 2018-01-25-vientiane-to-the-4000-islands-the-laost-of-laos
 thumbnail: /assets/images/thumbnails/IMG_6989.jpg
 title: Vientiane to the 4000 Islands, the La(o)st of Laos
 ---

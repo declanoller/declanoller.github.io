@@ -1,7 +1,7 @@
 ---
 date: 2020-01-13 18:05:12-05:00
 layout: post
-permalink: /2020/01/13/how-to-use-an-arduino-to-keep-a-crazy-pup-from-wrecking-the-house-while-youre-out/
+permalink: 2020-01-13-how-to-use-an-arduino-to-keep-a-crazy-pup-from-wrecking-the-house-while-youre-out
 thumbnail: /assets/images/thumbnails/dog_feeder_featimage.png
 title: How to use an Arduino to keep a crazy pup from wrecking the house while you're
   out

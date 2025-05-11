@@ -1,7 +1,7 @@
 ---
 date: 2018-06-05 20:19:28-04:00
 layout: post
-permalink: /2018/06/05/squall-moan-small-clone-clone/
+permalink: 2018-06-05-squall-moan-small-clone-clone
 thumbnail: /assets/images/thumbnails/squallmoan.jpg
 title: 'Squall Moan: Small Clone clone'
 ---

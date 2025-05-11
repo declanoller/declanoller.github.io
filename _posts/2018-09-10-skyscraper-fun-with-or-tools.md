@@ -1,7 +1,7 @@
 ---
 date: 2018-09-10 15:57:01-04:00
 layout: post
-permalink: /2018/09/10/skyscraper-fun-with-or-tools/
+permalink: 2018-09-10-skyscraper-fun-with-or-tools
 thumbnail: /assets/images/thumbnails/ss_hard_77.png
 title: Skyscraper fun with OR-Tools!
 ---

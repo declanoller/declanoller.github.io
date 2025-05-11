@@ -1,7 +1,7 @@
 ---
 date: 2019-09-13 17:02:51-04:00
 layout: post
-permalink: /2019/09/13/making-sol-lewitts-colored-bands-interactive-with-d3-js/
+permalink: 2019-09-13-making-sol-lewitts-colored-bands-interactive-with-d3-js
 thumbnail: /assets/images/thumbnails/full_withturb.png
 title: Making Sol LeWitt's colored bands interactive with d3.js
 ---

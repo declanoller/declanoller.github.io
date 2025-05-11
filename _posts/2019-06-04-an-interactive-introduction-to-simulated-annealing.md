@@ -1,7 +1,7 @@
 ---
 date: 2019-06-04 12:11:50-04:00
 layout: post
-permalink: /2019/06/04/an-interactive-introduction-to-simulated-annealing/
+permalink: 2019-06-04-an-interactive-introduction-to-simulated-annealing
 thumbnail: /assets/images/thumbnails/sim_anneal_cover_small.png
 title: An interactive introduction to Simulated Annealing!
 ---

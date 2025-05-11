@@ -1,7 +1,7 @@
 ---
 date: 2018-07-12 15:43:46-04:00
 layout: post
-permalink: /2018/07/12/snackin-my-way-across-viet-nom-nom-nom/
+permalink: 2018-07-12-snackin-my-way-across-viet-nom-nom-nom
 thumbnail: /assets/images/thumbnails/IMG_1860.jpg
 title: Snackin my way across Viet-nom nom nom
 ---

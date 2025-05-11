@@ -1,7 +1,7 @@
 ---
 date: 2018-09-17 17:04:32-04:00
 layout: post
-permalink: /2018/09/17/some-mathy-tesselating-stamp-art/
+permalink: 2018-09-17-some-mathy-tesselating-stamp-art
 thumbnail: /assets/images/thumbnails/hstripes_mod3_size15-1.png
 title: Some mathy tesselating stamp art!
 ---

@@ -1,7 +1,7 @@
 ---
 date: 2018-08-13 16:57:38-04:00
 layout: post
-permalink: /2018/08/13/rpi-camera-part-3-a-few-incremental-fixes/
+permalink: 2018-08-13-rpi-camera-part-3-a-few-incremental-fixes
 thumbnail: /assets/images/thumbnails/sliding_window1.png
 title: 'RPi camera, part 3: a few incremental fixes'
 ---

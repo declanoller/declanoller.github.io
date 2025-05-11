@@ -1,7 +1,7 @@
 ---
 date: 2018-05-11 16:15:17-04:00
 layout: post
-permalink: /2018/05/11/fruits-of-south-east-asia/
+permalink: 2018-05-11-fruits-of-south-east-asia
 thumbnail: /assets/images/thumbnails/IMG_3787.jpg
 title: Fruits of south east asia!
 ---

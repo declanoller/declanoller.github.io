@@ -1,7 +1,7 @@
 ---
 date: 2019-09-26 04:42:39-04:00
 layout: post
-permalink: /2019/09/26/a-fun-little-combinatorics-puzzle/
+permalink: 2019-09-26-a-fun-little-combinatorics-puzzle
 thumbnail: /assets/images/thumbnails/naive.png
 title: A fun little combinatorics puzzle
 ---

@@ -1,7 +1,7 @@
 ---
 date: 2019-01-06 21:17:08-05:00
 layout: post
-permalink: /2019/01/06/first-project-with-the-new-3d-printer-a-tof-sensor-mount/
+permalink: 2019-01-06-first-project-with-the-new-3d-printer-a-tof-sensor-mount
 thumbnail: /assets/images/thumbnails/TOF_mount_sensor1.png
 title: 'First project with the new 3D printer: a TOF sensor mount'
 ---
