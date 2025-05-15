@@ -1,16 +1,15 @@
 ---
 layout: page
-title: About
+title: About/contact
 permalink: /about/
 ---
-
-# About
 
 <div style="display: flex; gap: 1em; justify-content: center;">
   <img src="{{ site.baseurl }}/assets/images/me1.jpg" alt="Image 1" style="max-width: 300px; height: auto;" />
   <img src="{{ site.baseurl }}/assets/images/me2.jpg" alt="Image 2" style="max-width: 300px; height: auto;" />
   <img src="{{ site.baseurl }}/assets/images/me3.jpg" alt="Image 3" style="max-width: 300px; height: auto;" />
 </div>
+
 
 
 Hey there! My name's Declan. I like to learn stuff, make things, play music, code, and take some pictures.
