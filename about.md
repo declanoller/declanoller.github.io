@@ -5,9 +5,9 @@ permalink: /about/
 ---
 
 <div style="display: flex; gap: 1em; justify-content: center; align-items: flex-start;">
-  <img src="{{ site.baseurl }}/assets/images/me1.jpg" alt="Image 1" style="height: 300px; width: auto;" />
-  <img src="{{ site.baseurl }}/assets/images/me2.jpg" alt="Image 2" style="height: 300px; width: auto;" />
-  <img src="{{ site.baseurl }}/assets/images/me3.jpg" alt="Image 3" style="height: 300px; width: auto;" />
+  <img src="{{ site.baseurl }}/assets/images/me1.jpg" alt="Image 1" style="height: 200px; width: auto;" />
+  <img src="{{ site.baseurl }}/assets/images/me2.jpg" alt="Image 2" style="height: 200px; width: auto;" />
+  <img src="{{ site.baseurl }}/assets/images/me3.jpg" alt="Image 3" style="height: 200px; width: auto;" />
 </div>
 
 
@@ -18,9 +18,20 @@ I did my PhD in Physics at Brown University. Since 2020, I've been working at So
 
 Please poke around, and if you’d like to contact me about anything, please email me at (my first name)(my last name)^at^gmail^dot^com.
 
----
+## CV / Professional
 
-### Also, check out some of my friends' blogs! They do some very cool stuff:
+[A probably out of date resume]()
+
+[My github page](https://github.com/declanoller)
+
+[My google scholar](https://scholar.google.com/citations?user=JM0Au00AAAAJ&hl=en)
+
+[linkedin](https://www.linkedin.com/in/declan-oller/)
+
+
+## Other links
+
+Also, check out some of my friends' blogs! They do some very cool stuff:
 
 - [Ben](http://blog.benwiener.com)
 - [Phil](http://www.philipzucker.com/)
