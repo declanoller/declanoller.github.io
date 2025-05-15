@@ -22,9 +22,9 @@ Please poke around, and if you’d like to contact me about anything, please ema
 
 [A probably out of date resume]({{ site.baseurl }}/assets/misc/Declan_Oller_Resume.pdf)
 
-[My github page](https://github.com/declanoller)
+[github](https://github.com/declanoller)
 
-[My google scholar](https://scholar.google.com/citations?user=JM0Au00AAAAJ&hl=en)
+[google scholar](https://scholar.google.com/citations?user=JM0Au00AAAAJ&hl=en)
 
 [linkedin](https://www.linkedin.com/in/declan-oller/)
 
