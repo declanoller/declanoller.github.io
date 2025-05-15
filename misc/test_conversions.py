@@ -2,6 +2,7 @@ import pytest
 from convert_html_to_md import (
     a_tags_to_markdown,
     blockquote_to_markdown,
+    code_tags_to_markdown,
     convert_html_to_markdown,
     heading_tags_to_markdown,
     img_tags_to_markdown,
@@ -329,3 +330,20 @@ def test_remove_latexpage_br_in_paragraphs(html, expected):
 )
 def test_underline_span_to_h5_heading(html, expected):
     assert underline_span_to_h5_heading(html) == expected
+
+
+@pytest.mark.parametrize(
+    "html,expected",
+    [
+        ("<code>inline code</code>", "`inline code`"),
+        (
+            "And here's some cool <code>inline code</code> to process!",
+            "And here's some cool `inline code` to process!",
+        ),
+        ("<p><code>block</code> of code</p>", "<p>`block` of code</p>"),
+        ("<code>code</code> and <code>more code</code>", "`code` and `more code`"),
+        ("<p>Normal</p>", "<p>Normal</p>"),
+    ],
+)
+def test_code_tags_to_markdown(html, expected):
+    assert code_tags_to_markdown(html) == expected

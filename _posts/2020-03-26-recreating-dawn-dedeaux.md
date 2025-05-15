@@ -24,15 +24,15 @@ Let's look at a few close-ups I took:
 
 So we can see the main idea pretty easily: they were pixelated into little equal sized squares, and then smeared/exploded, such that they left trails behind them. The trails are different colors, so I took a guess that the trail color of each square was probably the mean color (however you define that, since color spaces are weird).
 
-Here's the progression of what I did! I just used [Pillow](https://pillow.readthedocs.io/en/stable/) (PIL) and numpy basically. The main idea is this: import the image with PIL, convert to a numpy array, calculate a bunch of <code>PixelBlock</code> namedtuples:
+Here's the progression of what I did! I just used [Pillow](https://pillow.readthedocs.io/en/stable/) (PIL) and numpy basically. The main idea is this: import the image with PIL, convert to a numpy array, calculate a bunch of `PixelBlock` namedtuples:
 
-<code>PixelBlock = namedtuple('PixelBlock', ['pixels', 'avg_color', 'block_corner', 'x', 'y', 'w', 'h', 'block_center_rel'])</code>
+`PixelBlock = namedtuple('PixelBlock', ['pixels', 'avg_color', 'block_corner', 'x', 'y', 'w', 'h', 'block_center_rel'])`
 
-Then, for each <code>PixelBlock</code>, plug its location (relative to the center of the image) into a vector field that will determine where it gets sent to. This gives the "final" location of that block. Then, chop that path up into many steps and overwrite the pixels of the image's numpy array with the constant mean color for that block. Finally, overwrite the pixels of the final location with the pixels of the original <code>PixelBlock</code>. There are a bunch of details, a few of which I'll mention but most of which I won't.
+Then, for each `PixelBlock`, plug its location (relative to the center of the image) into a vector field that will determine where it gets sent to. This gives the "final" location of that block. Then, chop that path up into many steps and overwrite the pixels of the image's numpy array with the constant mean color for that block. Finally, overwrite the pixels of the final location with the pixels of the original `PixelBlock`. There are a bunch of details, a few of which I'll mention but most of which I won't.
 
-Note that with this method, since you're necessary overwriting pixels/have some on top of others, you have to do them in a certain order: outside in. To do this, I just sort them by the norm of each <code>PixelBlock</code>'s <code>block_center_rel</code> attribute (i.e., the coordinates of that <code>PixelBlock</code>'s center, relative to the center of the image).
+Note that with this method, since you're necessary overwriting pixels/have some on top of others, you have to do them in a certain order: outside in. To do this, I just sort them by the norm of each `PixelBlock`'s `block_center_rel` attribute (i.e., the coordinates of that `PixelBlock`'s center, relative to the center of the image).
 
-I think we get pretty far with this off the bat! Here's an example of mangling dear Euler, along with its corresponding translation per <code>PixelBlock</code>:
+I think we get pretty far with this off the bat! Here's an example of mangling dear Euler, along with its corresponding translation per `PixelBlock`:
 
 - 
 - 
@@ -41,7 +41,7 @@ And one with much finer blocks:
 
 ![](/assets/images/euler_smeared_pos_1pt0_fixed.jpg)
 
-However, it's still missing a lot. One is that here I just used a translation vector field of the form $f(x, y) = x \hat{i} + y \hat{j}$, which is just sending "spreading" all the blocks out uniformly. Clearly, way more is going on in the originals. To fix this, I just added a "jitter" term to each, anp.random.randn(2). That definitely improves it a bunch:
+However, it's still missing a lot. One is that here I just used a translation vector field of the form $f(x, y) = x \hat{i} + y \hat{j}$, which is just sending "spreading" all the blocks out uniformly. Clearly, way more is going on in the originals. To fix this, I just added a "jitter" term to each, a `np.random.randn(2)`. That definitely improves it a bunch:
 
 - 
 - 

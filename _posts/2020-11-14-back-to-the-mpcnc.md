@@ -192,7 +192,7 @@ The other one was REAL nasty. It's honestly one of the harder to diagnose bugs I
 G2 I5.23282 J8.2320002 X8.4400242 Y2.0000284 Z48.992142
 ```
 
-aaaand it turns out there's a limit of ~53 characters or something, per gcode line. So despite that being a perfectly valid command otherwise (and indeed if you just remove a few digits from each number it works), it would break the program. Truly hard to figure out, because it would only ever be *slightly* over the limit when it was. Luckily, there was a built in <code>--precision</code> argument that lets you set that, but its default setting still made me pull my hair out for days.
+aaaand it turns out there's a limit of ~53 characters or something, per gcode line. So despite that being a perfectly valid command otherwise (and indeed if you just remove a few digits from each number it works), it would break the program. Truly hard to figure out, because it would only ever be *slightly* over the limit when it was. Luckily, there was a built in `--precision` argument that lets you set that, but its default setting still made me pull my hair out for days.
 
 ## Next steps
 

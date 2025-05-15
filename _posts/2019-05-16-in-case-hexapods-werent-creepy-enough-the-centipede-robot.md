@@ -78,9 +78,9 @@ I also put holes in the body so I could place screws to act as standoffs for the
 
 Now for the control code. I plan on trying different high level things with this (i.e., direct control, simpler control theory type things, and maybe even RL again), but here's the low level stuff so far.
 
-I organized it in a hierarchical class structure that's worked really well so far. Just to be clear, it's not hierarchical in the sense of inheritance. Anything running with it needs a <code>DriverBoard</code> object, which is how it communicates with the PCA board. When you use more than 16 servos, you need to create multiple of these objects with different I2C addresses.
+I organized it in a hierarchical class structure that's worked really well so far. Just to be clear, it's not hierarchical in the sense of inheritance. Anything running with it needs a `DriverBoard` object, which is how it communicates with the PCA board. When you use more than 16 servos, you need to create multiple of these objects with different I2C addresses.
 
-The most basic unit is the <code>Servo</code> class, which is passed a <code>DriverBoard</code> object and a board index (0-15). Using this, I can directly control a servo if I want. However, the next higher level class is <code>Leg</code>, which is also passed a <code>DriverBoard</code> object, a side (L or R, which side of the centipede it's on), and a <code>leg_index</code> (which runs 0-7). It then creates two <code>Servo</code> objects, one for the "hip" and one for the "ankle" I mentioned above, and assigns them the correct board index values based on its own <code>leg_index</code> (<code>2*leg_index</code> and <code>2*leg_index + 1</code>). Similar idea for <code>LegPair</code>, which creates two <code>Leg</code> objects (L and R).
+The most basic unit is the `Servo` class, which is passed a `DriverBoard` object and a board index (0-15). Using this, I can directly control a servo if I want. However, the next higher level class is `Leg`, which is also passed a `DriverBoard` object, a side (L or R, which side of the centipede it's on), and a `leg_index` (which runs 0-7). It then creates two `Servo` objects, one for the "hip" and one for the "ankle" I mentioned above, and assigns them the correct board index values based on its own `leg_index` (`2*leg_index` and `2*leg_index + 1`). Similar idea for `LegPair`, which creates two `Leg` objects (L and R).
 
 This allows me to pretty easily create a clean, understandable program at a high level. Here's an example:
 
@@ -111,19 +111,19 @@ What does this do?
 
 *Neato!*
 
-There's actually a bit more. The part that's actually making them move there is the <code>increment_ankles()</code> function. To explain this, we have to go back to the <code>Servo</code> class. The main thing the servos will be doing is moving cyclically. To control a servo's position, you send it a PWM signal of a certain duty cycle. So, to make it to oscillate around a point, I found the PWM that corresponds to that point, <code>mid_pwm</code>, and define a <code>pwm_amplitude</code> that determines how far it goes above and below that mid point in its cycle. Then, making it move cyclically is just a matter of doing something like:
+There's actually a bit more. The part that's actually making them move there is the `increment_ankles()` function. To explain this, we have to go back to the `Servo` class. The main thing the servos will be doing is moving cyclically. To control a servo's position, you send it a PWM signal of a certain duty cycle. So, to make it to oscillate around a point, I found the PWM that corresponds to that point, `mid_pwm`, and define a `pwm_amplitude` that determines how far it goes above and below that mid point in its cycle. Then, making it move cyclically is just a matter of doing something like:
 
 ```
 pwm = int(self.pwm_mid + pwm_amplitude*sin(self.phase + self.phase_offset))
 ```
 
-And controllingphasehowever you'd like. Here's where the fun stuff comes in. To get a single leg to move in a "walking" pattern like you'd expect, the hip and ankle servos can't be doing exactly the same movement. To see what I mean, imagine parametrizing an $x$ and $y$ with a time $t$ and the sine function, to make a circle. If you do $x(t) = y(t) = sin(\omega t)$, you'll get something like:
+And controlling `phase` however you'd like. Here's where the fun stuff comes in. To get a single leg to move in a "walking" pattern like you'd expect, the hip and ankle servos can't be doing exactly the same movement. To see what I mean, imagine parametrizing an $x$ and $y$ with a time $t$ and the sine function, to make a circle. If you do $x(t) = y(t) = sin(\omega t)$, you'll get something like:
 {{CODE_line_cycle}}
 
 Which obviously wouldn't make it walk. Rather, you have to give one of them a phase offset (like in the code above). To get a circle, $\pi/2$:
 {{CODE_circle_cycle}}
 
-So, each servo has a <code>phase_offset</code> variable. However, the really cool thing about the hierarchical setup is that it lets this be set coherently too! Each <code>Leg</code> object knows its <code>Servo</code> objects need a certain phase offset with respect to each other. However, each <code>Leg</code> also has a phase offset with respect to the other legs! So a high level phase offset is given to each <code>LegPair</code> object, and then every class assigns the appropriate offsets to its lower level objects.
+So, each servo has a `phase_offset` variable. However, the really cool thing about the hierarchical setup is that it lets this be set coherently too! Each `Leg` object knows its `Servo` objects need a certain phase offset with respect to each other. However, each `Leg` also has a phase offset with respect to the other legs! So a high level phase offset is given to each `LegPair` object, and then every class assigns the appropriate offsets to its lower level objects.
 
 The above bouncing up and down example was pretty simple, but to do something more complicated, like...
 

@@ -48,7 +48,7 @@ I added colors to the nodes to make it clear what's going on when it built the g
 
 I wouldn't be surprised if there's a better way to do this that I missed, but here's what I did to get a paper's references. There are two main ways. First, the majority of arXiv papers have their Latex sources uploaded. If it does, then I request the source files from archive, unzip them, and then parse the .bbl file they used, which is very easy to get the references from. However, many don't.
 
-For these, I had to do something a little janky. I use <code>pdftotext</code> to turn the paper PDF to a text file. This is harder than the one above, because while .bbl files are in a pretty standard format, different paper styles render their references in somewhat different ways. Here are just a couple examples:
+For these, I had to do something a little janky. I use `pdftotext` to turn the paper PDF to a text file. This is harder than the one above, because while .bbl files are in a pretty standard format, different paper styles render their references in somewhat different ways. Here are just a couple examples:
 
 ![](/assets/images/refs_1-1-1024x249.png)
 

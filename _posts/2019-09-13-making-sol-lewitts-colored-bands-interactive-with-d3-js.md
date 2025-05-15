@@ -57,7 +57,7 @@ function sine_bottom_stack(n, m){
 }
 ```
 
-(<code>n</code> is the number of layers, <code>m</code> is the number of points used to define each curve. I do <code>f_0 = 1.0/m</code> to make the frequency you actually see on the screen be independent of the number of points you use to make the curve.)
+(`n` is the number of layers, `m` is the number of points used to define each curve. I do `f_0 = 1.0/m` to make the frequency you actually see on the screen be independent of the number of points you use to make the curve.)
 
 ![](/assets/images/simple_sine_noturb-1024x491.png)
 
@@ -154,7 +154,7 @@ I also wanted to make it so the user could control how much it changes, but not 
 Another interesting aspect to this is that, due to how I'm updating $t_i$ and $f_{band_i}$ above, they'll act as random walkers: having average 0 change in value over infinity, but large fluctuations too.
 There's one last aspect to this, and it was actually a doozy and pretty interesting. If you notice, in his painting, they're not solid colors, and it gives this really interesting "mottled" effect. My friend Bobby said that he read one of the plaques at the museum and it talked about the process, something known as ["India washing"](https://en.wikipedia.org/wiki/Wash_(visual_arts)) where they paint in layers, doing things to them in between. I really wanted this effect, but wasn't sure how to do it. I thought d3.js might have some clever way of doing it, but I couldn't find it despite my best Google-fu. I knew that what I wanted had to involve some way of randomly changing the intensity of the color, with some specified correlation distance (so it would have that "patchy" look and not just be seen as a uniform dimmer color).
 
-I finally found a way, using a technique I didn't know about before: SVG filters. They're really interesting and I'll definitely be using them in the future, because they seem really powerful. Here, I'm using the <code>feTurbulence</code> filter, which uses [Perlin noise](https://en.wikipedia.org/wiki/Perlin_noise), to create the mottled look. By itself, it looks like this:
+I finally found a way, using a technique I didn't know about before: SVG filters. They're really interesting and I'll definitely be using them in the future, because they seem really powerful. Here, I'm using the `feTurbulence` filter, which uses [Perlin noise](https://en.wikipedia.org/wiki/Perlin_noise), to create the mottled look. By itself, it looks like this:
 
 ![](/assets/images/perlin_noise.png)
 

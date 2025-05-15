@@ -83,7 +83,7 @@ To be able to "package" the atom, the atom is stored as a json file. The simples
 }
 ```
 
-The really important part is the bottom, where it shows the function of the atom. The program knows to look for a single input, which it will call <code>a_0</code>, and then apply <code>tanh()</code> to it. The summing you typically expect for a node is expected to be handled external to the node/module.
+The really important part is the bottom, where it shows the function of the atom. The program knows to look for a single input, which it will call `a_0`, and then apply `tanh()` to it. The summing you typically expect for a node is expected to be handled external to the node/module.
 
 This functional form lets me do two cool things!
 

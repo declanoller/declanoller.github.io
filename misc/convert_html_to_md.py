@@ -591,6 +591,18 @@ def process_video_blocks_to_gif(html_text: str) -> str:
     return str(soup)
 
 
+def code_tags_to_markdown(html_text: str) -> str:
+    """
+    Convert <code> tags to Markdown inline code syntax using backticks.
+    """
+    soup = BeautifulSoup(html_text, "html.parser")
+    for code in soup.find_all("code"):
+        code_text = code.get_text()
+        md_code = f"`{code_text}`"
+        code.replace_with(NavigableString(md_code))
+    return str(soup)
+
+
 def special_text_replacements(html_text: str) -> str:
     """
     This function is a placeholder for any special text replacements.
@@ -710,7 +722,11 @@ def convert_html_to_markdown(html_text: str) -> Tuple[str, Set[str]]:
     # Convert <a> tags to Markdown hyperlink syntax.
     html_text = a_tags_to_markdown(html_text)
 
+    # Convert <code> tags to Markdown inline code syntax using backticks.
+    html_text = code_tags_to_markdown(html_text)
+
     # Convert <p> tags to Markdown, handling math expressions and replacements.
+    # Note! This one gets rid of the <p> tags!
     html_text = paragraphs_to_markdown(html_text)
 
     # Process video blocks and convert them to GIFs.
