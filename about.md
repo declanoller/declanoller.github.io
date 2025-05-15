@@ -20,7 +20,7 @@ Please poke around, and if you’d like to contact me about anything, please ema
 
 ## CV / Professional
 
-[A probably out of date resume]()
+[A probably out of date resume]({{ site.baseurl }}/assets/misc/Declan_Oller_Resume.pdf)
 
 [My github page](https://github.com/declanoller)
 
