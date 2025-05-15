@@ -4,10 +4,10 @@ title: About/contact
 permalink: /about/
 ---
 
-<div style="display: flex; gap: 1em; justify-content: center;">
-  <img src="{{ site.baseurl }}/assets/images/me1.jpg" alt="Image 1" style="max-width: 300px; height: auto;" />
-  <img src="{{ site.baseurl }}/assets/images/me2.jpg" alt="Image 2" style="max-width: 300px; height: auto;" />
-  <img src="{{ site.baseurl }}/assets/images/me3.jpg" alt="Image 3" style="max-width: 300px; height: auto;" />
+<div style="display: flex; gap: 1em; justify-content: center; align-items: flex-start;">
+  <img src="{{ site.baseurl }}/assets/images/me1.jpg" alt="Image 1" style="height: 300px; width: auto;" />
+  <img src="{{ site.baseurl }}/assets/images/me2.jpg" alt="Image 2" style="height: 300px; width: auto;" />
+  <img src="{{ site.baseurl }}/assets/images/me3.jpg" alt="Image 3" style="height: 300px; width: auto;" />
 </div>
 
 
