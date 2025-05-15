@@ -41,12 +41,10 @@ Anyway, on to the problem. My initial intention here was to implement it with ju
 
 So let's start with the DQN formulation. I should mention that since my network only has 1 hidden layer, I'm not sure it even qualifies for the "D" in DQN, but it's a more common acronym, so I'll use it.
 
-A very basic overview of DQN can be seen in the [now famous 2015 Deepmind paper, "Human-level control through deep reinforcement learning"](https://web.stanford.edu/class/psych209/Readings/MnihEtAlHassibis15NatureControlDeepRL.pdf). It's actually surprisingly readable and straightforward! (I wish typical physics papers made themselves this accessible.) The main idea is that we approximate the state-action value function, Q, with a neural network, and iteratively improve it to improve our agent's behavior. Here, $Q(s, a)$ can be read as "the value of taking action $a$ in state $s$". So, it itself is not the policy (i.e., what the agent should actually do), but getting the optimal action from an accurate $Q$ is easy, so often, we just solve for Q.
-
+A very basic overview of DQN can be seen in the[now famous 2015 Deepmind paper, "Human-level control through deep reinforcement learning"](https://web.stanford.edu/class/psych209/Readings/MnihEtAlHassibis15NatureControlDeepRL.pdf). It's actually surprisingly readable and straightforward! (I wish typical physics papers made themselves this accessible.) The main idea is that we approximate the state-action value function, Q, with a neural network, and iteratively improve it to improve our agent's behavior. Here, $Q(s, a)$ can be read as "the value of taking action $a$ in state $s$". So, it itself is not the policy (i.e., what the agent should actually do), but getting the optimal action from an accurate $Q$ is easy, so often, we just solve for Q.
 Two details. First, in the Deepmind paper, they have to do a bunch of stuff with convnets, because they're having it learn directly from the screen rather than giving it relevant coordinates of stuff in the game. In my opinion, this is obviously cool, but at the same time it doesn't seem like the novel part. I mean, people in 2015 knew about the power of convnets, so it really just feels like tacking on an extra hurdle for the RL, but not anything really new. So my point is, since I'm generating the environment myself anyway and I'm more interested in learning about RL than CNN's, my agent just gets the coordinates of the target, itself, and its own velocity (a 6-vector, since we're in 2D).
 
-The other detail is that intuitively, you might think that if the function the DQN is approximating is $Q(s, a)$, i.e., a function of two variables, you'd want to have as many inputs as you need to input $s$ and $a$ at the same time (so $6 + 4$) and one output, $Q(s, a)$. I think you *can* do this, but I guessed that it would make more sense to only have $s$ be the input, and have the values of $Q(s, a)$ be the output for different $a$ values, since $a$ is a discrete 4 options here. And luckily, they mention that they do that in the Deepmind paper! It makes a lot of sense, because we end up taking the argmax of $Q(s, a)$ over $a$ many times.
-
+The other detail is that intuitively, you might think that if the function the DQN is approximating is $Q(s, a)$, i.e., a function of two variables, you'd want to have as many inputs as you need to input $s$ and $a$ at the same time (so $6 + 4$) and one output, $Q(s, a)$. I think you*can*do this, but I guessed that it would make more sense to only have $s$ be the input, and have the values of $Q(s, a)$ be the output for different $a$ values, since $a$ is a discrete 4 options here. And luckily, they mention that they do that in the Deepmind paper! It makes a lot of sense, because we end up taking the argmax of $Q(s, a)$ over $a$ many times.
 The other question is about the architecture of the NN. If you take a look at the Deepmind paper, most of their NN is actually the CNN part. Only at the very end do they use fully connected (FC) layers:
 
 ![](/assets/images/deepmind_DQN.png)
@@ -89,21 +87,17 @@ Lawdy, I love watching it zip around like that.
 Anyway, since it's most of what I'll be showing, let me briefly talk about the "dashboard" above, which I use to see the behavior of the agent, as it learns. The upper left is the puck agent (red) and target (green). The upper middle is the x and y coordinates of the agent. The upper right is the current reward the agent is getting. You can see that it's mostly -0.01 except when it's at the target, where it gets 1.0. The middle is the x and y velocities. The middle right is the current action that the agent is selecting (the indices are a little messed up in the gif, but typically actions [0, 1, 2, 3] map to [U, D, L, R]). I made all these only show the last 1,000 values, for easier diagnosing.
 
 The bottom left is an approximation of the value function. The color is the value of the agent being at that position; you can see that darker red is closer to the target (more explicitly, since my $Q$ function is a NN, it's evaluating $Q(s)$ for each box, where $s$ is the state vector if the target was in the marked position, the agent was at the location being evaluated, and it had 0 velocity. It then takes the max of the output of $Q(s)$ to get the "best" value). The middle bottom is correspondingly the best action at a given position; it's essentially the argmax of the thing described for the bottom left. When it has learned well, you can see that it's forming a nice general strategy of "if the target is to the R of me, go R". It even forms nice diagonals if the agent is both to the left of and below the target, where it pretty cleanly divides whether it's better to first go right or up in that position. Lastly, the bottom right is the total cumulative reward, which is generally a good clue that the agent is learning, if it increases over time.
-
 Alright! All that said, there are lots of details I learned while doing this, which I'll say a bit about.
 
 ##### DDQN: probably not necessary for this problem
 
-Double DQNs (DDQN) were introduced [in yet another Deepmind paper](https://arxiv.org/abs/1509.06461). The idea is that, in the original DQN formulation, the TD target is $R + \gamma \max_a Q(s, a, \theta^-)$, where that max of $Q$ over actions $a$ is calculated using the target network (hence the $\theta^-$). Apparently, this tends to overestimate values, and they found that a fix was to split the max up into evaluating the function at the argmax (which would usually be equivalent to the max). However, they instead used the fixed network to get which action is the argmax, and then use the target network to actually evaluate the $Q$ value with this action. So, the TD target ends up being $R +  \gamma Q(s, \arg\max_a Q(s, a, \theta), \theta^-)$.
-
-If I'm honest, I get the idea but still don't have a great intuitive grasp of just why this works. It ends up feeling like the whole "extra frozen target network" thing was a tweak of the TD target to get stability/convergence, and then this DDQN solution is a *really similar* tweak to the TD target. So maybe I'll think about why this works more thoroughly sometime, because most of the stuff I see using it on the internet just say "it prevents overestimation of the $Q$ values" in a very handwavy way.
-
+Double DQNs (DDQN) were introduced[in yet another Deepmind paper](https://arxiv.org/abs/1509.06461). The idea is that, in the original DQN formulation, the TD target is $R + \gamma \max_a Q(s, a, \theta^-)$, where that max of $Q$ over actions $a$ is calculated using the target network (hence the $\theta^-$). Apparently, this tends to overestimate values, and they found that a fix was to split the max up into evaluating the function at the argmax (which would usually be equivalent to the max). However, they instead used the fixed network to get which action is the argmax, and then use the target network to actually evaluate the $Q$ value with this action. So, the TD target ends up being $R +  \gamma Q(s, \arg\max_a Q(s, a, \theta), \theta^-)$.
+If I'm honest, I get the idea but still don't have a great intuitive grasp of just why this works. It ends up feeling like the whole "extra frozen target network" thing was a tweak of the TD target to get stability/convergence, and then this DDQN solution is a*really similar*tweak to the TD target. So maybe I'll think about why this works more thoroughly sometime, because most of the stuff I see using it on the internet just say "it prevents overestimation of the $Q$ values" in a very handwavy way.
 Originally, I was using some minor method (unrelated to DDQN) that turned out to be messing stuff up, and using a DDQN seemed to mitigate the problem more than a vanilla DQN did. However, once I got rid of that, it turns out that DQN and DDQN perform very similarly in Puckworld:
 
 ![](/assets/images/allrewards_double_DQNFalse__double_DQNTrue__19-14-55.png)
 
 However, I've found that messing around with other parameters shows DDQN to behave slightly better than DQN in general. For example, the best target_update value (how often I update the target network from the current network) I've found is 500, and the best exploration policy is $\epsilon = 0.9, \epsilon_{decay} = 0.9995$, but if I use the very subpar values of target_update = 20 and $\epsilon = 0.9, \epsilon_{decay} = 0.9995$, you can see that they both do worse, but the DDQN trials have a higher mean and way less variance than the DQN:
-
 ![](/assets/images/allrewards_double_DQNFalse__double_DQNTrue__21-22-23.png)
 
 So, from now on, unless I say otherwise, I'll be using a DDQN.
@@ -135,17 +129,14 @@ You can see that they're not doing anything crazy, for some reason tanh is just 
 **Epsilon exploration**
 
 $\epsilon$-greediness means that, some small percent of the time, the agent will take a random action instead of the greedy one. People often either keep a small random element during the whole episode (maybe 5%), or they "anneal" by starting off with $\epsilon$ and "decaying" periodically by multiplying it with some other constant that's less than 1. This will make it decay to 0 over some time period. People also sometimes use an exponential plus a constant term, so they can have it decay to a finite, nonzero value, but I didn't do that here.
-
 I compared three strategies here: greedy, constant small exploration, and large initial epsilon, decaying to 0. Since this was run with $10^5$ steps, for the decaying one, $\epsilon \sim 0.006$ by step $10^4$, for example.
-
 ![](/assets/images/vary_epsilon_epsilon_decay_16-19-53.png)
 
 Not a lot of difference, given the variance and the general magnitude of them. It seems like the one thing that might be taken from this is that the "always a little random" strategy isn't great, as you might expect: after a long time, if its has learned correctly, that will just make getting to its target harder, decreasing the total reward.
 
 **Loss method**
 
-The classic "loss" method to use for stochastic gradient descent with the TD error is minimizing "L2", i.e., $(R + \gamma Q' - Q)^2$ (using some shorthand). This is good, because it punishes very wrong values much more and makes it so the loss is positive, whether the target is bigger than $Q$ or not. However, many people say that it can cause instability, because of the larger gradient due to large losses. Therefore, some people use the ["smooth L1 Huber loss"](https://pytorch.org/docs/stable/nn.html#torch.nn.SmoothL1Loss). I compared them here.
-
+The classic "loss" method to use for stochastic gradient descent with the TD error is minimizing "L2", i.e., $(R + \gamma Q' - Q)^2$ (using some shorthand). This is good, because it punishes very wrong values much more and makes it so the loss is positive, whether the target is bigger than $Q$ or not. However, many people say that it can cause instability, because of the larger gradient due to large losses. Therefore, some people use the["smooth L1 Huber loss"](https://pytorch.org/docs/stable/nn.html#torch.nn.SmoothL1Loss). I compared them here.
 ![](/assets/images/vary_loss_method_04-05-48.png)
 
 You can see that it does do a bit better, but... barely at all, given the variance.
@@ -153,7 +144,6 @@ You can see that it does do a bit better, but... barely at all, given the varian
 **NN hidden layer nodes**
 
 This one was interesting. I use a NN with one hidden layer for all of these, but I didn't have a great concept of how many hidden layer nodes (HLN) would be needed to learn the strategy. It seems like the main thing it has to do is evaluate the position of the agent ($p$) and target ($t$), and then just send it in the direction dictated by the sign of one minus the other. That is, if $t_x > p_x$, then the target is to the right of the agent, and the agent has to go right, and give a high number to the output node corresponding to R. It might seem like it would also have to have some sort of "comparator" when the target is, say, both to the right and above the agent, and it needs to decide which action is more pressing, but that's really done by the argmax: the outputs for U and R would both go high, but the more important one would go higher, and the argmax would choose them.
-
 So, if I had to guess, the NN could probably even do it with 2 HLN! The connections from the hidden layer to the output nodes let one HLN determine the L and R outputs (opposite signed weights), and the other node can handle U and D (same idea).
 
 So I knew that it could probably be done with a reaaally simple NN, but here are the results:
@@ -211,7 +201,6 @@ In [my mountain car post]({{ site.baseurl }}/2018-10-03-mountain-car-q-learning-
 One thing I wondered about is, if you made the acceleration too high (and the drag not able to cancel it out), would it be able to learn? It seems like if it was basically uncontrollable, it shouldn't be able to. On the other hand, if there was no drag and it could speed up infinitely, and it still bounces off the walls bounce elastically, a great strategy could be to gain as much speed as possible, and bounce at a slight angle from the horizontal. This would make it essentially "scan" the whole space, and be sure to hit any target much more quickly than if it had to stop and change direction each time. Does it?
 
 From $a = [0.1 - 10]$, you can see that having a higher $a$ basically just lets it get there faster, so it works better:
-
 ![](/assets/images/vary_a_01-41-56.png)
 
 However, for 100 and up, it apparently doesn't learn this "advanced" strategy:

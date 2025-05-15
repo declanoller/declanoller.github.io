@@ -40,7 +40,7 @@ Before getting to some of my results, I'll first go over 1) the task, 2) the alg
 
 ### Task
 
-Each episode, a "spec" (goal) 2D canvas is given. This is just a 2D matrix, with elements in $[0, 1]$ corresponding to pixel values, where 1 is "display". A primitive is defined as a 4-tuple of floats, corresponding to the coordinates of a rectangle to be created on a blank canvas; i.e., <code>primitive_rect(x, y, w, h)</code> returns a canvas with the elements that rectangle encompasses set to 1 and all other entries set to 0. There are also operations that take some number of input canvases and produce an output canvas; for example, the Union operation takes two input canvases and returns the canvas that's the union of them. The task is to figure out how to produce the spec in a top-down way, working backwards from the spec and figuring out how to create it using only primitives and operations on them. Eventually, all canvases must be created from a primitive.
+Each episode, a "spec" (goal) 2D canvas is given. This is just a 2D matrix, with elements in $[0, 1]$ corresponding to pixel values, where 1 is "display". A primitive is defined as a 4-tuple of floats, corresponding to the coordinates of a rectangle to be created on a blank canvas; i.e.,primitive_rect(x, y, w, h)returns a canvas with the elements that rectangle encompasses set to 1 and all other entries set to 0. There are also operations that take some number of input canvases and produce an output canvas; for example, the Union operation takes two input canvases and returns the canvas that's the union of them. The task is to figure out how to produce the spec in a top-down way, working backwards from the spec and figuring out how to create it using only primitives and operations on them. Eventually, all canvases must be created from a primitive.
 
 ![](/assets/images/rect_ex.png)
 
@@ -127,7 +127,7 @@ There's a bit of a trick I had to do here, specifically for PT $\pi_{canv 1}$. F
 
 ![](/assets/images/image.png)
 
-To get around this, when doing the PT for $\pi_{canv 1}$, I input the spec canv, and take the outputs, which define the sampling distribution for canvas 1. Then, I evaluate the log probability for each one of the primitives that make up the spec canvas. I select the one that gives the highest log probability as the "correct" one (even though there are multiple!), and maximize the log probability of *that* one. This is a bit weird: it means that we encourage the policy to be more like the valid answer that it was already closest to. Also, it means the policy "collapses" to one of several valid choices. Ideally, it'd be able to sample all the valid choices for the same input, but I think this would need an architecture more like a VAE, where it samples in the middle of the NN, and then has more NN layers after that, before the final output (where it has to sample again). I think this would let it be able to output very different valid canvases for the same input. Let me know if there's a better way!
+To get around this, when doing the PT for $\pi_{canv 1}$, I input the spec canv, and take the outputs, which define the sampling distribution for canvas 1. Then, I evaluate the log probability for each one of the primitives that make up the spec canvas. I select the one that gives the highest log probability as the "correct" one (even though there are multiple!), and maximize the log probability of*that*one. This is a bit weird: it means that we encourage the policy to be more like the valid answer that it was already closest to. Also, it means the policy "collapses" to one of several valid choices. Ideally, it'd be able to sample all the valid choices for the same input, but I think this would need an architecture more like a VAE, where it samples in the middle of the NN, and then has more NN layers after that, before the final output (where it has to sample again). I think this would let it be able to output very different valid canvases for the same input. Let me know if there's a better way!
 
 Anyway, doing PT is crucial for getting it to work. More on that below!
 
@@ -224,7 +224,7 @@ First, RL only, using the advantage:
 
 ![](/assets/images/rewards_RL-1.png)
 
-Well, it does *something*, but definitely worse than with PT. We can see that it's pretty unstable, since $R_{recon, union}$ collapses after seemingly improving for a while. However, note the x range of that plot: they only go up to ~10k, while the others go up to ~300k. This is because in the $R_{recon, rect}$ and $R_{recon, union}$ plots, there are only points for each use of that operation, so this is telling us that the union operation is getting used way less often. This is confirmed by another metric that's always plotted, the $N_{nodes}$ for each episode:
+Well, it does*something*, but definitely worse than with PT. We can see that it's pretty unstable, since $R_{recon, union}$ collapses after seemingly improving for a while. However, note the x range of that plot: they only go up to ~10k, while the others go up to ~300k. This is because in the $R_{recon, rect}$ and $R_{recon, union}$ plots, there are only points for each use of that operation, so this is telling us that the union operation is getting used way less often. This is confirmed by another metric that's always plotted, the $N_{nodes}$ for each episode:
 
 ![](/assets/images/N_nodes_only.png)
 
@@ -235,7 +235,7 @@ We can see that it quickly drops to $N_{nodes} = 1$, where it's trying to solve 
 - 
 - 
 
-Given that it's only using primitive rects, it's actually *not* doing that badly! In the randomly chosen examples above, the worst one gets an $R_{tot}$ of 0.62, and the others get from 0.75 to 0.90. This is a prime example of why PT really makes a difference: RL can get these not-terrible scores relatively easily, but it's a local minimum. It briefly tries with more nodes at the beginning (i.e., using the union operation more), but the canvas policies are bad enough that they don't produce helpful child canvases, and thus $\pi_{op}$ learns that doing union is always bad! This could possibly be solved by enforcing exploration by adding an entropy term to the loss, but I didn't bother with that here.
+Given that it's only using primitive rects, it's actually*not*doing that badly! In the randomly chosen examples above, the worst one gets an $R_{tot}$ of 0.62, and the others get from 0.75 to 0.90. This is a prime example of why PT really makes a difference: RL can get these not-terrible scores relatively easily, but it's a local minimum. It briefly tries with more nodes at the beginning (i.e., using the union operation more), but the canvas policies are bad enough that they don't produce helpful child canvases, and thus $\pi_{op}$ learns that doing union is always bad! This could possibly be solved by enforcing exploration by adding an entropy term to the loss, but I didn't bother with that here.
 
 Now, RL with no baseline subtracted:
 

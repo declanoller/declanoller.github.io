@@ -41,7 +41,7 @@ And one with much finer blocks:
 
 ![](/assets/images/euler_smeared_pos_1pt0_fixed.jpg)
 
-However, it's still missing a lot. One is that here I just used a translation vector field of the form $f(x, y) = x \hat{i} + y \hat{j}$, which is just sending "spreading" all the blocks out uniformly. Clearly, way more is going on in the originals. To fix this, I just added a "jitter" term to each, a <code>np.random.randn(2)</code>. That definitely improves it a bunch:
+However, it's still missing a lot. One is that here I just used a translation vector field of the form $f(x, y) = x \hat{i} + y \hat{j}$, which is just sending "spreading" all the blocks out uniformly. Clearly, way more is going on in the originals. To fix this, I just added a "jitter" term to each, anp.random.randn(2). That definitely improves it a bunch:
 
 - 
 - 

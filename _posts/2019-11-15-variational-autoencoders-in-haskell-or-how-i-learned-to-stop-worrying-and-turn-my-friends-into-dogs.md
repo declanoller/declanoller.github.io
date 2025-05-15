@@ -33,13 +33,11 @@ I'll first talk about VAEs, then show my results with them using my Haskell VAE,
 
 ##### Brief VAE background
 
-I won't go too into the details of VAEs here, as there are a million tutorials for it (I'll post a few at the bottom). The theory in the [Kingma and Welling paper](https://arxiv.org/abs/1312.6114) that kicked them off is very readable. Here's the basic idea, using the typical notation: we have some data, $X$, and we're going to pretend that a very simplified model, $p$, generated it stochastically. This model has a latent variable, $z$ (a vector), that can take on different values, with probabilities $p(z)$. For a given value of $z$ it generates, the model can then generate data points $x$ with probabilities $p(x | z)$. So if you know the correct distribution of $p(z)$ and $p(x | z)$, you can generate data that's similar to/includes $X$. Typically, people choose the dimension of the latent space to be smaller than dimension of the data, because this 1) compresses the data, and 2) hopefully forces the latent space to learn a representation of the data that captures core features of it.
-
+I won't go too into the details of VAEs here, as there are a million tutorials for it (I'll post a few at the bottom). The theory in the[Kingma and Welling paper](https://arxiv.org/abs/1312.6114)that kicked them off is very readable. Here's the basic idea, using the typical notation: we have some data, $X$, and we're going to pretend that a very simplified model, $p$, generated it stochastically. This model has a latent variable, $z$ (a vector), that can take on different values, with probabilities $p(z)$. For a given value of $z$ it generates, the model can then generate data points $x$ with probabilities $p(x | z)$. So if you know the correct distribution of $p(z)$ and $p(x | z)$, you can generate data that's similar to/includes $X$. Typically, people choose the dimension of the latent space to be smaller than dimension of the data, because this 1) compresses the data, and 2) hopefully forces the latent space to learn a representation of the data that captures core features of it.
 ![](/assets/images/vae_schematic.png)
 
 However, this is abstract. The actual goal is to approximate this model with an "encoder", $q(z | x)$, to translate data to that underlying latent space we're assuming, and a "decoder" $p(x | z)$, that lets you produce data from latent values. That's the general approach and could be done in several ways. However, a common way (and what we'll do here) is to approximate the model using a specific NN structure with two (or, depending on how you want to count it, three) main parts: 1) the encoder takes the input $x$ and transforms it into a vector of $[\mu, \sigma]$, 2) These are combined into the latent variable $z = \mu + \sigma \epsilon$, where $\epsilon = \mathcal{U}(0,1)$, and 3) the decoder takes this $z$ and produces the output $y$. More on the specifics of this below.
-
-The loss term (see the paper for why this makes sense) is a sum of the "reconstruction error", which is just the MSE between $x$ and $\hat{x}$, and the [Kullback-Leibler divergence](https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence) between the prior $p(z)$ (which is usually taken to be $\mathcal{N}(0, 1)$ with the dimensions of $z$), and the encoder distribution $q(z | x)$. The motivation for the reconstruction error term is simple (we want to reproduce what we put in), but the KL div error is a little more opaque. It comes out of the math, but why does it make sense, intuitively? For a handwavy explanation, it penalizes the latent points for having less overlap with the prior. While incentivizing this will certainly increase your reconstruction error, you might want this. Forcing all the points to cluster more closely together could cause the latent space between and around latent points more meaningful, since they correspond to actual data points.
+The loss term (see the paper for why this makes sense) is a sum of the "reconstruction error", which is just the MSE between $x$ and $\hat{x}$, and the[Kullback-Leibler divergence](https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence)between the prior $p(z)$ (which is usually taken to be $\mathcal{N}(0, 1)$ with the dimensions of $z$), and the encoder distribution $q(z | x)$. The motivation for the reconstruction error term is simple (we want to reproduce what we put in), but the KL div error is a little more opaque. It comes out of the math, but why does it make sense, intuitively? For a handwavy explanation, it penalizes the latent points for having less overlap with the prior. While incentivizing this will certainly increase your reconstruction error, you might want this. Forcing all the points to cluster more closely together could cause the latent space between and around latent points more meaningful, since they correspond to actual data points.
 
 ##### First experiment, MNIST digits
 
@@ -60,11 +58,8 @@ You can see that the clusters for the different digits are placed and overlap in
 (Note the log yscale. Even though the returns are really diminishing, there's actually a noticeable difference in the reconstructed images halfway through vs the final point.)
 
 However, I actually cheated here a bit. The loss is the sum of the reconstruction loss and the KL divergence loss. Typically, people use a coefficient I'm calling $\beta_{KL}$ for the KL divergence loss that determines how much to optimize it compared to the reconstruction loss. If you set it to 0, you've turned off this loss term and now you're only optimizing for reconstructing the input.
-
 If you only want to recreate the input, then I guess this is fine. However, take a look at the latent space above. You'll see that the coordinates for $z_1$ and $z_2$ are pretty large! That's because there was no KL div loss, and the NN learned to make them large, as that allowed differences between different clusters to be more easily seen (i.e., keeping 10 distinct sub-distributions separate is easier in a 30 x 30 square than a 1 x 1 square).
-
 This has the effect that the space in between the distributions for separate digits doesn't have much meaning; $p(z)$ is low there and therefore if you try to calculate $p(x | z)$ from that region, you shouldn't expect it to look much like something from our data. However, if we choose $\beta_{KL}$ carefully, this has the effect of penalizing differences from the prior distribution, which is usually taken to be a zero centered Gaussian. Practically, this "smooshes" all the points in towards the center. Here's what that looks like:
-
 ![](/assets/images/latent_space-1.png)
 
 Note the axes bounds, smaller with the pressure from the KL div. Now if we take a path from one point to another, we can see that it transitions much more smoothly:
@@ -98,9 +93,7 @@ Onwards! So at this point I basically just had to train it, pretty similarly to 
 ![](/assets/images/recon_default-2.png)
 
 A couple interesting things. First, you can tell that the poor lil guy is really trying; it matches outline shades and a few other facets pretty well. Second, it's clearly encoding them all as humans, even the dogs. The dataset is half dogs, half humans, but I guess it found that with this constraint, it could minimize the loss more by just catering to reconstructing humans. However, from my brief experiments with this, I think this might actually just be a fluke -- I recall other times when it seemed like it was reproducing dogs a lot better than humans (when I was using a larger $N_{latent}$).
-
 After experimenting a bit, I found that $N_{latent} \sim 50$ works pretty well for reconstruction:
-
 ![](/assets/images/recon_default-1.png)
 
 ![](/assets/images/recon_default-3.png)
@@ -120,15 +113,10 @@ I wonder if this is because in a much higher dimensional latent space, the "clou
 Anyway, now for the fun part! Like before, we can transform between points. Now that we've gotten humans and dogs to reconstruct relatively well, we should be able to input a human, find its latent point, then input a dog, get its latent point, and decode a line of points between them. This works for any dimensional latent space, since we're just adding two vectors. All I'm really doing is this:
 
 $x_{human} \rightarrow z_{human}$
-
 $x_{dog} \rightarrow z_{dog}$
-
 $z_{step} = (z_{dog} - z_{human})/N_{steps}$
-
 $z_j = z_{human} + j z_{step}$
-
 and for each $z_j$, getting $p(x | z_j)$.
-
 Let's take it for a spin on my friends! First, let's try with Will.
 
 ![](/assets/images/0-150x150.png)
@@ -190,7 +178,6 @@ Will:
 ![](/assets/images/transform_gif_will.gif)
 
 These were with $\beta_{KL} = 0$, so it's purely reconstructing them. I tested with increasing it, but didn't notice any difference in the interpolations, but did notice a decrease in reconstruction quality.
-
 I want to look into why it seemed to reconstruct my friends way worse than other images in the dataset. I didn't do much preprocessing to them, so it's possible they're different (like their dynamic range or something) than the dataset of faces I downloaded.
 
 ![](/assets/images/friend_recons.png)
@@ -220,7 +207,6 @@ So far I haven't mentioned the Haskell part of this much, because I figured figu
 Since we're essentially doing deep learning, everything is based on matrices. I based everything on the [hmatrix](http://hackage.haskell.org/package/hmatrix) package. It works pretty well for what I needed and has a lot of the same options numpy has, but its documentation is a bit weird. For example,  [this Hackage page](https://hackage.haskell.org/package/hmatrix-0.16.0.2/docs/Numeric-LinearAlgebra-HMatrix.html) has some of its functions, but then there's [this other page](http://dis.um.es/~alberto/hmatrix/hmatrix.html) that has lots of useful functions I couldn't find on the first page. In addition, there's just not a ton of support for it online if you run into something you're stuck with. In addition, I believe you're stuck with 2D matrices. There are obviously NN packages, but I wanted to do things by hand to really get my hands dirty.
 
 Structurally, the VAE is really two regular old NNs back to back, with a random sampling in between. However, while backpropagation is generally pretty easy to do with a typical feedforward NN, the sampling to calculate $z$ in between the two NNs make things a bit trickier.
-
 I created a bunch of hierarchical types to make the code a bit more clear. I define that in a module like so:
 
 ```

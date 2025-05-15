@@ -29,15 +29,11 @@ So, what can you do? Even though there was a higher spot than where you finished
 Free again! You can see the dot wobble a little at the second little valley, where it has to get lucky several times in a row to overcome it.
 
 So this is the basic idea: always accept a better solution offered, but also sometimes accept a worse one. The classic way of determining that "sometimes" is by calling your current height $E$, the height you're considering going to $E_{new}$, choosing a "temperature" $T$, and calculating:
-
 $$p = e^{\frac{E_{new} - E}{T}}$$
 
 which represents the probability that you'll take a step that takes you from $E$ to $E_{new}$. So for $E_{new} > E$, $p > 1$, for which we just take the step (so if you want to be precise, $p = \min(e^{\frac{E_{new} - E}{T}}, 1)$), but if $E_{new} < E$, we only take the step with probability $p < 1$.
-
-Note two significant aspects of this form: 1) it allows you to take worse steps, but the worse the step, the less likely you'll take that step, and 2) $T$ acts as a multiplier to this effect; if $T \gg 1$, then $p \sim e^0 = 1$, meaning *it will accept anything, even if* $E_{new}$ *is much worse*. Conversely, if $T \ll 1$, it makes any $E_{new} - E$ difference huge, and therefore it'll *only* accept steps that are better... which is exactly what we were doing originally! As you'll see below, this is really important.
-
+Note two significant aspects of this form: 1) it allows you to take worse steps, but the worse the step, the less likely you'll take that step, and 2) $T$ acts as a multiplier to this effect; if $T \gg 1$, then $p \sim e^0 = 1$, meaning*it will accept anything, even if*$E_{new}$*is much worse*. Conversely, if $T \ll 1$, it makes any $E_{new} - E$ difference huge, and therefore it'll*only*accept steps that are better... which is exactly what we were doing originally! As you'll see below, this is really important.
 Here's a plot of $p$ for a few values of $T$, as a function of $E_{new} - E$:
-
 ![](/assets/images/T_curves.png)
 
 We'll come back to this, but here's an example you can try out yourself to get a feel for it. [In a previous article]({{ site.baseurl }}/2018-12-24-solving-the-brachistochrone-and-a-cool-parallel-between-diversity-in-genetic-algorithms-and-simulated-annealing), I solved the Brachistochrone problem with a genetic algorithm. Briefly, the Brachistochrone is the curve between two points such that if you released a bead from the higher point and it was constrained to that curve, with force of gravity on it, it would take the shortest time to reach the lower point (see the article for details).
@@ -47,24 +43,19 @@ Here's an interactive example of it. Try dragging the points around to make a ba
 {{CODE_SA_brach}}
 
 You can also vary the temperature, mean amount of change, and height difference, and hit Run again to do more iterations with the same curve. You can see that if you use a high $T$, it accepts all sorts of solutions, and if you use a low $T$, it only improves, but often pretty slowly.
-
 So this method works pretty well for these two scenarios, but it still isn't the whole story. To see why, let's go back to the hill climbing story and make it slightly more complex. While before you took a step of constant size to the left or right, pretend now that not only is your direction random, the size of the step is too; your step size probability is a Gaussian distribution with a mean of 5.0.
 
 And again, the sneaky expert has thrown you a curveball: they've made the hill textured as hell, with lots of local maxima. Now, let's see what happens when you try it with the acceptance probability from above, $p$, and a low $T$ of 0.1 (causing you to mostly only take improving steps):
-
 {{CODE_texture_1}}
 
 You never get very far, because you'd have to leave the local maximum found very early.
 
 You could try using a large T instead, so you won't get stuck up there. Here it is with $T = 80$:
-
 {{CODE_texture_2}}
 
 Well... you explore more and get a better overall score, so that's good! ...but you also never more thoroughly explore the area around the true maximum, because you're so willing to accept anything. So the max height you reach is closer to, but not the true maximum.
 
-So you can probably see the problem and a potential solution. You need a large $T$ at the beginning to accept worse steps to get out of local maxima, but you need a small temperature at the end to only accept better probabilities. This is what simulated annealing does: start with a high $T$ and slowly lower it, so the willingness to accept worse steps, $p$, goes down over time. You can decrease it in all sorts of ways, but a simple one is doing: $T_{i+1} = \lambda T_i$, where you can choose some $\lambda < 1$ to make $T$ start at some value and decrease to ~0 by the time you want to be done.
-Let's try the nasty problem again with this! Here it is with $T_{init} = 80$, and $\lambda = (0.01)^{1/1600}$, because I'm doing 1600 iterations:
-
+So you can probably see the problem and a potential solution. You need a large $T$ at the beginning to accept worse steps to get out of local maxima, but you need a small temperature at the end to only accept better probabilities. This is what simulated annealing does: start with a high $T$ and slowly lower it, so the willingness to accept worse steps, $p$, goes down over time. You can decrease it in all sorts of ways, but a simple one is doing: $T_{i+1} = \lambda T_i$, where you can choose some $\lambda < 1$ to make $T$ start at some value and decrease to ~0 by the time you want to be done.Let's try the nasty problem again with this! Here it is with $T_{init} = 80$, and $\lambda = (0.01)^{1/1600}$, because I'm doing 1600 iterations:
 {{CODE_texture_3}}
 
 Ta da! You're the insane optimization expert now. And the cycle continues...
@@ -94,5 +85,4 @@ This illustrates the mechanism, but this example is too small to see the really 
 {{CODE_SA_ising_squares}}
 
 Like before, a very high $T$ never settles to a low energy, and a low $T$ settles, but to a sub-optimal point. You can see a characteristic of a lower energy state: because spins aligned have lower energy, and larger clusters of spins in the same direction have smaller boundaries compared to their size, the average cluster size increases for lower energy. So, try different temperature decay rates, and see how they affect the final cluster sizes!
-
 Welp, that's all for now! There's a lot more to simulated annealing I didn't even touch on, like restarts, tabu search, and other stuff... so maybe in a future post! Please let me know if you have any questions or feedback.

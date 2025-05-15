@@ -87,16 +87,13 @@ The really important part is the bottom, where it shows the function of the atom
 
 This functional form lets me do two cool things!
 
-First, it lets me compose a bunch of atoms via their functions. When the NN is created, the program starts at the graph input/bias nodes, and uses sympy to plug in the placeholder *symbols* $i_0, i_1, i_2, ... $ to the input nodes' atom functions. The outputs of these input nodes are then propagated to the atoms that they output to, where each atom is collecting a vector of inputs (which are all in terms of the original input $i_n$ symbols now). When it's one of *those* atoms' turns to propagate, it sums its input vector, and plugs it into *its'* atom function, and the process is repeated until the final output nodes of the NN have their values.
-
+First, it lets me compose a bunch of atoms via their functions. When the NN is created, the program starts at the graph input/bias nodes, and uses sympy to plug in the placeholder*symbols*$i_0, i_1, i_2, ... $ to the input nodes' atom functions. The outputs of these input nodes are then propagated to the atoms that they output to, where each atom is collecting a vector of inputs (which are all in terms of the original input $i_n$ symbols now). When it's one of*those*atoms' turns to propagate, it sums its input vector, and plugs it into*its'*atom function, and the process is repeated until the final output nodes of the NN have their values.
 This is a bit tricky, so here's a practical example. I'll build a simple NN for a NAND gate and show it and its corresponding total function (i.e., what the output node outputs as a function of the input to each input node, $i$) as it gets added to!
-
 Starting with the blank NN, we have the two input nodes (light green), the bias node (dark green, value always 1.0), and the output node (orange). The default output (with no inputs) of every (non-bias) node is 0, so the value of the orange output node is 0 no matter what inputs you give the NN.
 
 ![](/assets/images/NAND_atom_fn_0-1.png)
 
 A weight is added from 0 to 3. $i_0$ represents the input to node 0, and weight $w_{0,0,3,0}$ is the weight from node 0 to 3 (ignore the other 0's for now, we'll get to that later). Note that it's still linear at this point, because neither input or output nodes apply a nonlinearity to their summed inputs.
-
 ![](/assets/images/1-2.png)
 
 Next, a regular node (atom) is added in between nodes 0 and 3. It *does* apply tanh() to its summed inputs, but it's still only getting input from node 0.
@@ -104,7 +101,6 @@ Next, a regular node (atom) is added in between nodes 0 and 3. It *does* apply 
 ![](/assets/images/2-2.png)
 
 A weight is added from node 1 to 4, so it now gets inputs $i_0$ and $i_1$, with their corresponding weights.
-
 ![](/assets/images/3-1.png)
 
 Lastly, the bias node is added. Note that in the function, its value is 1.0, because it doesn't take inputs, it just acts as a constant.
@@ -140,14 +136,12 @@ To illustrate this, let's insert the NAND atom from above, and look at the resul
 
 Note that, because it was inserted as an atom here, although it internally has weights, they're represented as their numerical values, whereas the weights outside the atom are still variables. This means that when I run gradient descent, it only affects the weights outside atoms! You could certainly accomplish this by instead carefully masking the weights and choosing only the non-atom ones to be updated, but this works really nicely.
 
-So, how well does it actually work? Well... let's just say that this part was less of a success. However, it was really a first stab at it, so there are lots of things to try. What I tried doing was the following. The mutation that adds an atom can now add either a simple node, *or* a "complex atom", meaning one that has been saved previously (in a directory that it looks in), with some probability, $p_{complex atom add}$.
-
+So, how well does it actually work? Well... let's just say that this part was less of a success. However, it was really a first stab at it, so there are lots of things to try. What I tried doing was the following. The mutation that adds an atom can now add either a simple node,*or*a "complex atom", meaning one that has been saved previously (in a directory that it looks in), with some probability, $p_{complex atom add}$.
 The perfect example to try it on is a MUX gate, which basically has two main inputs, and also a third input that determines which of the two main inputs to use as the output. It's perfect for this because it can be constructed entirely out of NAND gates:
 
 ![](/assets/images/mux.png)
 
 So if you crank up this $p_{complex atom add}$, it will insert them...
-
 ![](/assets/images/bestNN_LogicAgentMux_24-05-2019_08-22-26.png)
 
 ...but not really effectively, and it makes a horrible franken-network. The FF never gets really good, despite what hyperparameters I use. In fact, the problem is still simple enough that if I just have it build it without these NAND atoms, it still gets it:
@@ -207,7 +201,6 @@ Second, the GD method needs a bunch of training/test samples (I typically used 3
 I briefly mentioned above that the NN's produced are often far from the simplest they could be for the problem (for example, compare the final NAND gate found in that first movie, vs the one I constructed by hand as an example in the modularity section). Two of the main hyperparameters in this problem are the probability that you add a node/atom, and the probability that you add a weight between existing nodes/atoms, every generation. From running a bunch of these, it seems like in general, larger NNs are more flexible, which I think makes intuitive sense. Conversely, the configuration of the nodes/weights for the theoretically simplest NN that can solve a problem has to be a lot more exact. So if you want to solve a problem like finding a NAND gate quickly, one strategy would be to just quickly add as many nodes and weights as you can. And conversely, to get a simpler NN, you should decrease these probabilities, but be prepared to wait a long time for it to try more options.
 
 This is indeed what I saw. I tried doing the NAND gate for $p_{atom add} = 0.8, p_{weight add} = 0.6$ and $p_{atom add} = 0.2, p_{weight add} = 0.8$, and here were the results.
-
 The histogram of runtimes, more and less aggressive add:
 
 ![](/assets/images/hist_21-05-2019_14-27-11-1.png)
@@ -233,7 +226,6 @@ There's even redundancy with the simpler one, but the aggressive one is really i
 If you want to be a little loose with analogies, I think this is similar to simulated annealing. If you included some regularization so that NN's paid a cost for being more complex, then this would correspond to them reaching a lower final energy state if you make them take longer to reach it. To make it a little more concrete, I might actually experiment with giving it something analogous simulated annealing's temperature: maybe I'll try making the add/remove mutation rate very high at first, and then slowly lower it over the generations.
 
 This effect is especially important for the GD-free method, because there it has to figure out the magnitude of the weights too; it's possible that a NN already has the perfect topology but the weights just need a few more generations to mutate. This is reflected in the values of the probabilities I've seen used in the literature (for GD-free methods): $p_{add node} = 0.0005$, $p_{add weight} = 0.09$, $p_{change weight} = 0.98$, $p_{remove weight} = 0.05$. So you can see that it's almost always changing weights, but adding nodes/weights is a really rare thing.
-
 On the other hand, for the GD method, I'm still a little confused. I definitely have evidence suggesting that the slower you make it change the topology, the simpler NN's you end up with. However, why exactly? If we assume (and I have good evidence for this) that it doesn't have the same problem the GD-free method does, with having a NN with correct topology but incorrect weights (because it seems to successfully train the weights quickly when it has the topology available), then why wouldn't you want to be adding as much as possible? A NN can *only* add nodes/weights, so if it does neither in a turn, it's kind of a wasted generation for it. One possible reason I can think of is that you probably do want to avoid adding *both* a weight and node in the same generation, because one of them alone may have solved it, but the other made it harder to.
 
 ##### What learning rate to use? How many training examples?

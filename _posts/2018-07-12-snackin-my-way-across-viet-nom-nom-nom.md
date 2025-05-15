@@ -93,7 +93,6 @@ But, the view of Ha Long Bay at sunset was worth it!
 ![](/assets/images/IMG_1547-1024x683.jpg)
 
 The next day we took one of the Ha Long Bay tours. There are pretty fancy ones that cost ~$100 or more, where you sleep on the boats, but I had been told that it wasn't totally necessary, you'd probably get your fill after a day one. So we paid $20 for a whole day thing, which turned out to be a pretty sweet deal. We got a massive meal cooked for lunch, they brought us kayaking, around the bay, to a snorkeling spot (though pretty much no one did because the water was cold), and more. To be honest, the main highlight was just being out on this cool junk type boat, looking at the cool karsts popping out of the water and other boats.
-
 ![](/assets/images/IMG_1559-1024x683.jpg)
 
 There were a few "boat villages", where it seemed like they moored them together and people lived (memories of the Gyptians in the Golden Compass!):

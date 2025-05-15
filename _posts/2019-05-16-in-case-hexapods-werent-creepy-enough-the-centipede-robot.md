@@ -117,12 +117,10 @@ There's actually a bit more. The part that's actually making them move there is 
 pwm = int(self.pwm_mid + pwm_amplitude*sin(self.phase + self.phase_offset))
 ```
 
-And controlling <code>phase</code> however you'd like. Here's where the fun stuff comes in. To get a single leg to move in a "walking" pattern like you'd expect, the hip and ankle servos can't be doing exactly the same movement. To see what I mean, imagine parametrizing an $x$ and $y$ with a time $t$ and the sine function, to make a circle. If you do $x(t) = y(t) = sin(\omega t)$, you'll get something like:
-
+And controllingphasehowever you'd like. Here's where the fun stuff comes in. To get a single leg to move in a "walking" pattern like you'd expect, the hip and ankle servos can't be doing exactly the same movement. To see what I mean, imagine parametrizing an $x$ and $y$ with a time $t$ and the sine function, to make a circle. If you do $x(t) = y(t) = sin(\omega t)$, you'll get something like:
 {{CODE_line_cycle}}
 
 Which obviously wouldn't make it walk. Rather, you have to give one of them a phase offset (like in the code above). To get a circle, $\pi/2$:
-
 {{CODE_circle_cycle}}
 
 So, each servo has a <code>phase_offset</code> variable. However, the really cool thing about the hierarchical setup is that it lets this be set coherently too! Each <code>Leg</code> object knows its <code>Servo</code> objects need a certain phase offset with respect to each other. However, each <code>Leg</code> also has a phase offset with respect to the other legs! So a high level phase offset is given to each <code>LegPair</code> object, and then every class assigns the appropriate offsets to its lower level objects.

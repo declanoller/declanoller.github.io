@@ -15,9 +15,7 @@ After I [trained an agent to play "puckworld" using Q-learning]({{ site.baseurl 
 ##### First, simulation
 
 The first thing I wanted to verify was whether a slightly different version of the game could be solved with the same neural network (NN) architecture. When I simulated it before, I used a NN with 4 state inputs $(x, y, x_t, y_t)$ (where $(x, y)$ is the agent position and $(x_t, y_t)$ is the position of the current target), 4 action outputs (up, down, left, right), and a single hidden layer (with varying numbers of neurons; I found relatively similar behavior over the range of 10-200 neurons).
-
-However, I planned on using a robot [of this style](https://declanoller.com/wp-content/uploads/2019/03/robot_type.jpeg), which meant that its actions would instead be (forward, backward, CCW turn CW turn). The state vector is a little more complicated, but for now let's assume it's $(x, y, \theta, x_t, y_t)$ ($\theta$ is the angle, where $\theta = 0$ is pointing to the right, ranging from $-\pi$ to $\pi$, CCW).
-
+However, I planned on using a robot[of this style](https://declanoller.com/wp-content/uploads/2019/03/robot_type.jpeg), which meant that its actions would instead be (forward, backward, CCW turn CW turn). The state vector is a little more complicated, but for now let's assume it's $(x, y, \theta, x_t, y_t)$ ($\theta$ is the angle, where $\theta = 0$ is pointing to the right, ranging from $-\pi$ to $\pi$, CCW).
 It's not that I had doubts about whether it could be simulated at all (it's pretty simple either way), but it wasn't immediately clear to me whether the same simple NN architecture that worked for the original "cartesian" version would work here. I wanted to check this because while I could easily imagine the ideal NN that would work for the original puckworld, the radial one is inherently nonlinear and I couldn't immediately say what kind of operations it would need to do to determine the optimal action.
 
 So, I wrote up a <code>PuckworldAgent_robot</code> class and gave it a spin! Here's the average reward curve and how it performs after learning:
@@ -28,8 +26,7 @@ So, I wrote up a <code>PuckworldAgent_robot</code> class and gave it a spin! Her
 
 {{CODE_pw_sim}}
 
-It also has no velocity state term (whereas the original <code>PuckworldAgent</code>did), to reflect the fact that the real robot will never "drift" if the motors aren't driving. I also tested a few other little variants, like making the turns rotate it $90^\circ$ plus some zero centered Gaussian randomness, which it was all pretty robust to.
-
+It also has no velocity state term (whereas the originalPuckworldAgentdid), to reflect the fact that the real robot will never "drift" if the motors aren't driving. I also tested a few other little variants, like making the turns rotate it $90^\circ$ plus some zero centered Gaussian randomness, which it was all pretty robust to.
 Anyway, that confirmed that I could probably do it without having to explore different architectures or learning methods!
 
 ##### The robot agent
@@ -100,8 +97,7 @@ The <code>Agent</code> class takes another more specific agent class as an argum
 
 So while previously I used specific agents <code>PuckworldAgent</code> and <code>PuckworldAgent_radial</code>, here I just had to pass the <code>Robot</code> class instead, and <code>Agent</code> did the RL using exactly the same machinery. <code>Robot</code> itself has a *ton* of stuff, since it needs to interface with a bunch of other classes for each modules, log information, etc. All the code for this project can be found [in this github repo](https://github.com/declanoller/robot_car).
 
-There's one more important detail. While I mentioned in the <code>PuckworldAgent_radial</code> simulation example that the agent's NN got a state vector with the robot's position, here it's not as simple. There are definitely ways I could have measured the position of the robot more directly, but I wanted it to be "self contained". Therefore, I used the three TOF distance sensors I mentioned above to measure the distances to walls, and the compass to know which direction it was facing. I set it up so one was aiming out the front of the robot and the other two were aiming out the left and right sides (so $\theta \pm 90^\circ$), which kind of gives three "distance vectors" to the walls, with their tails at the robot.
-
+There's one more important detail. While I mentioned in thePuckworldAgent_radialsimulation example that the agent's NN got a state vector with the robot's position, here it's not as simple. There are definitely ways I could have measured the position of the robot more directly, but I wanted it to be "self contained". Therefore, I used the three TOF distance sensors I mentioned above to measure the distances to walls, and the compass to know which direction it was facing. I set it up so one was aiming out the front of the robot and the other two were aiming out the left and right sides (so $\theta \pm 90^\circ$), which kind of gives three "distance vectors" to the walls, with their tails at the robot.
 As a first attempt, I wrote a function that calculates the robot position based on the three distances and compass direction, which is given to the state vector. However, this turned out to be a little trickier than I intuitively guessed at first!
 
 Right now, try guessing: how many of these "distance" vectors (plus the compass direction) do you need, in a square arena, to uniquely specify the position?
@@ -127,7 +123,6 @@ Lastly, there are actually a small subset of cases where even three vectors don'
 ![](/assets/images/hardcase-300x284.png)
 
 Now, I think if you were willing to put the TOFs at non-right angles to each other, for example, maybe the center one at $\theta$ and the other two at $\pm 10^\circ$, that would remove this case. But, from my experience with this, I'd rather get much different TOF readings that have this weakness than 3 ones that are nearly the same.
-
 Anyway, whenever I talk about the position, it's the *estimated* position from the TOFs and compass.
 
 ##### The results!
@@ -140,8 +135,7 @@ To start, here's a look at a (sped up) and labeled gif of it at the end of train
 
 This training took about 30 hours. The blue rectangle shows the current target. The red arrow shows the current estimated position and angle of the robot. You can see that the compass direction is almost always accurate, but the position is often somewhat off, and occasionally very off. The TOF sensors are usually pretty accurate, so the big errors in position are due to the method of calculating the position, which occasionally gets it wrong.
 
-You can see that when it's getting the wrong position, it gets stuck in a small loop where it's choosing its next action based on where it *thinks* it is (it only gets out of it because there's an $\epsilon_{min}$ value of the epsilon-greedy policy). So it could eventually figure out that that "deceptive" position isn't actually accurate, and update the Q value to account for that, but that could also potentially screw it when it's in that actual position.
-
+You can see that when it's getting the wrong position, it gets stuck in a small loop where it's choosing its next action based on where it*thinks*it is (it only gets out of it because there's an $\epsilon_{min}$ value of the epsilon-greedy policy). So it could eventually figure out that that "deceptive" position isn't actually accurate, and update the Q value to account for that, but that could also potentially screw it when it's in that actual position.
 Here's what the first successful reward learning curve looks like:
 
 ![](/assets/images/plot__chunk_133_iterations_133000-133999_R-1.png)
@@ -149,23 +143,19 @@ Here's what the first successful reward learning curve looks like:
 You can see that it increases pretty steadily until about 70k, at which point it levels off. I was a little surprised that it starts improving so quickly. The leveling off is where it reaches its limits (i.e., how many targets it can hit, on average, with it doing optimal actions). Actually, it might continue to improve a little... The bottom left plot is the total average reward, up to that iteration. The bottom center plot is the average reward over the last 1,000 iterations (hence why it's noisier but larger/more current).
 
 Let's also take a look at the final Q values. A state vector is of the form $(x, y, \theta, x_t, y_t)$, so to plot Q as a function of x and y, I have to specify the target and an angle. For all of the plots below, the angle is fixed at 0 degrees, and the position of the target is shown as the black disc. This gives me an output vector of the NN, which is the Q value for each of the 4 actions. To get an idea of how the Q value looks, I take the maximum of this output vector at each point, which gives the plots below (red = higher value). You can see that the maximum Q value increases as it gets closer to the target, which is expected.
-
 ![](/assets/images/plot__chunk_133_iterations_133000-133999_Q.png)
 
 Similarly, instead of taking the maximum Q value at each point, we could look at the argmax of the output vector, which dictates which action it would take in that position. These are plotted for each target position, same as the Q plots above. Each color corresponds to the optimal action in that position (according to the robot). For clarity, these are all for $\theta = 0$, too.
-
 ![](/assets/images/plot__chunk_133_iterations_133000-133999_act.png)
 
 They make some sense, but to be honest, they're also a little confusing: for the 3rd and 4th ones in the top row (i.e., the targets on the right wall), it really seems like the optimal action would be to drive forward, if the target is directly to the right (because $\theta = 0$). However, apparently it wants to turn first. All I can assume is that it hasn't collected enough evidence to know that that's a superior move, so currently it is doing another set of actions, like turning, and then going to the target via some other path, that it's found to work well enough.
-
 It's also interesting to see how the Q function and greedy action plots evolve as the robot learns. Since I saved the NN parameters after every 1000 iterations, I can do the same as above at many different points:
 
 {{CODE_Qplot1}}
 
 {{CODE_act_plot1}}
 
-If you carefully compare the Q plot and the action plot, you can often actually make out regions with weird contours in the max Q value that correspond to the boundary between different actions. I suspect what's going on here is that the Q value for that action (in that position) is incorrectly too high, because it hasn't finished learning yet. Indeed, looking at the action plots, you can see that they make sense *in general*, but there are definitely parts that aren't the best move you could make there. This makes sense: in a given position, it can take a slightly more roundabout way to get to the target, which costs a bit of reward. After the $\epsilon$ has decayed to its minimum (0.05), if it has a suboptimal "path" that still reliably gets it to the target, it will almost always take that. Theoretically, it should *eventually* learn the optimal action (because $\epsilon_{min} = 0.05$), but even if it does do the slightly better move, it's only saving a little bit of time/reward, and it has to do that perhaps many times to overcome the already-established suboptimal action's Q value.
-
+If you carefully compare the Q plot and the action plot, you can often actually make out regions with weird contours in the max Q value that correspond to the boundary between different actions. I suspect what's going on here is that the Q value for that action (in that position) is incorrectly too high, because it hasn't finished learning yet. Indeed, looking at the action plots, you can see that they make sense*in general*, but there are definitely parts that aren't the best move you could make there. This makes sense: in a given position, it can take a slightly more roundabout way to get to the target, which costs a bit of reward. After the $\epsilon$ has decayed to its minimum (0.05), if it has a suboptimal "path" that still reliably gets it to the target, it will almost always take that. Theoretically, it should*eventually*learn the optimal action (because $\epsilon_{min} = 0.05$), but even if it does do the slightly better move, it's only saving a little bit of time/reward, and it has to do that perhaps many times to overcome the already-established suboptimal action's Q value.
 The targets were a little too sensitive at this point (getting triggered when it was too far away), so I decreased the sensitivity and trained it again, with similar results:
 
 ![](/assets/images/plot__chunk_130_iterations_130000-130999_R.png)

@@ -36,13 +36,11 @@ Anyway, I thought this might be a fun application for genetic algorithms (GA). M
 So, here's an example of a (very bad) candidate solution in black, with the ideal solution in gray:
 
 ![](/assets/images/evolve_Brachistochrone__pop20__gen10__N30__height1.3__17-12-2018_22-46-28-1.png)Here, $N_{pts} = 30$, which you can see on the candidate solution.
-
 Mutating is randomly choosing between 1 and N points (besides the start and end points), and changing each from its current position by some amount (more on this below). Mating is taking two candidate solutions and choosing a random set of their corresponding points, and switching them. I (for no real reason) do something here that's actually a little unusual from stuff I've seen in the literature: to mate them, I basically do a Cartesian product of the current population to get mate pairs, mate them, then mutate these, as well as the (unmated) current population, and then take the best of all these *and* the original population. That involves taking the FF of each, which is usually a way too expensive operation. Maybe I'll change this in a bit, since it's probably very inefficient.
 
 Anyway! So how does it do?
 
 Here it is for $N_{pop}$ (population size) 12, $N_{pts} = 12$, a height of 1.3, and 150 generations:
-
 ![](/assets/images/evolve_Brachistochrone__pop12__gen150__N12__height1.3__17-12-2018_23-07-41.gif)Neat! In the top panel, it's plotting the best FF of the population, as well as the mean of the population, which are pretty similar pretty quickly. In the bottom panel, it's showing the whole population at each step, color coded from best to worse (black being the best solution, red to blue going from best to worst). The 'ideal' label is the time needed for the calculated ideal solution, and the 'actual' label is for the best candidate solution.
 
 Let's also try a configuration that has to go below the finishing point, by setting the height to 0.3 instead:
@@ -52,11 +50,9 @@ Let's also try a configuration that has to go below the finishing point, by sett
 So let's try and vary a couple other things. First, let's add some points. You can see that, in the 2nd example, even after settling, it's still not exactly at the ideal solution. However, that's because the ideal solution isn't limited by the resolution of these points. So, the one it finds might *actually be* roughly the ideal solution, if you could only use 12 points (...or it could still be a slightly crappy solution).
 
 Here's $N_{pop} = 12$, $N_{pts} = 30$, height = 1.3 again, and for 250 gens:
-
 ![](/assets/images/evolve_Brachistochrone__pop12__gen250__N30__height1.3__17-12-2018_23-19-38.gif)
 
 Hmmmm..! You can see that it actually doesn't converge to the ideal solution, even though the points seem to be converging to something. Doubling $N_{pop}$ (to maybe account for the increased number of points?) doesn't help a whole lot either. Even if I let it go a bunch longer, it doesn't improve much.
-
 Here's where I had a fun little learn!
 
 An important insight for this problem is that, if the current best candidate solution is somewhat far off from the ideal solution but also smooth (like the ending states of the ones above), if you mutate only a single point to the *actual* solution coordinate, the solution almost certainly wouldn't be chosen for the next gen. Because it would now cause a jagged bump, the bead would have to waste time going up it, which would be worse than the current sub-par solution that's at least smooth.
@@ -96,7 +92,6 @@ This feels somewhat analogous to this diversifying, where I'm necessarily taking
 Taking the SA analogy further, if you never decreased T, you would never converge to a good solution, so you "anneal" it over time to eventually let it settle. Similarly, we have to do that here with the diversity requirement, for the stuff I talked about before. To do this, every generation, I multiply that same_thresh by a decay factor. I calculate the decay factor so it will bring same_thresh to about 0 by the end of the evolution,
 
 $decay = (10^{-5})^{\frac{1}{N_{gen}}}$
-
 Similarly, in gradient descent, you usually have to decrease your step size as you get closer to the solution, or it won't converge as well (or even diverge!).
 
 How does it do?
@@ -128,7 +123,6 @@ From my brief poking around, it seems like there may not be local minima to this
 Anyway, I mention all that partly because it's what makes this problem kind of tricky for some search methods, and partly because this type of this isn't really what GA excels at (if it excels at anything, heh). If you are in a landscape with no local optima, only a global one, something like gradient descent is probably pretty reliable.
 
 A few details: I actually specify $N_{pts}$ and divide the x (lateral) distance (which will always be 1.0) into that many points. So that could be unconstrained too, but I chose to specify the x points, and have the solution be the y coordinate for each one of them. I also constrain the first and last points to the two points that define the brachistochrone solution.
-
 Because my candidate solutions certainly contain sharp bends, the assumption (to be physical and conserve energy) is that when the bead encounters a sharp bend between two segments, it keeps the same exact magnitude velocity, but now in the direction of the next line segment.
 
 Lastly, if one of the (moveable) points went above the starting point, that would mean it could never get to the end (because the bead wouldn't have enough energy to get over it), I just don't allow any points to go above that first point. I could let them, and make the FF infinity or something, but eh.
