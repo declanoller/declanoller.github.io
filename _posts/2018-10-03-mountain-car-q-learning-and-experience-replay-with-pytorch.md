@@ -58,7 +58,7 @@ After 200 episodes, it needs about 800 steps to complete. You can see that if we
 
 ![](/assets/images/TD0_coarse_14-24-08_ub3_x00.0_dt0.1_a0.98_alpha0.1_epsilon0.0_lambda0.8_gamma1.0_3000eps.png)
 
-Now let's try working some $\epsilon$ greediness into this. It's doing fine with total greediness, but maybe if we introduce some randomness early on, it might find better states, or converge faster? For clarity, I'm**not**resetting $\epsilon$ between episodes, which I think makes more sense.
+Now let's try working some $\epsilon$ greediness into this. It's doing fine with total greediness, but maybe if we introduce some randomness early on, it might find better states, or converge faster? For clarity, I'm **not** resetting $\epsilon$ between episodes, which I think makes more sense.
 ![](/assets/images/vary_epsilon_epsilon_decay.png)
 
 Hmm. It turns out epsilon greediness doesn't seem to have a huge effect, at least for the values I tried. For clarity, epsilon_decay is the value that is multiplied by epsilon every time step to get the new value. On the right I'm plotting the average of the last 20 points of each curve on the left, to show where they settle. So it seems like it just doesn't do much here.

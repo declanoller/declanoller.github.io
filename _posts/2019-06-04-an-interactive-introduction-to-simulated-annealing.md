@@ -32,7 +32,7 @@ So this is the basic idea: always accept a better solution offered, but also som
 $$p = e^{\frac{E_{new} - E}{T}}$$
 
 which represents the probability that you'll take a step that takes you from $E$ to $E_{new}$. So for $E_{new} > E$, $p > 1$, for which we just take the step (so if you want to be precise, $p = \min(e^{\frac{E_{new} - E}{T}}, 1)$), but if $E_{new} < E$, we only take the step with probability $p < 1$.
-Note two significant aspects of this form: 1) it allows you to take worse steps, but the worse the step, the less likely you'll take that step, and 2) $T$ acts as a multiplier to this effect; if $T \gg 1$, then $p \sim e^0 = 1$, meaning*it will accept anything, even if*$E_{new}$*is much worse*. Conversely, if $T \ll 1$, it makes any $E_{new} - E$ difference huge, and therefore it'll*only*accept steps that are better... which is exactly what we were doing originally! As you'll see below, this is really important.
+Note two significant aspects of this form: 1) it allows you to take worse steps, but the worse the step, the less likely you'll take that step, and 2) $T$ acts as a multiplier to this effect; if $T \gg 1$, then $p \sim e^0 = 1$, meaning *it will accept anything, even if* $E_{new}$ *is much worse*. Conversely, if $T \ll 1$, it makes any $E_{new} - E$ difference huge, and therefore it'll *only* accept steps that are better... which is exactly what we were doing originally! As you'll see below, this is really important.
 Here's a plot of $p$ for a few values of $T$, as a function of $E_{new} - E$:
 ![](/assets/images/T_curves.png)
 
@@ -55,7 +55,8 @@ You could try using a large T instead, so you won't get stuck up there. Here it 
 
 Well... you explore more and get a better overall score, so that's good! ...but you also never more thoroughly explore the area around the true maximum, because you're so willing to accept anything. So the max height you reach is closer to, but not the true maximum.
 
-So you can probably see the problem and a potential solution. You need a large $T$ at the beginning to accept worse steps to get out of local maxima, but you need a small temperature at the end to only accept better probabilities. This is what simulated annealing does: start with a high $T$ and slowly lower it, so the willingness to accept worse steps, $p$, goes down over time. You can decrease it in all sorts of ways, but a simple one is doing: $T_{i+1} = \lambda T_i$, where you can choose some $\lambda < 1$ to make $T$ start at some value and decrease to ~0 by the time you want to be done.Let's try the nasty problem again with this! Here it is with $T_{init} = 80$, and $\lambda = (0.01)^{1/1600}$, because I'm doing 1600 iterations:
+So you can probably see the problem and a potential solution. You need a large $T$ at the beginning to accept worse steps to get out of local maxima, but you need a small temperature at the end to only accept better probabilities. This is what simulated annealing does: start with a high $T$ and slowly lower it, so the willingness to accept worse steps, $p$, goes down over time. You can decrease it in all sorts of ways, but a simple one is doing: $T_{i+1} = \lambda T_i$, where you can choose some $\lambda < 1$ to make $T$ start at some value and decrease to ~0 by the time you want to be done.
+Let's try the nasty problem again with this! Here it is with $T_{init} = 80$, and $\lambda = (0.01)^{1/1600}$, because I'm doing 1600 iterations:
 {{CODE_texture_3}}
 
 Ta da! You're the insane optimization expert now. And the cycle continues...

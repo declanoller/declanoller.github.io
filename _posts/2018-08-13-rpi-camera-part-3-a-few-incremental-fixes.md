@@ -14,7 +14,7 @@ Here are the things I said last time I needed to make better:
 - Fix detection sensitivity (still often picking up strong shade/sunlight quirks)
 - Total design flaw: since the log file currently gets sent with each picture, but is updated when each picture is written, it is actually sometimes more updated than the pics in the folder. That is, if 30 pictures are created by the camera function, and those are immediately added to the log file, the log file is sent with the first of those 30, and it contains all 30 of them even though only one has been sent
 - Better image classifier architecture
-- Better labeled image dataset (32x32 is*tiny*)
+- Better labeled image dataset (32x32 is *tiny*)
 - Sliding windows over detected images
 
 ##### Sliding windows
@@ -158,7 +158,7 @@ How does it work? Pretty great! And it feels a lot cleaner than making a million
 Well, that's all for now. I have a couple more things already in the works, but I'll just put them in the next post. Here are the things that still obviously need to be done:
 
 - It's still just getting a lot of shade problems. I think if I did this carefully and smartly I could actually make this not happen by just changing how the background average is taken. Related to that but slightly different, looking at it in not just grayscale might do it. That is, when an alternating shady/bright spot changes, it's currently sensing the change in intensity, but it's actually mostly the same hue. So if I kept the colors and looked at the different in the different channels, actual object movement (that changes the color as well as the intensity) might still trigger it, but not things like the sun getting brighter or the shade of leaves moving in the wind.
-- Use a different convnet architecture -- I've actually already gotten a pre-trained VGGNet working with it, which is trained on a*wayyyy*huger dataset, and larger images. So hopefully it will be able to use my images that are larger (than 32x32) anyway, and be better trained that the dinky thing I did with the CIFAR-10.
+- Use a different convnet architecture -- I've actually already gotten a pre-trained VGGNet working with it, which is trained on a *wayyyy* huger dataset, and larger images. So hopefully it will be able to use my images that are larger (than 32x32) anyway, and be better trained that the dinky thing I did with the CIFAR-10.
 - Relatedly, have it detect things like people, or bicycles: the VGGNet dataset has the most crazily specific classes.
 
 Till next time!

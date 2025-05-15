@@ -67,7 +67,6 @@ This meant changing the method slightly, since before I was just relying on the 
 ![{\displaystyle R={\begin{bmatrix}\cos \theta &-\sin \theta \\\sin \theta &\cos \theta \\\end{bmatrix}}}](/assets/images/fe4ee3f1ce8e028da5bd4219c9dc7fc2216543e4)
 
 but, make it so the angle of rotation $\theta$ itself, is a periodic function of the distance from the center of image: $\theta = \mathrm{cos}(2 \pi r/r_{max})$
-
 Which gives a vector field of the form:
 
 ![](/assets/images/vec_field.png)

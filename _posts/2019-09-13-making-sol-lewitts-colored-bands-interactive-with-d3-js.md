@@ -85,7 +85,7 @@ a_i = t_i (1 + 0.6 \textrm{sin}(2\pi f_0 f_{band} x) ) $
 
 ![](/assets/images/ai_pos_based_noturb-1024x491.png)
 
-Looking better! This is definitely the "Pareto jump" of this problem. However, it's still not quite there. The base thicknesses of each layer ($t_i$) are all different, and now each thickness is being modulated by position, which looks better, but they're still being modified by position*by the same amount*and*in the same places*. One easy way to change this is to add a phase term, $\phi_i$, that's constant for each band, but selected randomly for each:
+Looking better! This is definitely the "Pareto jump" of this problem. However, it's still not quite there. The base thicknesses of each layer ($t_i$) are all different, and now each thickness is being modulated by position, which looks better, but they're still being modified by position *by the same amount* and *in the same places*. One easy way to change this is to add a phase term, $\phi_i$, that's constant for each band, but selected randomly for each:
 $ t_i = 1 + 1.2 \mathcal{U} (0, 1)
 
 \phi_i = 2\pi \mathcal{U} (0, 1)

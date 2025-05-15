@@ -36,7 +36,7 @@ That's the way some continuous action space algorithms work, by just parameteriz
 
 $$\nabla_\theta J = \mathbb E_\mu[\nabla_\theta Q(s, \mu_\theta(s)]$$
 
-I.e., instead of doing gradient ascent of $J$ by following the gradient of well performing actions scaled by the returns they're responsible for (a handwavy explanation of the regular PG theorem), here it follows only the gradient of $Q$, but*with respect to the policy parameters*$\theta$. This is actually pretty easy to do with PyTorch due to how it calculates gradients.
+I.e., instead of doing gradient ascent of $J$ by following the gradient of well performing actions scaled by the returns they're responsible for (a handwavy explanation of the regular PG theorem), here it follows only the gradient of $Q$, but *with respect to the policy parameters* $\theta$. This is actually pretty easy to do with PyTorch due to how it calculates gradients.
 Those are the main points of the algorithms I tried out here. I'll mention some of the finer points specific to each of them below when I talk about them.
 
 ##### Results
@@ -56,7 +56,7 @@ However, if we up it to $v_{cat} = 3.3$ (same hyperparameters)...
 It kind of gets 2 runs, but they're clearly having lots of trouble.
 
 I think a lot of the trouble is with its exploration, which is especially vital in this problem. For a second, pretend there is no cat and the mouse just has to get out of the circle. If it behaves as a random 2D walker (i.e., talking a step randomly in any direction), it will have a mean position of (0, 0) but still randomly get out of the circle eventually. Now consider the easy case with $v_{cat} = 3.0$: it's much harder for a random 2D walker to get out of this, because it requires randomly going in the same (specific) direction several times in a row!
-Exploration is encouraged in A2C by adding an entropy penalty term to the total loss, which encourages it to keep the $\sigma$ output of the NN artificially higher. However, this just increases the variance of the normal distribution $\pi (s, a)$. This*does*increase exploration in the sense of making it take actions it wouldn't otherwise, but not helpfully; it'll just make it more of a random walker. So I suspect that in this problem, when it does get one of its first successes, it's probably when the weights happen to have some random bias that cause it to "always go left" or something, and that will eventually match up with the cat starting on the right.
+Exploration is encouraged in A2C by adding an entropy penalty term to the total loss, which encourages it to keep the $\sigma$ output of the NN artificially higher. However, this just increases the variance of the normal distribution $\pi (s, a)$. This *does* increase exploration in the sense of making it take actions it wouldn't otherwise, but not helpfully; it'll just make it more of a random walker. So I suspect that in this problem, when it does get one of its first successes, it's probably when the weights happen to have some random bias that cause it to "always go left" or something, and that will eventually match up with the cat starting on the right.
 DDPG is different! Because it's deterministic, it would never explore on its own. So, a common strategy is to explicitly add a noise term to the action output, and then update using that modified action (helpfully, you don't have to deal with importance sampling here, because it's not integrating over actions anyway, which is nice). A common choice is to use [Ornstein-Uhlenbeck noise](https://en.wikipedia.org/wiki/Ornstein%E2%80%93Uhlenbeck_process) (OU noise), which is basically temporally correlated noise. This is perfect for this problem due to what I was saying above: because each value is related to the previous value, it tends to give rise to "trajectories" more than a random walker's "stumbling", allowing it to escape more easily.
 
 For example, here are 3 Gaussian random walkers with $\sigma = 0.1$, with the actual noise on the left, and their paths (i.e., cumulative sum) on the right:
@@ -66,7 +66,7 @@ Instead, with OU noise:
 
 ![](/assets/images/OU_noise_ex-1.png)
 
-You can see that the OU noise walkers get to a given distance from zero much more quickly. The DDPG paper said they used OU noise, but I've[seen a few places mention](https://spinningup.openai.com/en/latest/algorithms/ddpg.html#exploration-vs-exploitation)that it might actually not be more effective than plain ol' Gaussian noise. That's kind of surprising to me. To check this out, I tried DDPG with both Gaussian noise, and OU noise (both with the same $\sigma$) for $v_{cat} = 3.2$.
+You can see that the OU noise walkers get to a given distance from zero much more quickly. The DDPG paper said they used OU noise, but I've [seen a few places mention](https://spinningup.openai.com/en/latest/algorithms/ddpg.html#exploration-vs-exploitation) that it might actually not be more effective than plain ol' Gaussian noise. That's kind of surprising to me. To check this out, I tried DDPG with both Gaussian noise, and OU noise (both with the same $\sigma$) for $v_{cat} = 3.2$.
 OU noise:
 
 ![](/assets/images/train_classclass-CatMouse_DDPG.CatMouse_DDPG_N_eps5000_noise_sigma0.500_max_ep_steps100_N_steps100_decay_noiseTrue_cat_speed_rel3.200.png)

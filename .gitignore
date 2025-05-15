@@ -1,2 +1,5 @@
 .obsidian/workspace.json
 **/workspace.json
+.vscode/
+.vscode/settings.json
+misc/__pycache__/

@@ -538,6 +538,24 @@ def paragraphs_to_markdown(html_text: str) -> str:
             eq = eq.replace("|", " \\mid ")
             new_text = f"$${eq}$$\n"
         elif text.count("$") >= 2:
+            """
+            print_warning(f"\nHas inline math exprs:\n\t{text}")
+            # Search for inline math expressions within the paragraph
+            inline_math_matches = re.finditer(r"\$(.+?)\$", text)
+            for match in inline_math_matches:
+                eq = match.group(1).strip()
+                if len(eq) >= max_inline_eqn_length:
+                    continue
+                print_info(f"\n\tInline math expr:\n\t\t{match.group(1)}")
+                eq = eq.replace(
+                    "|", " \\mid "
+                )  # Replace vertical bar with " \mid " (with spaces)
+                new_eq = f"${eq}$"
+                print_info(f"\tConverted to:\n\t\t{new_eq}\n")
+                text = text.replace(match.group(0), new_eq)
+
+            print_info(f"\nParagraph converted to:\n\t{new_text}\n")
+            """
             new_text = text
         else:
             new_text = "".join(str(child) for child in p.contents).strip() + "\n\n"
@@ -573,6 +591,26 @@ def process_video_blocks_to_gif(html_text: str) -> str:
     return str(soup)
 
 
+def find_unhandled_html_tags(html_text: str) -> Set[str]:
+    """
+    Identify any remaining (unhandled) HTML tags in the given HTML text.
+    Excludes common inline tags like <br>.
+
+    Args:
+        html_text (str): The HTML content to analyze.
+
+    Returns:
+        Set[str]: A set of unhandled HTML tag names.
+    """
+    soup = BeautifulSoup(html_text, "html.parser")
+    unhandled_tags = {tag.name for tag in soup.find_all() if tag.name not in ["br"]}
+    if unhandled_tags:
+        print_warning(
+            f"\n\tWarning: The following HTML tags were not explicitly handled: {', '.join(unhandled_tags)}"
+        )
+    return unhandled_tags
+
+
 def remove_remaining_html_tags_and_entities(html_text: str) -> str:
     """
     Remove any remaining HTML tags and replace HTML entities with their literal characters.
@@ -606,228 +644,67 @@ def convert_html_to_markdown(html_text: str) -> Tuple[str, Set[str]]:
     if doctype and "-//W3C//DTD HTML 4.0 Transitional//EN" in doctype:
         doctype.extract()
 
+    html_text = str(soup)
+
     # Remove entire <p> tags that contain WordPress-style comments.
-    for comment in soup.find_all(string=lambda t: isinstance(t, Comment)):
-        if "wp:" in comment:
-            if comment.parent and comment.parent.name == "p":
-                comment.parent.decompose()
+    html_text = remove_wp_comment_paragraphs(html_text)
 
     # Remove <p>[latexpage]</p> if it is the very first paragraph.
-    first_p = soup.find("p")
-    if first_p and first_p.get_text(strip=True) == "[latexpage]":
-        first_p.decompose()
+    html_text = remove_latexpage_first_paragraph(html_text)
 
-    # Remove [latexpage]<br /> at the very beginning of a <p> tag and keep the rest
-    for p in soup.find_all("p"):
-        if p.contents and isinstance(p.contents[0], NavigableString):
-            if "[latexpage]" in p.contents[0]:
-                p.contents[0].replace_with(p.contents[0].replace("[latexpage]", ""))
-        for br in p.find_all("br"):
-            br.extract()
+    # Remove [latexpage]<br /> at the very beginning of a <p> tag and keep the rest.
+    html_text = remove_latexpage_br_in_paragraphs(html_text)
 
     # Convert underlined text created with <p><span style="text-decoration: underline;">...</span></p>
     # to Markdown H5 headings.
-    for p in soup.find_all("p"):
-        children = list(p.children)
-        if len(children) == 1 and children[0].name == "span":
-            span = children[0]
-            if span.has_attr("style") and "text-decoration: underline" in span["style"]:
-                heading_text = span.get_text(strip=True)
-                md_heading = f"##### {heading_text}\n\n"
-                p.replace_with(NavigableString(md_heading))
+    html_text = underline_span_to_h5_heading(html_text)
 
-    # In a few instances we have: <p><strong><span style="text-decoration: underline;">...</span></strong></p>
-    # convert this to Markdown H5 headings.
-    for p in soup.find_all("p"):
-        children = list(p.children)
-        if len(children) == 1 and children[0].name == "strong":
-            strong = children[0]
-            children = list(strong.children)
-            if len(children) == 1 and children[0].name == "span":
-                span = children[0]
-                print_info(f"\nFound instance: {strong}")
-                if (
-                    span.has_attr("style")
-                    and "text-decoration: underline" in span["style"]
-                ):
-                    heading_text = span.get_text(strip=True)
-                    md_heading = f"##### {heading_text}\n\n"
-                    print_info(f"\tConverted to: {md_heading}\n")
-                    p.replace_with(NavigableString(md_heading))
+    # Convert <p><strong><span style="text-decoration: underline;">...</span></strong></p>
+    # to Markdown H5 headings.
+    html_text = strong_underline_span_to_h5_heading(html_text)
 
-    # Convert any <span style="text-decoration: underline;">...</span> to Markdown bold
-    for span in soup.find_all("span"):
-        if span.has_attr("style") and "text-decoration: underline" in span["style"]:
-            bold_text = f"**{span.get_text(strip=True)}**"
-            span.replace_with(NavigableString(bold_text))
+    # Convert any <span style="text-decoration: underline;">...</span> to Markdown bold.
+    html_text = underline_span_to_bold(html_text)
 
     # Convert heading tags (<h2> to <h6>) to Markdown header syntax.
-    for level in range(2, 7):
-        for header in soup.find_all(f"h{level}"):
-            header_text = header.get_text(separator=" ", strip=True)
-            md_header = f"{'#' * level} {header_text}\n\n"
-            header.replace_with(NavigableString(md_header))
+    html_text = heading_tags_to_markdown(html_text)
 
-    # Convert <blockquote> tags.
-    for blockquote in soup.find_all("blockquote"):
-        blockquote_text = blockquote.get_text(separator="\n", strip=True)
-        lines = blockquote_text.splitlines()
-        md_blockquote = "\n".join(["> " + line for line in lines]) + "\n\n"
-        blockquote.replace_with(NavigableString(md_blockquote))
+    # Convert <blockquote> tags to Markdown blockquotes.
+    html_text = blockquote_to_markdown(html_text)
 
     # Convert italic tags (<i> and <em>) to Markdown italics.
-    for tag in list(soup.find_all(["i", "em"])):
-        italic_text = tag.get_text()
-        md_italic = f"*{italic_text}*"
-        tag.replace_with(NavigableString(md_italic))
+    html_text = italic_tags_to_markdown(html_text)
 
     # Convert <strong> tags to Markdown bold.
-    for tag in list(soup.find_all("strong")):
-        strong_text = tag.get_text()
-        md_strong = f"**{strong_text}**"
-        tag.replace_with(NavigableString(md_strong))
+    html_text = strong_tags_to_markdown(html_text)
 
     # Convert unordered lists (<ul> with <li>) to Markdown bullet lists.
-    for ul in list(soup.find_all("ul")):
-        items = []
-        for li in ul.find_all("li", recursive=False):
-            for a in li.find_all("a"):
-                if a.has_attr("href"):
-                    markdown_link = f"[{a.get_text(strip=True)}]({a['href']})"
-                    a.replace_with(markdown_link)
-            li_text = li.get_text(separator="", strip=True)
-            items.append(f"- {li_text}")
-        md_ul = "\n".join(items) + "\n\n"
-        ul.replace_with(NavigableString(md_ul))
+    html_text = unordered_lists_to_markdown(html_text)
 
     # Convert ordered lists (<ol> with <li>) to Markdown numbered lists.
-    for ol in list(soup.find_all("ol")):
-        items = []
-        for idx, li in enumerate(ol.find_all("li", recursive=False), start=1):
-            for a in li.find_all("a"):
-                if a.has_attr("href"):
-                    markdown_link = f"[{a.get_text(strip=True)}]({a['href']})"
-                    a.replace_with(markdown_link)
-            li_text = li.get_text(separator="", strip=True)
-            items.append(f"{idx}. {li_text}")
-        md_ol = "\n".join(items) + "\n\n"
-        ol.replace_with(NavigableString(md_ol))
+    html_text = ordered_lists_to_markdown(html_text)
 
-    # Convert <pre> tags (code blocks).
-    for pre in soup.find_all("pre"):
-        code_text = pre.get_text()  # preserves whitespace and indentation
-        language = "python" if is_probably_python(code_text) else ""
-        code_text = code_text.strip("\n")
-        md_code = f"```{language}\n{code_text}\n```\n"
-        pre.replace_with(NavigableString(md_code))
+    # Convert <pre> tags (code blocks) to Markdown fenced code blocks.
+    html_text = pre_tags_to_markdown(html_text)
 
     # Convert <img> tags to Markdown image syntax.
-    for img in soup.find_all("img"):
-        src = img.get("src", "")
-        new_src = update_image_src(src)
-        alt = img.get("alt", "")
-        md_img = f"![{alt}]({new_src})"
-        img.replace_with(NavigableString(md_img))
+    html_text = img_tags_to_markdown(html_text)
 
     # Convert <a> tags to Markdown hyperlink syntax.
-    for a in soup.find_all("a"):
-        href = a.get("href", "")
-        link_text = a.text
-        href = maybe_convert_declanoller_url_to_permalink(href)
-        md_link = f"[{link_text}]({href})"
-        a.replace_with(NavigableString(md_link))
+    html_text = a_tags_to_markdown(html_text)
 
-    # Convert <p> tags.
-    # For each paragraph, if it appears to be an isolated math expression,
-    # remove any existing $ symbols, trim whitespace, replace vertical bar symbols with " \\mid ",
-    # then re-wrap in $...$ on its own line.
-    # Otherwise, convert the paragraph normally.
-    max_inline_eqn_length = 30
-    for p in soup.find_all("p"):
-        text = p.get_text(strip=True)
-        if is_block_math_expression(text):
-            print_info(f"\nIs block math expr: {text}")
-            eq = text.strip("$").strip()
-            eq = eq.replace(
-                "|", " \\mid "
-            )  # Replace vertical bar with " \mid " (with spaces)
+    # Convert <p> tags to Markdown, handling math expressions and replacements.
+    html_text = paragraphs_to_markdown(html_text)
 
-            new_text = f"$${eq}$$\n"
-            print_info(f"\tConverted to: {new_text}\n")
-        elif text.count("$") >= 2:
-            pass
-            """
-            print_warning(f"\nHas inline math exprs:\n\t{text}")
-            # Search for inline math expressions within the paragraph
-            inline_math_matches = re.finditer(r"\$(.+?)\$", text)
-            for match in inline_math_matches:
-                eq = match.group(1).strip()
-                if len(eq) >= max_inline_eqn_length:
-                    continue
-                print_info(f"\n\tInline math expr:\n\t\t{match.group(1)}")
-                eq = eq.replace(
-                    "|", " \\mid "
-                )  # Replace vertical bar with " \mid " (with spaces)
-                new_eq = f"${eq}$"
-                print_info(f"\tConverted to:\n\t\t{new_eq}\n")
-                text = text.replace(match.group(0), new_eq)
+    # Process video blocks and convert them to GIFs.
+    html_text = process_video_blocks_to_gif(html_text)
 
-            print_info(f"\nParagraph converted to:\n\t{new_text}\n")
-            """
-            new_text = text
-        else:
-            new_text = "".join(str(child) for child in p.contents).strip() + "\n\n"
+    unhandled_tags = find_unhandled_html_tags(html_text)
 
-        # Replace these here so they'll target any inline equations that aren't their own paragraph:
-        new_text = new_text.replace(
-            "\\mathrm{log}", "\\log "
-        )  # Replace \mathrm{log} with \log
-        new_text = new_text.replace(
-            "\\textrm{log}", "\\log "
-        )  # Replace \textrm{ln} with \log
-        new_text = new_text.replace(
-            "\\textrm{ln}", "\\log "
-        )  # Replace \textrm{ln} with \log
-        new_text = new_text.replace("\\textrm{argmax}", "\\arg\\max")
-        new_text = new_text.replace("\\textrm{max}", "\\max")
-        new_text = new_text.replace("\\textrm{min}", "\\min")
+    # Remove any remaining HTML tags and replace HTML entities with their literal characters.
+    html_text = remove_remaining_html_tags_and_entities(html_text)
 
-        p.replace_with(NavigableString(new_text))
-
-    # Process video blocks and convert them to GIFs
-    for video_tag in soup.find_all(string=re.compile(r"\[video.*?\[/video\]")):
-        video_match = re.search(r'mp4="([^"]+)"', video_tag)
-        if video_match:
-            video_url = video_match.group(1)
-            print_info(f"\n\tFound video URL: {video_url}")
-            try:
-                gif_path = download_and_convert_video_to_gif(
-                    video_url,
-                )
-                gif_filename = Path(gif_path).name
-                markdown_image = f"![](/assets/images/{gif_filename})\n\n"
-                video_tag.replace_with(NavigableString(markdown_image))
-            except Exception as e:
-                print_error(f"\n\t\tError processing video {video_url}: {e}")
-
-    # Check for any remaining (unhandled) HTML tags (excluding common inline tags like <br>).
-    unhandled_tags = {tag.name for tag in soup.find_all() if tag.name not in ["br"]}
-    if unhandled_tags:
-        print_warning(
-            f"\n\tWarning: The following HTML tags were not explicitly handled: {', '.join(unhandled_tags)}"
-        )
-
-    # Remove any remaining HTML tags.
-    intermediate = str(soup)
-    markdown_text = re.sub(r"<[^>]+>", "", intermediate)
-    markdown_text = re.sub(r"\n{3,}", "\n\n", markdown_text)
-
-    # Replace HTML entities with their literal characters.
-    markdown_text = markdown_text.replace("&lt;", "<")
-    markdown_text = markdown_text.replace("&gt;", ">")
-    markdown_text = markdown_text.replace("&amp;", "&")
-
-    return markdown_text.strip(), unhandled_tags
+    return html_text.strip(), unhandled_tags
 
 
 def build_markdown(front_matter: dict, markdown_body: str) -> str:
