@@ -31,6 +31,7 @@ This was kind of appealing because of just how easy it would be to do: I could p
 In the more professional realm, you see some really cool ones:
 
 ![](/assets/images/6a00d8341d2b8f53ef01157107e150970b-500wi-300x227.jpg)
+
 ![](/assets/images/tmp833193-236x300.png)
 
 ...maybe someday.
@@ -76,11 +77,13 @@ All ready to go:
 So, how'd it turn out? Let's see some side-by-sides.
 
 ![](/assets/images/Screenshot-from-2018-12-06-17-38-18.png)
+
 ![](/assets/images/IMG_20181202_150113-768x1024.jpg)
 
 The camera mount:
 
 ![](/assets/images/Screenshot-from-2018-12-06-17-39-37.png)
+
 ![](/assets/images/IMG_20181124_192822-1-1012x1024.jpg)
 
 I'm pretty proud of how this part worked out! DSLRs typically have a 1/4" 20 threading on their bottoms, so I knew it couldn't be too hard to attach, but I wanted something that ideally could easily be removed in case she needed to use the camera for something else or whatever. So I bought [this mount](https://www.amazon.com/Foto4easy-Camera-Camcorder-Monopod-Release/dp/B00TB09SKS/) which had enough space under where the camera-side mount attaches to have some button head screws. I drilled 4 holes, with the top and bottom row separated by 20 mm, to attach to t-slot nuts in the extrusion. It's *veryyy* sturdy with my monster Canon 7D, which has a magnesium alloy body, and is definitely heavier than her camera.
@@ -88,6 +91,7 @@ I'm pretty proud of how this part worked out! DSLRs typically have a 1/4" 20 thr
 I also modeled the camera mount from scratch, which was totally unnecessary, but a good way to learn about making arbitrary shapes and extruding.
 
 ![](/assets/images/Screenshot-from-2018-12-06-17-29-51-1024x638.png)
+
 ![](/assets/images/IMG_20181202_151030-1024x686.jpg)
 
 You may notice that those little tabs are in the rendering but not in the photo. I hadn't made them by the time I assembled this, because I hadn't decided how I'd do it yet. I figured I'd probably need *some* better counter leverage on the other side of the camera, but to be honest, it was really solid and I probably didn't.
@@ -101,20 +105,25 @@ It was actually kind of hard to find what these tabs are called by searching ("a
 Another little difference between the CAD and real thing is that I found these corner mounts I wanted to use for the camera bar connection because they're *really* solid and give it a nice, flush look:
 
 ![](/assets/images/Screenshot-from-2018-12-06-17-24-36-1024x572.png)
+
 ![](/assets/images/IMG_20181202_150127-1-1024x994.jpg)
 
 A few other gratuitous design/reality shots:
 
 ![](/assets/images/Screenshot-from-2018-12-06-17-23-25.png)
+
 ![](/assets/images/IMG_20181202_150224-768x1024.jpg)
 
 ![](/assets/images/Screenshot-from-2018-12-06-17-02-44-1024x552.png)
+
 ![](/assets/images/IMG_20181202_150211-1024x610.jpg)
 
-![](/assets/images/Screenshot-from-2018-12-06-17-07-02.png) 
+![](/assets/images/Screenshot-from-2018-12-06-17-07-02.png)
+ 
 ![](/assets/images/IMG_20181202_150345-768x1024.jpg)
 
 ![](/assets/images/Screenshot-from-2018-12-06-16-46-56-2.png)
+
 ![](/assets/images/IMG_20181202_150146-746x1024.jpg)
 
 Lastly, there was one little hurdle... in my mom's original sketch, she wanted the height to be about 42". I designed it to have about this height, but I had an intuitive guess (from my amateur photography) that the focal length was something I'd have to deal with. More specifically, many lenses will automatically zoom in (i.e., lens getting longer) due to gravity if they're just hanging down. Many also have a lock, but in my experience they usually lock in the totally zoomed out position. So I knew that probably neither of those extremes would get the bottom plane in frame perfectly at the height it is. Indeed, when I set it up with my 7D and Sigma 17-50mm lens, it has to be at about 28mm to have the area at the bottom be the field of view.

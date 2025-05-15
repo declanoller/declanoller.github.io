@@ -90,6 +90,7 @@ def mateGrid(self):
 Getting rid of duplicates:
 
 ![](/assets/images/evolve_output-2.png)
+
 ![](/assets/images/endpop_nodupes.png)
 
 This is better behavior, in that the mean doesn't just automatically become the best (because it's full of duplicates) after a while. We're still limited by no mutations, though: a correct board configuration (which this sometimes finds anyway) is going to need a certain set of queens in a particular order; that is, it may need the first 3 entries to be something like [x, x+2, x+4, ...] (if you've ever looked at the solution, you can see that the queens are obviously "moved" by a knight's move, i.e., one over and two up). So, if the set of starting boards just never started with those numbers in those positions (across all of them), it'll never find a solution no matter how much you shuffle it.
@@ -127,8 +128,10 @@ def mateGrid(self):
 
 The results are pretty immediately striking. Here are three runs:
 
-![](/assets/images/evolve_output3-300x225.png) 
-![](/assets/images/evolve_output2-300x225.png) 
+![](/assets/images/evolve_output3-300x225.png)
+ 
+![](/assets/images/evolve_output2-300x225.png)
+ 
 ![](/assets/images/evolve_output1-300x225.png)
 
 You can see in the 2nd one that it actually finds a solution, and then "un-finds" it. This is probably because it got mutated out. However, as time goes on this tends not to happen, because the population gets better as a whole, so if one solution is mutated away from being a solution, another almost-solution board will mutate into one, I think. You can also see that the average tends towards slightly less than 1 -- this is because in each case, only two solutions were found, and the others all have one attacking pair, so the mean is 18/20 in this case.

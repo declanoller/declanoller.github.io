@@ -46,7 +46,8 @@ Here's what it looks like, just passing through:
 
 If we turn just the volume up, with no drive, it mostly preserves the sine wave shape, not distorting it:
 
-![](/assets/images/IMG_20181030_115952-1024x768.jpg) 
+![](/assets/images/IMG_20181030_115952-1024x768.jpg)
+ 
 ![](/assets/images/IMG_20181030_120029-1024x768.jpg)
 
 Turn up the drive instead starts making it look more like a square wave, though curiously, moreso on the bottom of the waveform. This is what gives it the fuzz sound:

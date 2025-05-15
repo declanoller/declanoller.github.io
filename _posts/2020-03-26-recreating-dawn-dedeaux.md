@@ -37,6 +37,7 @@ I think we get pretty far with this off the bat! Here's an example of mangling d
 ![](/assets/images/euler_smeared_3.jpg)
 
 ![](/assets/images/euler_vecfield_smeared_3.jpg)
+
 And one with much finer blocks:
 
 ![](/assets/images/euler_smeared_pos_1pt0_fixed.jpg)
@@ -85,6 +86,7 @@ There's one last major mod. If you check the original again, you can see parts w
 Like I said, at this point, there's some art to choosing the parameters that determine the strength of the effect, how fast it falls off, etc. If you mess them up, you quickly get some Cronenberg-esque monstrosities:
 
 ![](/assets/images/euler_smeared_horror3.jpg)
+
 *"My existence is torture!"*
 
 This hellbeast is actually the result of using a whorl as described above. Because a rotation field just looks like spinning around the origin, it causes the "outgoing" original field from the center to "collide" with the whorl's field going in the opposite direction, giving rise to that diverging horror area near his...no, its mouth. To make this less awful, I made it so it rotates around the whorl in opposite directions, depending on which side the point is on the whorl, like a stream going around a rock.
@@ -96,11 +98,13 @@ Finally, all together, here are a few outputs:
 ![](/assets/images/euler_smeared-4.jpg)
 
 ![](/assets/images/saturn_smeared.jpg)
+
 Bonus points if you can recognize this one!
 
 ![](/assets/images/hiero_smeared.jpg)
 
 ![](/assets/images/moondog_smeared.jpg)
+
 I'm so sorry, [Moondog](https://en.wikipedia.org/wiki/Moondog).
 
 There are actually still a few little details I have to get down, but I think I'll stop here. The code repo for this [is here](https://github.com/declanoller/dawn-dedeaux-smear-art). See ya next time!

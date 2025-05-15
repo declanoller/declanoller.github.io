@@ -179,7 +179,9 @@ You can see the wonky argmax values for high f, 2e states, in the bottom right a
 
 I tried a couple things here, and to be honest I'm not sure what the takeaway is. My first guess was that maybe $\alpha$ is too high, so I tried to vary it to see how it affected the error. For this problem, I'm calling the error the Mean Squared Error between the argmax of the 2e states and the square root of the floor number for each of those states, since that seems like a good metric. I varied $\alpha$ from 0.05 to 1.4, for each value of $\alpha$, did 5 runs so I could get a bit of the mean/stdev, and I repeated the whole experiment for three different numbers of episodes (2000,20000,200000). Here are the results:
 ![](/assets/images/2000eps_MSE_vs_alpha.png)
+
 ![](/assets/images/20000eps_MSE_vs_alpha.png)
+
 ![](/assets/images/200000eps_MSE_vs_alpha.png)
 
 So it seems like it's probably just not converging much at all for the runs with 2,000 episodes, to the point where all $\alpha$ values suck. It seems like the runs with 20,000 episodes are all pretty similar for $\alpha$ > 0.1 (MSE really only varying from about 1-2). The runs with 200,000 episodes look crazier, but if you look at the actual MSE range, it's about the same as the 20,000 episodes one. Additionally, it appears to have a minimum at alpha ~ 1.1, same as the 20,000 one.
@@ -217,14 +219,18 @@ Ooof. That is *terrible*. Honestly, I'm not sure why, either. This "true averag
 I'll briefly show two more things. The first is what the "inspect" plots look for two different alphas, 0.1 and 1.1. Remember from above, it seems like $\alpha$ = 1.1 should be the better choice. For each of these, I first run the whole thing with 200,000 episodes, then inspect state (2e, 22f) (randomly chosen high floor, so more likely to change its state with more samples). I inspect that state for 1,000 extra drops (starting from it), and then 10,000 immediately following, to see the short and long term effects if there are any.
 $\alpha$ = 1.1:
 ![](/assets/images/noavg_randomdrop2e_25f_alpha1.10_gamma1.00_lambda0.00_200000trials_11-27-37_whole.png)
+
 ![](/assets/images/noavg_randomdrop2e_25f_alpha1.1_gamma1.0_lambda0.0_1000trials_11-27-37_inspect21f.png)
+
 ![](/assets/images/noavg_randomdrop2e_25f_alpha1.1_gamma1.0_lambda0.0_10000trials_11-27-37_inspect21f.png)
 
 You can see that the argmax tends to be more stable, but also has a pretty big range (~5). It only switches once in the extended "inspection".
 
 $\alpha$ = 0.1:
 ![](/assets/images/noavg_randomdrop2e_25f_alpha0.10_gamma1.00_lambda0.00_200000trials_11-28-53_whole.png)
+
 ![](/assets/images/noavg_randomdrop2e_25f_alpha0.1_gamma1.0_lambda0.0_1000trials_11-28-53_inspect21f.png)
+
 ![](/assets/images/noavg_randomdrop2e_25f_alpha0.1_gamma1.0_lambda0.0_10000trials_11-28-53_inspect21f.png)
 
 A few things to notice. First, the MSE is worse, as expected. The 2e argmaxes actually look "better behaved", i.e., monotonic, but they diverge too much for high states, giving the high MSE. This is probably because the lower states (that higher states depend on) are correctly getting figured out which ones are the best choice, but they can be known to be the best action and still have an inaccurate Q value. You can also see in the upper right plot, the plot of Q(S,A) vs A (with the different curves being for different S's) that the argmaxes (little peaks) are a lot more pronounced. This is because the bad ones aren't as severely punished because of the small $\alpha$ value. Compare it to the $\alpha$ = 1.1 one above, where the non optimal Q(S,A) values are much more negative. Similarly, the same plots but for the 1e states (the top middle plot) goes down to -10000 for $\alpha$ = 1.1, but for $\alpha$ = 0.1, they don't get as much of the huge negative, meaning they're only 1,000.

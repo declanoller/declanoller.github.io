@@ -225,6 +225,7 @@ We can see that it quickly drops to $N_{nodes} = 1$, where it's trying to solve 
 ![](/assets/images/RL_tree_4.png)
 
 ![](/assets/images/RL_tree_8.png)
+
 Given that it's only using primitive rects, it's actually *not* doing that badly! In the randomly chosen examples above, the worst one gets an $R_{tot}$ of 0.62, and the others get from 0.75 to 0.90. This is a prime example of why PT really makes a difference: RL can get these not-terrible scores relatively easily, but it's a local minimum. It briefly tries with more nodes at the beginning (i.e., using the union operation more), but the canvas policies are bad enough that they don't produce helpful child canvases, and thus $\pi_{op}$ learns that doing union is always bad! This could possibly be solved by enforcing exploration by adding an entropy term to the loss, but I didn't bother with that here.
 Now, RL with no baseline subtracted:
 

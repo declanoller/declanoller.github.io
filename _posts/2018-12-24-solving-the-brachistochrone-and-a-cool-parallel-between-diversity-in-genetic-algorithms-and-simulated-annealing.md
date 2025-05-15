@@ -35,17 +35,20 @@ Anyway, I thought this might be a fun application for genetic algorithms (GA). M
 
 So, here's an example of a (very bad) candidate solution in black, with the ideal solution in gray:
 
-![](/assets/images/evolve_Brachistochrone__pop20__gen10__N30__height1.3__17-12-2018_22-46-28-1.png)Here, $N_{pts} = 30$, which you can see on the candidate solution.
+![](/assets/images/evolve_Brachistochrone__pop20__gen10__N30__height1.3__17-12-2018_22-46-28-1.png)
+Here, $N_{pts} = 30$, which you can see on the candidate solution.
 Mutating is randomly choosing between 1 and N points (besides the start and end points), and changing each from its current position by some amount (more on this below). Mating is taking two candidate solutions and choosing a random set of their corresponding points, and switching them. I (for no real reason) do something here that's actually a little unusual from stuff I've seen in the literature: to mate them, I basically do a Cartesian product of the current population to get mate pairs, mate them, then mutate these, as well as the (unmated) current population, and then take the best of all these *and* the original population. That involves taking the FF of each, which is usually a way too expensive operation. Maybe I'll change this in a bit, since it's probably very inefficient.
 
 Anyway! So how does it do?
 
 Here it is for $N_{pop}$ (population size) 12, $N_{pts} = 12$, a height of 1.3, and 150 generations:
-![](/assets/images/evolve_Brachistochrone__pop12__gen150__N12__height1.3__17-12-2018_23-07-41.gif)Neat! In the top panel, it's plotting the best FF of the population, as well as the mean of the population, which are pretty similar pretty quickly. In the bottom panel, it's showing the whole population at each step, color coded from best to worse (black being the best solution, red to blue going from best to worst). The 'ideal' label is the time needed for the calculated ideal solution, and the 'actual' label is for the best candidate solution.
+![](/assets/images/evolve_Brachistochrone__pop12__gen150__N12__height1.3__17-12-2018_23-07-41.gif)
+Neat! In the top panel, it's plotting the best FF of the population, as well as the mean of the population, which are pretty similar pretty quickly. In the bottom panel, it's showing the whole population at each step, color coded from best to worse (black being the best solution, red to blue going from best to worst). The 'ideal' label is the time needed for the calculated ideal solution, and the 'actual' label is for the best candidate solution.
 
 Let's also try a configuration that has to go below the finishing point, by setting the height to 0.3 instead:
 
-![](/assets/images/evolve_Brachistochrone__pop12__gen150__N12__height0.3__17-12-2018_23-15-25-1.gif)Neato!
+![](/assets/images/evolve_Brachistochrone__pop12__gen150__N12__height0.3__17-12-2018_23-15-25-1.gif)
+Neato!
 
 So let's try and vary a couple other things. First, let's add some points. You can see that, in the 2nd example, even after settling, it's still not exactly at the ideal solution. However, that's because the ideal solution isn't limited by the resolution of these points. So, the one it finds might *actually be* roughly the ideal solution, if you could only use 12 points (...or it could still be a slightly crappy solution).
 
@@ -71,7 +74,8 @@ So, to enforce more diversity, you just need to increase that threshold, same_th
 
 So how does it do? Here it is with same_thresh = 0.05:
 
-![](/assets/images/evolve_Brachistochrone__pop25__gen400__N30__height1.3__sameness_thresh0.05__mutate_strength_height_frac0.05__same_thresh_decay_stepsNone__18-12-2018_17-19-52.gif)So you can see that it's definitely achieving a better solution by the end that the previous one that didn't enforce diversity. However, there are two things to watch out for here.
+![](/assets/images/evolve_Brachistochrone__pop25__gen400__N30__height1.3__sameness_thresh0.05__mutate_strength_height_frac0.05__same_thresh_decay_stepsNone__18-12-2018_17-19-52.gif)
+So you can see that it's definitely achieving a better solution by the end that the previous one that didn't enforce diversity. However, there are two things to watch out for here.
 
 First, if you look closely you can see the red curves disappearing as it goes on. This is because at some point, too many of the solutions are returning True from isSameState(), and the enforced diversity is actually making the population size go down. Sometimes it will bounce back, after a few lucky mutations/matings, but often it effectively kills it. This also makes the mutation_strength parameter very important, because it will determine how different states can mutate from each other. So you have to scale the mutation amount by the diversity you're enforcing.
 
@@ -81,7 +85,8 @@ Here's an example where the mutation strength is too weak to provide different e
 
 However, this is a pretty delicate balance too, because just increasing the mutation_strength along with the diversity will just make it so most solutions are pretty bad, even if the population doesn't collapse. Here's an example with a high diversity, but also a high mutation_strength:
 
-![](/assets/images/evolve_Brachistochrone__pop25__gen800__N30__height1.3__sameness_thresh0.05__mutate_strength_height_frac0.15__same_thresh_decay_stepsNone__18-12-2018_17-38-26.gif)The states are changing and the population isn't collapsing, but the solution isn't really getting anywhere either.
+![](/assets/images/evolve_Brachistochrone__pop25__gen800__N30__height1.3__sameness_thresh0.05__mutate_strength_height_frac0.15__same_thresh_decay_stepsNone__18-12-2018_17-38-26.gif)
+The states are changing and the population isn't collapsing, but the solution isn't really getting anywhere either.
 
 The other hurdle is that even if you tuned that combo somewhat well, there's a good chance that as it gets close to the solution, it will be really difficult for it to converge nicely, because you'll effectively be allowing only one individual too close to the solution.
 
@@ -114,7 +119,8 @@ You can see something pretty cool if you look carefully at the colors of the pop
 
 This point where the population picks back up again is actually where it makes a relatively (for being so "late" in the evolution) large amount of progress, such that you can often see a noticeable shoulder in the FF curves, like here around generation 375:
 
-![](/assets/images/evolve_Brachistochrone__pop25__gen500__N30__height0.3__sameness_thresh0.15__mutate_strength_height_frac0.01__same_thresh_decay_steps500__18-12-2018_19-50-11.gif)Anyway, that's it for the fun stuff! This was longer than I expected, so I'll actually do the other stuff in another post, like other applications and comparisons to other search methods. Below is just a little more rambling about this stuff.
+![](/assets/images/evolve_Brachistochrone__pop25__gen500__N30__height0.3__sameness_thresh0.15__mutate_strength_height_frac0.01__same_thresh_decay_steps500__18-12-2018_19-50-11.gif)
+Anyway, that's it for the fun stuff! This was longer than I expected, so I'll actually do the other stuff in another post, like other applications and comparisons to other search methods. Below is just a little more rambling about this stuff.
 
 I do feel obligated to mention that GA actually probably isn't the best search method for this application, though: the merits of GA for *anything* (compared to other search/optimization methods, that is) are a contentious issue, but this problem almost certainly isn't a good application for it.
 

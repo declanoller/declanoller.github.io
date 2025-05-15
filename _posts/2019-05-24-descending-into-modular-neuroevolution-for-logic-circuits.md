@@ -20,9 +20,12 @@ So, those worked for those simple games, but the larger reason I'm interested in
 
 In contrast, lots of impressive structures you see in the world are modular and hierarchical, which naturally lends itself to reuse and generality. For example: with complex electronics and computers, you start with a handful of very simple components, and combine them in clever ways to make "meta components", or "modules", that you can treat like a black box that does a specific task. You figure out how to wire together a couple transistors and a few resistors, and now you've got a NAND gate. You wire some of those together to make an AND or OR gate, then wire those together to make a single bit half adder, etc., and you eventually get a computer (more on this below).
 
-![](/assets/images/modular_1.png) 
-![](/assets/images/modular_2.png) 
-![](/assets/images/comp_cat.png)My point is that it seems like you eventually *need* some concept of modularity to do the really cool stuff. And of course, here again, there's a tonnnn of research being done on this topic, which I'm really interested in. So here's an extension of what I did last time!
+![](/assets/images/modular_1.png)
+ 
+![](/assets/images/modular_2.png)
+ 
+![](/assets/images/comp_cat.png)
+My point is that it seems like you eventually *need* some concept of modularity to do the really cool stuff. And of course, here again, there's a tonnnn of research being done on this topic, which I'm really interested in. So here's an extension of what I did last time!
 
 There are two main additions here. The first is that here, I use both the evolutionary strategy *and* GD.  Last time, the only way to change the weights was for them to randomly mutate. It...worked, but really slowly: finding an acceptable set of even just 12 weights is still a large parameter space to search randomly. So, in this article, **I'm still letting it mutate the NN to add/remove nodes/weights, but I'm letting it find the best weights it can for its current architecture by training it with GD**. This turns out to be much faster, as you'll see.
 

@@ -529,7 +529,7 @@ def img_tags_to_markdown(html_text: str) -> str:
         src = img.get("src", "")
         new_src = update_image_src(src)
         alt = img.get("alt", "")
-        md_img = f"\n![{alt}]({new_src})"
+        md_img = f"\n![{alt}]({new_src})\n"
         img.replace_with(NavigableString(md_img))
     return str(soup)
 

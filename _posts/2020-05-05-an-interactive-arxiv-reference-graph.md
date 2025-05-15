@@ -30,12 +30,15 @@ Graph layouts themselves are a big topic. The layout is, well, how you display t
 Luckily, networkx has a bunch of layouts built in. I experimented with a few, but ultimately found the "dot" layout to be my favorite. Here are a few I tested:
 
 ![](/assets/images/graph_test_sfdp-1024x585.png)
+
 SFDP layout
 
 ![](/assets/images/graph_test_neato-1-1024x585.png)
+
 Neato layout
 
 ![](/assets/images/graph_test-1024x585.png)
+
 Dot layout
 
 I like dot because it tightly bunches citations of the same parent together, and you can see "levels" in it fairly well.
