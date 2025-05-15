@@ -7,9 +7,9 @@ permalink: /about/
 # About
 
 <div align="center">
-  <img class="custom-row-img" src="/assets/images/me1.png">
-  <img class="custom-row-img" src="{{ site.baseurl }}/assets/images/me2.png">
-  <img class="custom-row-img" src="{{ site.baseurl }}/assets/images/me3.png">
+  <img class="custom-row-img" src="/assets/images/me1.jpg">
+  <img class="custom-row-img" src="{{ site.baseurl }}/assets/images/me2.jpg">
+  <img class="custom-row-img" src="{{ site.baseurl }}/assets/images/me3.jpg">
 </div>
 
 Hey there! My name's Declan. I like to learn stuff, make things, play music, code, and take some pictures.
