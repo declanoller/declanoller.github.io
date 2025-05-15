@@ -108,9 +108,11 @@ Increasing the depth changes how big the difference between small and large ampl
 
 ![](/assets/images/5.gif)
 
-Increasing the rate does pretty much what you'd expect:![](/assets/images/2.gif)
+Increasing the rate does pretty much what you'd expect:
+![](/assets/images/2.gif)
 
-However, if we make the window time much larger (here, 10 and 20 ms), you can see what it's doing on a larger scale: adding something akin to an "envelope" to the wave:![](/assets/images/6.gif)
+However, if we make the window time much larger (here, 10 and 20 ms), you can see what it's doing on a larger scale: adding something akin to an "envelope" to the wave:
+![](/assets/images/6.gif)
 
 Therefore, increasing the rate makes those envelopes bunched a lot tighter. What's interesting is that, while the phaser was doing it fairly regularly, this one has very random looking envelopes:
 

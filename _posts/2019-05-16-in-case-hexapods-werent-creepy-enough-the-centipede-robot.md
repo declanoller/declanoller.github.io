@@ -163,7 +163,8 @@ I half suspected the hip/ankle to servo attachment would be a problem since the 
 
 So, after a while, I was finding that if too much torque was on a leg, the part where it attaches to the gear would just slip, which obviously can't work. So, I redesigned them to work with the servo horns:
 
-![](/assets/images/horns_leg.png)![](/assets/images/horns_connector.png)
+![](/assets/images/horns_leg.png)
+![](/assets/images/horns_connector.png)
 
 ![](/assets/images/IMG_20190502_093820-1.jpg)
 

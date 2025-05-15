@@ -10,21 +10,29 @@ title: How to use an Arduino to keep a crazy pup from wrecking the house while y
 I recently got a dog!
 
 ![](/assets/images/IMG_20191017_155910_939-745x1024.jpg)
+
 ![](/assets/images/IMG_20191006_111918-3-768x1024.jpg)
+
 ![](/assets/images/IMG_20191008_092503-768x1024.jpg)
+
 ![](/assets/images/IMG_20200101_100331-1024x768.jpg)
 Her name is Goose, because when we first got her she had a kennel cough, and it sounded exactly like a goose's honk. She was roughly 9 months old (she's a rescue, so stuff like dates and the breed are just a guess) when we got her, so she's not quite a puppy, but still has plenty of recently-puppy energy. Appreciate more pictures of my pup!
 
 ![](/assets/images/IMG_20191014_120731-810x1024.jpg)
+
 ![](/assets/images/IMG_20191106_093939-1024x983.jpg)
+
 ![](/assets/images/imagejpeg_0.jpg)
+
 ![](/assets/images/IMG_20191007_115256-765x1024.jpg)
 *APPRECIATE HER.*
 
 I mostly work at home, but sometimes when I have to go out for several hours, she gets...rowdy. I don't know if she has separation anxiety, or is just taking advantage of being unsupervised to be a little demon, but...
 
 ![](/assets/images/IMG_20191123_004734-757x1024.jpg)
+
 ![](/assets/images/IMG_20191123_004906-814x1024.jpg)
+
 ![](/assets/images/IMG_20191123_004728-768x1024.jpg)
 
 ![](/assets/images/IMG_20200105_131643-1-768x1024.jpg)
@@ -41,12 +49,14 @@ It's actually a pretty clever mechanism I hadn't thought of. The food just sits 
 So I got one of these, but because it's meant for fish, it's only programmed to feed every 12 or 24 hours. Fortunately, it also has a "manual feed" button you can just press. Typically, pressing a button just means bridging two parts of the circuit on either side of the button, usually connecting something to ground or the circuit's positive voltage. I opened it up, powered it on, and poked around with my multimeter.
 
 ![](/assets/images/IMG_20191126_165439-1024x690.jpg)
+
 ![](/assets/images/IMG_20191126_165525-1024x866.jpg)
 As expected, one side of the button is at 0V, and the other side is at 3.3V. When you press the button, it connects them and triggers the input of some IC. I tested it by poking the 0V side with a wire connected to the positive voltage, and it worked sporadically. I figured it had to do with my timing of poking the wire, and I could work out the precise timing later, but it was only after I screwed the whole thing shut once that I realized that the button press wasn't pulling the 0V side up to 3.3V, the 0V side was pulling the 3.3V side down! I rewired it slightly and closed the whole thing up.
 
 I broke out 3 wires: ground, 3.3V, and the positive side of the button. The device typically runs on 2 AA batteries, but I thought it'd be nice to instead power it with an external supply since I needed it anyway.
 
 ![](/assets/images/IMG_20191126_175435-1.jpg)
+
 ![](/assets/images/IMG_20191126_181640-829x1024.jpg)
 As for the control, I wanted the option to tune the frequency of the food deposits in some time range (~5 minutes or so). Originally I was planning on using a classic 555 timer circuit with a potentiometer. I whipped one up, but only after doing so did I realize that they're not really meant for such long periods; you start having issues with leakage, tolerances matter a lot, and it's generally a nightmare, from what I read. So I caved and just used an Arduino mini, and it took about 5 minutes to get it working. To tune the frequency, I used the analog input of it. I knew the concept but had never actually used it. You basically just use the pot as a voltage divider between ground and V+, and the analog input reads the voltage of the pot's middle pin, and the standard analog input library returns a value from 0 - 2^10 corresponding to voltage values from ground to V+. I'll definitely be using it again!
 
@@ -115,6 +125,7 @@ The feeder is built with a nice clamping mechanism, so I put it high up where th
 I also used half a funnel to make sure it goes in the right direction. How does it work?
 
 ![](/assets/images/IMG_20200112_015915-768x1024.jpg)
+
 ![](/assets/images/IMG_20200112_015810-768x1024.jpg)
 That's a distracted and less destructive pup! I've used it a handful of times so far and she hasn't destroyed anything since.
 

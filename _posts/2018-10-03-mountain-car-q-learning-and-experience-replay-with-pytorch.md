@@ -100,7 +100,8 @@ $\alpha = 0.7$:
 
 For 300 episodes, they're pretty much the same. However, after 3000, the N=60 one has continued to improve, because it got more info it needed and was able to use it, while the N=10 one is about the same.
 
-$\alpha = 0.05$:![](/assets/images/vary_N_discrete-8.png)
+$\alpha = 0.05$:
+![](/assets/images/vary_N_discrete-8.png)
 ![](/assets/images/vary_N_discrete-9.png)
 
 Here, you can see that if you try a smaller learning rate, the effect is really pronounced. After 300 episodes, N=10 has converged quickly, but N=60 is both getting fewer samples per state, and additionally, the smaller alphas mean that each samples "counts" for less. So, even after 3000, N=10 is somewhat better, though it seems like N=60 is still improving.

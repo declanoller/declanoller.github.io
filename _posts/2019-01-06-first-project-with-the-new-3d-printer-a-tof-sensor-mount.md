@@ -52,7 +52,8 @@ This is also another way this design could be better: ideally, you could take th
 
 ![](/assets/images/TOF_mount_sensor3.png)
 
-You can also see the challenge of getting it centered over the rod. You definitely couldn't if it was rotated 90 degrees CW here (the pins/wires would go straight into the rod), and it would be tricky to mount it over the center and not have the screws collide with the rod. There are definitely ways, but this is a pretty easy compromise.![](/assets/images/TOF_mount_sensor2.png)
+You can also see the challenge of getting it centered over the rod. You definitely couldn't if it was rotated 90 degrees CW here (the pins/wires would go straight into the rod), and it would be tricky to mount it over the center and not have the screws collide with the rod. There are definitely ways, but this is a pretty easy compromise.
+![](/assets/images/TOF_mount_sensor2.png)
 
 How'd it come out?
 

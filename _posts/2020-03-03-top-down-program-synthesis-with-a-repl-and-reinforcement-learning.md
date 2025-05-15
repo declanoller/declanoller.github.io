@@ -192,8 +192,11 @@ However, for the sake of brevity (hah), I'll leave those out unless they're rele
 Lastly before I go into details and experiments, probably the coolest outputs are the actual synthesis trees produced by an episode! To do this, I just run an episode in evaluation mode, and save all the resulting canvases and rewards. Here are a few examples:
 
 ![](/assets/images/PT_tree_3.png)
+
 ![](/assets/images/PT_tree_9.png)
+
 ![](/assets/images/PT_tree_14.png)
+
 ![](/assets/images/PT_tree_9-1.png)
 
 For each, the spec canvas is on the left, and its reconstruction (given its actions and reconstructions of its child canvases) are on the right. The node's number and $R_{tot}$ are displayed above each. You can see a few interesting things off the bat. It does a pretty good job, but it will frequently miss little corners if they're not large enough to register as part of an actual primitive, as opposed to noise. Also, note that although the canvases produced by the policy (canv 1 and 2) are often imperfect, because they get a primitive rectangle fitted to them, and the rectangle is what actually creates the reconstructed canvases, the root node is still able to get a perfect score.
@@ -214,9 +217,13 @@ Well, it does *something*, but definitely worse than with PT. We can see that it
 ![](/assets/images/N_nodes_only.png)
 
 We can see that it quickly drops to $N_{nodes} = 1$, where it's trying to solve every spec canvas with a single primitive. Here are a few of the synthesis trees of that:
+
 ![](/assets/images/RL_tree_0.png)
+
 ![](/assets/images/RL_tree_1.png)
+
 ![](/assets/images/RL_tree_4.png)
+
 ![](/assets/images/RL_tree_8.png)
 Given that it's only using primitive rects, it's actually *not* doing that badly! In the randomly chosen examples above, the worst one gets an $R_{tot}$ of 0.62, and the others get from 0.75 to 0.90. This is a prime example of why PT really makes a difference: RL can get these not-terrible scores relatively easily, but it's a local minimum. It briefly tries with more nodes at the beginning (i.e., using the union operation more), but the canvas policies are bad enough that they don't produce helpful child canvases, and thus $\pi_{op}$ learns that doing union is always bad! This could possibly be solved by enforcing exploration by adding an entropy term to the loss, but I didn't bother with that here.
 Now, RL with no baseline subtracted:

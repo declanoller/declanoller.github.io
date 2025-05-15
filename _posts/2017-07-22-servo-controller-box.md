@@ -65,7 +65,8 @@ Yet another motivation was that I wanted to learn about Arduinos a little. I kne
 
 So with these two components in mind, I put together the following device:
 
-![img_20160901_181353082](/assets/images/img_20160901_181353082.jpg)![img_20160901_181409251](/assets/images/img_20160901_181409251.jpg)
+![img_20160901_181353082](/assets/images/img_20160901_181353082.jpg)
+![img_20160901_181409251](/assets/images/img_20160901_181409251.jpg)
 
 Again, you'll notice some "were you drunk when you made this?" shoddy construction details. I grabbed these three big red momentary push buttons I had lying around, which is why it looks like a detonator a cartoon coyote would use or something. The hole for the LCD screen was roughly cut out with a jigsaw, so it's not that smooth or flush. The screws are very visible and obviously clash with the black color of the box. The bolt heads for the nylon standoffs on the bottom stick out.  My point is, I wasn't really going for cosmetics here.
 

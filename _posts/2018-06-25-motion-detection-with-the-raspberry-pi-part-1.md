@@ -18,7 +18,13 @@ I was able to put his code together and run it pretty quickly (though I removed 
 
 Of course, the devil is in the details. If you watch it a few times, you'll notice some weird behavior. Most obviously, boxes are detected around the objects, but then the boxes appear to remain where the object was for several frames. Here you can see it frame by frame:
 
-![](/assets/images/2018-06-11_11-34-29.jpg) ![](/assets/images/2018-06-11_11-34-30.jpg) ![](/assets/images/2018-06-11_11-34-31.jpg) ![](/assets/images/2018-06-11_11-34-32.jpg) ![](/assets/images/2018-06-11_11-34-33.jpg) ![](/assets/images/2018-06-11_11-34-34.jpg) ![](/assets/images/2018-06-11_11-34-35.jpg)
+![](/assets/images/2018-06-11_11-34-29.jpg) 
+![](/assets/images/2018-06-11_11-34-30.jpg) 
+![](/assets/images/2018-06-11_11-34-31.jpg) 
+![](/assets/images/2018-06-11_11-34-32.jpg) 
+![](/assets/images/2018-06-11_11-34-33.jpg) 
+![](/assets/images/2018-06-11_11-34-34.jpg) 
+![](/assets/images/2018-06-11_11-34-35.jpg)
 
 Why does this happen? Well it's actually a smart feature, but done in a somewhat clumsy way. In his code, he has the following (I combined the few relevant snippets) inside the main frame capturing loop:
 
