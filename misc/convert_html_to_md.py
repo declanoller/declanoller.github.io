@@ -497,6 +497,29 @@ def pre_tags_to_markdown(html_text: str) -> str:
     return str(soup)
 
 
+def convert_gallery_to_individual_images(html_text: str) -> str:
+    """
+    Converts <figure> blocks with gallery structure into individual <img> tags separated by new lines.
+
+    Args:
+        html_text (str): The HTML content to process.
+
+    Returns:
+        str: The modified HTML content.
+    """
+    soup = BeautifulSoup(html_text, "html.parser")
+
+    for figure in soup.find_all("figure", class_="wp-block-gallery"):
+        images = []
+        for img in figure.find_all("img"):
+            images.append(str(img))
+        if images:
+            new_content = "\n\n".join(images)
+            figure.replace_with(BeautifulSoup(new_content, "html.parser"))
+
+    return str(soup)
+
+
 def img_tags_to_markdown(html_text: str) -> str:
     """
     Convert <img> tags to Markdown image syntax.
@@ -706,6 +729,11 @@ def convert_html_to_markdown(html_text: str) -> Tuple[str, Set[str]]:
 
     # Convert <strong> tags to Markdown bold.
     html_text = strong_tags_to_markdown(html_text)
+
+    # Convert <figure> blocks with gallery structure into individual <img> tags.
+    # Note! Do this before the unordered lists, because the <figure> blocks *contain*
+    # unordered lists.
+    html_text = convert_gallery_to_individual_images(html_text)
 
     # Convert unordered lists (<ul> with <li>) to Markdown bullet lists.
     html_text = unordered_lists_to_markdown(html_text)

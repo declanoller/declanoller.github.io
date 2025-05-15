@@ -34,17 +34,15 @@ Note that with this method, since you're necessary overwriting pixels/have some 
 
 I think we get pretty far with this off the bat! Here's an example of mangling dear Euler, along with its corresponding translation per `PixelBlock`:
 
-- 
-- 
-
+![](/assets/images/euler_smeared_3.jpg)
+![](/assets/images/euler_vecfield_smeared_3.jpg)
 And one with much finer blocks:
 
 ![](/assets/images/euler_smeared_pos_1pt0_fixed.jpg)
 
 However, it's still missing a lot. One is that here I just used a translation vector field of the form $f(x, y) = x \hat{i} + y \hat{j}$, which is just sending "spreading" all the blocks out uniformly. Clearly, way more is going on in the originals. To fix this, I just added a "jitter" term to each, a `np.random.randn(2)`. That definitely improves it a bunch:
-
-- 
-- 
+![](/assets/images/euler_smeared_30.jpg)
+![](/assets/images/euler_vecfield_smeared_30.jpg)
 
 ![](/assets/images/euler_smeared_200.jpg)
 
