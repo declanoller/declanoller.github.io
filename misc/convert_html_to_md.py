@@ -457,7 +457,7 @@ def unordered_lists_to_markdown(html_text: str) -> str:
                 if a.has_attr("href"):
                     markdown_link = f"[{a.get_text(strip=True)}]({a['href']})"
                     a.replace_with(markdown_link)
-            li_text = li.get_text(separator="", strip=True)
+            li_text = li.get_text(separator="")
             items.append(f"- {li_text}")
         md_ul = "\n".join(items) + "\n\n"
         ul.replace_with(NavigableString(md_ul))

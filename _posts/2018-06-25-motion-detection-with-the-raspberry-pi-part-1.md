@@ -140,7 +140,10 @@ There's a flaw with this still, though. It's hard to notice unless you know to l
 So, on the docket for next time:
 
 - Fix the sending thing to do in parallel
-- Make monitoring program on other side that adds the files, etc to a CSV file to be analyzed with pandasDo statistics with traffic (car and human)?
+- Make monitoring program on other side that adds the files, etc to a CSV file to be analyzed with pandas
+
+Do statistics with traffic (car and human)?
+
 - Use keras with CIFAR datasets to figure out if detected object is car, person, etc
 - Attach lens to get better view of cars
 - Make rain shield with PVC pipe so I can leave it out for days or weeks
