@@ -1,25 +1,194 @@
 import pytest
-from convert_html_to_md import convert_html_to_markdown
-from typing import Tuple, List
 from convert_html_to_md import (
+    a_tags_to_markdown,
+    blockquote_to_markdown,
+    convert_html_to_markdown,
+    heading_tags_to_markdown,
+    img_tags_to_markdown,
+    italic_tags_to_markdown,
+    ordered_lists_to_markdown,
+    paragraphs_to_markdown,
+    pre_tags_to_markdown,
     remove_doctype_declaration,
-    remove_wp_comment_paragraphs,
-    remove_latexpage_first_paragraph,
     remove_latexpage_br_in_paragraphs,
-    underline_span_to_h5_heading,
+    remove_latexpage_first_paragraph,
+    remove_wp_comment_paragraphs,
+    strong_tags_to_markdown,
     strong_underline_span_to_h5_heading,
     underline_span_to_bold,
-    heading_tags_to_markdown,
-    blockquote_to_markdown,
-    italic_tags_to_markdown,
-    strong_tags_to_markdown,
+    underline_span_to_h5_heading,
     unordered_lists_to_markdown,
-    ordered_lists_to_markdown,
-    pre_tags_to_markdown,
-    img_tags_to_markdown,
-    a_tags_to_markdown,
-    paragraphs_to_markdown,
 )
+from typing import Tuple, List
+
+
+@pytest.mark.parametrize(
+    "html,expected",
+    [
+        ("<strong><u>Important</u></strong>", "<h5>Important</h5>"),
+        (
+            "<strong><u>Text</u></strong> and more",
+            "<strong><u>Text</u></strong> and more",
+        ),
+        ("<p><strong><u>Header</u></strong></p>", "<h5>Header</h5>"),
+        ("<p>Normal</p>", "<p>Normal</p>"),
+    ],
+)
+def test_strong_underline_span_to_h5_heading(html, expected):
+    assert strong_underline_span_to_h5_heading(html) == expected
+
+
+@pytest.mark.parametrize(
+    "html,expected",
+    [
+        (
+            "<span style='text-decoration: underline;'>Underlined</span>",
+            "**Underlined**",
+        ),
+        (
+            "<span style='text-decoration: underline;'>Text</span> and more",
+            "**Text** and more",
+        ),
+        ("<p><span style='text-decoration: underline;'>A</span></p>", "<p>**A**</p>"),
+        ("<p>Normal</p>", "<p>Normal</p>"),
+    ],
+)
+def test_underline_span_to_bold(html, expected):
+    assert underline_span_to_bold(html) == expected
+
+
+@pytest.mark.parametrize(
+    "html,expected",
+    [
+        ("<h1>Header 1</h1>", "# Header 1\n\n"),
+        ("<h2>Header 2</h2>", "## Header 2\n\n"),
+        ("<h3>Header 3</h3>", "### Header 3\n\n"),
+        ("<h4>Header 4</h4>", "#### Header 4\n\n"),
+        ("<h5>Header 5</h5>", "##### Header 5\n\n"),
+        ("<h6>Header 6</h6>", "###### Header 6\n\n"),
+    ],
+)
+def test_heading_tags_to_markdown(html, expected):
+    assert heading_tags_to_markdown(html) == expected
+
+
+@pytest.mark.parametrize(
+    "html,expected",
+    [
+        ("<blockquote>Quote</blockquote>", "> Quote\n\n"),
+        ("<blockquote><p>Nested</p></blockquote>", "> Nested\n\n"),
+        ("<p>Normal</p>", "<p>Normal</p>"),
+    ],
+)
+def test_blockquote_to_markdown(html, expected):
+    assert blockquote_to_markdown(html) == expected
+
+
+@pytest.mark.parametrize(
+    "html,expected",
+    [
+        ("<i>italic</i>", "*italic*"),
+        ("<em>emphasis</em>", "*emphasis*"),
+        ("<i>italic</i> and <em>emphasis</em>", "*italic* and *emphasis*"),
+        ("<p>Normal</p>", "<p>Normal</p>"),
+    ],
+)
+def test_italic_tags_to_markdown(html, expected):
+    assert italic_tags_to_markdown(html) == expected
+
+
+@pytest.mark.parametrize(
+    "html,expected",
+    [
+        ("<strong>bold</strong>", "**bold**"),
+        ("<b>bold</b>", "**bold**"),
+        ("<strong>bold</strong> and <b>bold</b>", "**bold** and **bold**"),
+        ("<p>Normal</p>", "<p>Normal</p>"),
+    ],
+)
+def test_strong_tags_to_markdown(html, expected):
+    assert strong_tags_to_markdown(html) == expected
+
+
+@pytest.mark.parametrize(
+    "html,expected",
+    [
+        ("<ul><li>Item 1</li><li>Item 2</li></ul>", "- Item 1\n- Item 2\n\n"),
+        (
+            "<ul><li>Nested<ul><li>Subitem</li></ul></li></ul>",
+            "- Nested\n  - Subitem\n\n",
+        ),
+        ("<p>Normal</p>", "<p>Normal</p>"),
+    ],
+)
+def test_unordered_lists_to_markdown(html, expected):
+    assert unordered_lists_to_markdown(html) == expected
+
+
+@pytest.mark.parametrize(
+    "html,expected",
+    [
+        ("<ol><li>First</li><li>Second</li></ol>", "1. First\n2. Second\n\n"),
+        (
+            "<ol><li>Nested<ol><li>Subitem</li></ol></li></ol>",
+            "1. Nested\n   1. Subitem\n\n",
+        ),
+        ("<p>Normal</p>", "<p>Normal</p>"),
+    ],
+)
+def test_ordered_lists_to_markdown(html, expected):
+    assert ordered_lists_to_markdown(html) == expected
+
+
+@pytest.mark.parametrize(
+    "html,expected",
+    [
+        ("<pre>Code block</pre>", "```\nCode block\n```\n"),
+        ("<pre><code>Indented</code></pre>", "```\nIndented\n```\n"),
+        ("<p>Normal</p>", "<p>Normal</p>"),
+    ],
+)
+def test_pre_tags_to_markdown(html, expected):
+    assert pre_tags_to_markdown(html) == expected
+
+
+@pytest.mark.parametrize(
+    "html,expected",
+    [
+        (
+            '<img src="/path/to/image.png" alt="Description">',
+            "![Description](/path/to/image.png)",
+        ),
+        ('<img src="/path/to/image.png">', "![](/path/to/image.png)"),
+        ("<p>Normal</p>", "<p>Normal</p>"),
+    ],
+)
+def test_img_tags_to_markdown(html, expected):
+    assert img_tags_to_markdown(html) == expected
+
+
+@pytest.mark.parametrize(
+    "html,expected",
+    [
+        ('<a href="https://example.com">Link</a>', "[Link](https://example.com)"),
+        ('<a href="https://example.com"></a>', "[](https://example.com)"),
+        ("<p>Normal</p>", "<p>Normal</p>"),
+    ],
+)
+def test_a_tags_to_markdown(html, expected):
+    assert a_tags_to_markdown(html) == expected
+
+
+@pytest.mark.parametrize(
+    "html,expected",
+    [
+        ("<p>Paragraph</p>", "Paragraph\n\n"),
+        ("<p>Line 1</p><p>Line 2</p>", "Line 1\n\nLine 2\n\n"),
+        ("<p>Normal</p>", "Normal\n\n"),
+    ],
+)
+def test_paragraphs_to_markdown(html, expected):
+    assert paragraphs_to_markdown(html) == expected
 
 
 @pytest.mark.parametrize(

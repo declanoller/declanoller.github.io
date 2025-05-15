@@ -591,6 +591,23 @@ def process_video_blocks_to_gif(html_text: str) -> str:
     return str(soup)
 
 
+def special_text_replacements(html_text: str) -> str:
+    """
+    This function is a placeholder for any special text replacements.
+
+    Be careful where you place this -- I'm placing it last, to act as
+    a special catch-all.
+
+    Here's a list of the current ones and their reasons:
+    - " | " to " \\mid ": This is in the Haskell post and the REPL post, in
+                the context of q(x | y), etc.
+    """
+    # Replace any special text patterns here
+    # For example, replace "foo" with "bar"
+    html_text = html_text.replace(" | ", r" \mid ")
+    return html_text
+
+
 def find_unhandled_html_tags(html_text: str) -> Set[str]:
     """
     Identify any remaining (unhandled) HTML tags in the given HTML text.
@@ -699,6 +716,10 @@ def convert_html_to_markdown(html_text: str) -> Tuple[str, Set[str]]:
     # Process video blocks and convert them to GIFs.
     html_text = process_video_blocks_to_gif(html_text)
 
+    # Perform any special text replacements.
+    html_text = special_text_replacements(html_text)
+
+    # Find any unhandled HTML tags
     unhandled_tags = find_unhandled_html_tags(html_text)
 
     # Remove any remaining HTML tags and replace HTML entities with their literal characters.
