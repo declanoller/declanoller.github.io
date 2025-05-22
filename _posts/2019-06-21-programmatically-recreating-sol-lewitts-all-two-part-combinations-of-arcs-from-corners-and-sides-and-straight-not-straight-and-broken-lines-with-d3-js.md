@@ -7,7 +7,8 @@ title: Programmatically recreating Sol LeWitt's "All two-part combinations of ar
   from corners and sides, and straight, not straight and broken lines" with d3.js
 ---
 
-[Skip to the full page interactive version](https://www.declanoller.com/wp-content/uploads/2019/06/two_part_combos_fullscreen.html) if you don't want to read the post!
+[Skip to the full page interactive version](assets/html/two_part_combos_fullscreen.html) if you don't want to read the post!
+
 I recently went to [MASS MoCA](https://massmoca.org/) with my friends for the first time. I had heard of it, but assumed they were talking about a huge chocolate flavored coffee drink. So imagine my surprise!
 
 I missed it when they went last year, but they spoke really highly of it, and particularly of one artist's *oeuvre* (that's the even more pretentious way of saying "works"!): [Sol LeWitt](https://en.wikipedia.org/wiki/Sol_LeWitt). In fact, they liked one of his pieces so much that [Ben](http://blog.benwiener.com/programming/art/2017/08/24/lewitt.html) and [Phil](http://www.philipzucker.com/elm-eikonal-sol-lewitt/) made posts on recreating it with code!
