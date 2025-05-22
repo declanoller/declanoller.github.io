@@ -12,8 +12,6 @@ So I wanted to visualize this for fun! but it also has the possible benefit of g
 
 [Try it out here if you don't want to read about it!](assets/html/d3_graph.html)
 
-[Try it out here if you don't want to read about it!](/assets/html/d3_graph.html)
-
 There are lots of ways of doing this, but I did it in a quick and dirty way. Here's a brief overview. arXiv is of course free, and they do support you downloading papers/sources/etc, but they also don't want you spamming them to a ridiculous extent. I'd much rather use Google Scholar, but as of this date, they're actually very *against* this type of thing. [This article talks](https://www.nature.com/articles/d41586-018-04190-5) about a grad student's summer project being about getting data from Google Scholar, but it seems like he had to just solve lots of CAPTCHAs anyway! The reason I've heard for them being cagey is that they probably have some deal with journals that don't want their data aggregated.
 
 So I'm just crawling arXiv here. To start, you give it the URL of an arXiv article, which it adds to a simple FIFO queue. It then does this process:
