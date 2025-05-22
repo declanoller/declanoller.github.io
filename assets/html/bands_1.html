@@ -1,0 +1,407 @@
+<div id="button_stack">
+<div id="button_cont">
+<button class='button' id='save_button'>Save your image!</button>
+</div>
+<div id="button_cont">
+  <a id='about_link' href="https://www.declanoller.com/2019/09/13/making-sol-lewitts-colored-bands-interactive-with-d3-js/">About</a>
+
+</div>
+</div>
+
+<div id="svg_cont"></div>
+
+
+<style>
+
+  body{
+        margin: 0px;
+        padding: 0px;
+    }
+
+  .button {
+    background-color : Transparent;
+    outline : none;
+    border : solid 2px black;
+    border-radius : 6px;
+    font-size : 16px;
+    margin-top : 5px;
+    margin-left : 5px;
+    margin-right : 5px;
+    padding-top : 6px;
+    padding-bottom : 6px;
+    padding-left : 8px;
+    padding-right : 8px;
+    transition-duration: 0.2s;
+    float : right;
+  }
+
+  .button:hover {
+    background-color: #FFEBCD;
+  }
+
+  #about_link {
+    background-color : Transparent;
+    text-decoration : none;
+    outline : none;
+    border : solid 2px black;
+    border-radius : 6px;
+    font-size : 16px;
+    font-color : black;
+    margin-top : 5px;
+    margin-left : 5px;
+    margin-right : 5px;
+    padding-top : 6px;
+    padding-bottom : 6px;
+    padding-left : 8px;
+    padding-right : 8px;
+    transition-duration: 0.2s;
+    float : right;
+  }
+
+  #about_link:hover {
+    background-color: #FFEBCD;
+  }
+</style>
+
+
+
+<script src="https://d3js.org/d3.v5.min.js"></script>
+<script src="https://cdn.rawgit.com/eligrey/canvas-toBlob.js/f1a01896135ab378aa5c0118eadd81da55e698d8/canvas-toBlob.js"></script>
+<script src="https://cdn.rawgit.com/eligrey/FileSaver.js/e9d941381475b5df8b7d7691013401e171014e89/FileSaver.min.js"></script>
+
+<script>
+
+//<button class='button' id='about_button'>About</button>
+
+d3.selectAll('#button_stack')
+          .style('top', '0px')
+          .style('right', '0px')
+          .style('position', 'absolute')
+          .style('z-index', '2');
+
+
+// Better way of figuring out window size
+var wind = window,
+    doc = document,
+    doc_el = doc.documentElement,
+    body_el = doc.getElementsByTagName('body')[0],
+    window_w = wind.innerWidth || doc_el.clientWidth || body_el.clientWidth,
+    window_h = wind.innerHeight|| doc_el.clientHeight|| body_el.clientHeight;
+
+
+var cont_dims = { w : Math.round(window_w),
+                  h : Math.round(window_h)};
+console.log('window dims: ', window_w, window_h);
+
+var w = cont_dims.w;
+var h = cont_dims.h;
+var mouse_pos_x = w/2.0;
+var svg_main = d3.select("div#svg_cont")
+                .append('svg')
+                .attr('width', w)
+                .attr('height', h)
+                .style('position', 'fixed')
+                .style('z-index', '1')
+                .on('mousemove', function() {
+                  mouse_pos_x = d3.mouse(this)[0]; // log the mouse x,y position
+                });
+
+
+var filter = svg_main.append("defs")
+  .append("filter")
+    .attr("id", "cool_filter");
+
+turb_filter = filter
+  .append("feTurbulence")
+    .attr("type", 'fractalNoise')
+    .attr("baseFrequency", 0.02)
+    .attr("numOctaves", 2)
+    .attr("seed", 2)
+    .attr("result", 'myTurbulence');
+
+filter
+  .append("feColorMatrix")
+  .attr("in", 'myTurbulence')
+  .attr("type", 'matrix')
+  .attr("values", "0   0   0   0   0\
+                    0   0   0   0   0\
+                    0   0   0   0   0\
+                    0   0   0   0.12 0")
+  .attr("result", 'myColorTurb');
+
+filter
+  .append("feComposite")
+    .attr("operator", 'xor')
+    .attr("in", 'myColorTurb')
+    .attr("in2", "SourceGraphic")
+    .attr("result", "myComposite");
+
+svg_main
+.attr("filter", "url(#cool_filter)");
+
+var m_pts = 300;
+
+//const colorScale = d3.schemeCategory20b;
+// starting from dark green at the bottom. All brightened a little
+const colorScale = ['#5f6735', '#486174', '#de4c34', '#b98833', '#bd4648', '#e0a527', '#624458',
+                    '#8a595a', '#687e8f', '#6a8465', '#ba9036', '#e1656d', '#7f5c68', '#929063',
+                    '#6e7142', '#be4e53', '#578db6', '#b59f8f', '#c86d4e', '#435d51'];
+
+var n_curves = colorScale.length;
+
+var stack_gen = d3.stack()
+    .keys(d3.range(n_curves));
+
+const x = d3.scaleLinear()
+    .domain([0, m_pts - 1])
+    .range([0, w]);
+
+const y = d3.scaleLinear()
+    .range([h,0]);
+
+const z = d3.interpolateRdYlBu;
+
+const area = d3.area()
+    .x((d, i) => x(i))
+    .y0(d => y(d[0]))
+    .y1(d => y(d[1]));
+
+var pi = 3.14;
+var tau = 2*3.14;
+var phase_f_sine = tau*Math.random();
+var phase_0_sine = tau*Math.random();
+var phase_A_sine = tau*Math.random();
+
+var t_band = Array.from({length: n_curves}, () => 1.5 + 1.0*Math.random()); // goes from 1.5 - 2.5
+var f_mult_band = Array.from({length: n_curves}, () => 1.0 + 1.0*Math.random()); // goes from 1 - 2
+var phase_A_band = Array.from({length: n_curves}, () => tau*Math.random());// goes from 1 - 2
+
+
+var no_move_w = w/30.0;
+var c = w/2;
+var edge_L = (c - no_move_w);
+var edge_R = (c + no_move_w);
+var change = 0.0;
+
+function update_band_params(){
+
+  var dist_from_center = Math.abs(c - mouse_pos_x);
+  var change_mag = 1.5*(dist_from_center - no_move_w)/(c - no_move_w);
+
+  change = 0.0;
+
+  if (mouse_pos_x >= edge_R){
+    change = change_mag;
+  }
+  if (mouse_pos_x <= edge_L) {
+    change = -change_mag;
+  }
+
+  phase_0_sine += change*0.02;
+  phase_f_sine -= change*0.04;
+
+  for (let i = 1; i < n_curves; i++){
+    t_band[i] = change*0.02*(Math.random() - 0.5) + t_band[i];
+    f_mult_band[i] = change*0.005*(Math.random() - 0.5) + f_mult_band[i];
+  }
+
+
+}
+
+
+function sine_bottom_stack(n, m){
+
+  var curves_stack = [];
+
+  var f_0 = 1.0/m;
+  var sine = [];
+
+  // Want f to vary from ~(0.5, 1.5)*f_0
+
+
+  phase_f_sine = phase_f_sine%(tau)
+  phase_0_sine = phase_0_sine%(tau)
+
+  for (let j = 0; j < m; ++j){
+    var A = 4*((1.0 + 0.3*Math.sin(phase_A_sine + tau*f_0*j))); // goes from 2.8 - 5.2
+    var f_mult = (2.5 + 0.5*Math.sin(phase_f_sine + tau*f_0*j)) // goes from 2 - 3
+    sine[j] = A*Math.sin(phase_0_sine + tau*f_0*j*f_mult);
+  }
+
+
+  curves_stack[0] = sine;
+
+
+  for (let i = 1; i < n; i++){
+    const a = [];
+
+
+    var A = 0.6*t_band[i];
+    for (let j = 0; j < m; ++j) {
+      a[j] = t_band[i] + A*Math.sin(tau*f_0*f_mult_band[i]*j + phase_A_band[i]);
+    }
+
+    curves_stack[i] = a;
+  }
+
+  return curves_stack;
+
+
+}
+
+function randomize() {
+
+  var stack = sine_bottom_stack(n_curves, m_pts);
+  const layers = stack_gen(d3.transpose(stack));
+
+  y.domain([
+    d3.max(layers[0], d => d[0]),
+    d3.min(layers[layers.length-1], d => d[1])
+  ]);
+  return layers;
+}
+
+const path = svg_main.selectAll("path")
+  .data(randomize)
+  .enter().append("path")
+    .attr("d", area)
+    .attr("stroke", (d,i) => colorScale[i%colorScale.length])
+    .attr("fill", (d,i) => colorScale[i%colorScale.length]);
+
+var update_period = 10;
+var trans_dur = 1*update_period;
+
+const interval = d3.interval(() => {
+  update_band_params();
+  path
+    .data(randomize)
+    .transition()
+      .duration(trans_dur)
+      .ease(d3.easeLinear)
+      .attr("d", area)
+      .attr("stroke", (d,i) => colorScale[i%colorScale.length])
+      .attr("fill", (d,i) => colorScale[i%colorScale.length]);
+
+}, update_period);
+
+
+
+// Below are the functions that handle actual exporting:
+// getSVGString ( svgNode ) and svgString2Image( svgString, width, height, format, callback )
+function getSVGString( svgNode ) {
+	svgNode.setAttribute('xlink', 'http://www.w3.org/1999/xlink');
+	var cssStyleText = getCSSStyles( svgNode );
+	appendCSS( cssStyleText, svgNode );
+
+	var serializer = new XMLSerializer();
+	var svgString = serializer.serializeToString(svgNode);
+	svgString = svgString.replace(/(\w+)?:?xlink=/g, 'xmlns:xlink='); // Fix root xlink without namespace
+	svgString = svgString.replace(/NS\d+:href/g, 'xlink:href'); // Safari NS namespace fix
+
+	return svgString;
+
+	function getCSSStyles( parentElement ) {
+		var selectorTextArr = [];
+
+		// Add Parent element Id and Classes to the list
+		selectorTextArr.push( '#'+parentElement.id );
+		for (var c = 0; c < parentElement.classList.length; c++)
+				if ( !contains('.'+parentElement.classList[c], selectorTextArr) )
+					selectorTextArr.push( '.'+parentElement.classList[c] );
+
+		// Add Children element Ids and Classes to the list
+		var nodes = parentElement.getElementsByTagName("*");
+		for (var i = 0; i < nodes.length; i++) {
+			var id = nodes[i].id;
+			if ( !contains('#'+id, selectorTextArr) )
+				selectorTextArr.push( '#'+id );
+
+			var classes = nodes[i].classList;
+			for (var c = 0; c < classes.length; c++)
+				if ( !contains('.'+classes[c], selectorTextArr) )
+					selectorTextArr.push( '.'+classes[c] );
+		}
+
+    console.log(selectorTextArr);
+		// Extract CSS Rules
+		var extractedCSSText = "";
+		for (var i = 0; i < document.styleSheets.length; i++) {
+			var s = document.styleSheets[i];
+
+			try {
+			    if(!s.cssRules) continue;
+			} catch( e ) {
+		    		if(e.name !== 'SecurityError') throw e; // for Firefox
+		    		continue;
+		    	}
+
+			var cssRules = s.cssRules;
+			for (var r = 0; r < cssRules.length; r++) {
+				if ( contains( cssRules[r].selectorText, selectorTextArr ) )
+					extractedCSSText += cssRules[r].cssText;
+			}
+		}
+
+
+		return extractedCSSText;
+
+		function contains(str,arr) {
+			return arr.indexOf( str ) === -1 ? false : true;
+		}
+
+	}
+
+	function appendCSS( cssText, element ) {
+		var styleElement = document.createElement("style");
+		styleElement.setAttribute("type","text/css");
+		styleElement.innerHTML = cssText;
+		var refNode = element.hasChildNodes() ? element.children[0] : null;
+		element.insertBefore( styleElement, refNode );
+	}
+}
+
+
+function svgString2Image( svgString, width, height, format, callback ) {
+	var format = format ? format : 'png';
+
+	var imgsrc = 'data:image/svg+xml;base64,'+ btoa( unescape( encodeURIComponent( svgString ) ) ); // Convert SVG string to data URL
+
+	var canvas = document.createElement("canvas");
+	var context = canvas.getContext("2d");
+
+	canvas.width = width;
+	canvas.height = height;
+
+	var image = new Image();
+	image.onload = function() {
+		context.clearRect ( 0, 0, width, height );
+		context.drawImage(image, 0, 0, width, height);
+
+		canvas.toBlob( function(blob) {
+			var filesize = Math.round( blob.length/1024 ) + ' KB';
+			if ( callback ) callback( blob, filesize );
+		});
+
+
+	};
+
+	image.src = imgsrc;
+}
+
+
+
+d3.select('#save_button').on('click', function(){
+	var svgString = getSVGString(svg_main.node());
+	svgString2Image( svgString, w, h, 'png', save ); // passes Blob and filesize String to the callback
+
+	function save( dataBlob, filesize ){
+    var d = new Date();
+    var date_str = d.getHours() + '-' + d.getMinutes() + '-' + d.getSeconds();
+    var fname = 'sol_lewitt_colored_bands_' + date_str + '.png';
+		saveAs(dataBlob, fname); // FileSaver.js function
+	}
+});
+
+
+
+  </script>

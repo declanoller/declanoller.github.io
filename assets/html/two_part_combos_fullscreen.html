@@ -1,0 +1,1006 @@
+
+<script src="https://d3js.org/d3.v5.min.js"></script>
+<script src="https://unpkg.com/d3-simple-slider"></script>
+<script src="https://d3js.org/d3-shape.v1.min.js"></script>
+<script src="https://cdn.rawgit.com/eligrey/canvas-toBlob.js/f1a01896135ab378aa5c0118eadd81da55e698d8/canvas-toBlob.js"></script>
+<script src="https://cdn.rawgit.com/eligrey/FileSaver.js/e9d941381475b5df8b7d7691013401e171014e89/FileSaver.min.js"></script>
+
+<style>
+
+.button {
+  background-color : #B2C2CD;
+  border : solid 2px black;
+  border-radius : 6px;
+  font-size : 16px;
+  padding-top : 6px;
+  padding-bottom : 6px;
+  padding-left : 8px;
+  padding-right : 8px;
+  transition-duration: 0.2s;
+}
+
+.button:hover {
+  background-color: #FFEBCD;
+}
+
+</style>
+
+
+<div id='link_cont'>
+<a id='about_link' href="https://www.declanoller.com/2019/06/21/programmatically-recreating-sol-lewitts-all-two-part-combinations-of-arcs-from-corners-and-sides-and-straight-not-straight-and-broken-lines-with-d3-js/">About</a>
+</div>
+
+
+
+<div id='top_bar'>
+
+
+<div id="controls_and_save">
+
+  <div id='slider_cont'>
+    <div class="slider_label_N_squares"><p id="value_N_squares"></p></div>
+    <div class="slider_N_squares" id="slider_N_squares"></div>
+  </div>
+
+  <div id="button_cont">
+    <button class='button' id='save_button'>Save your image!</button>
+  </div>
+
+</div>
+
+</div>
+
+
+
+
+
+
+<div id="svg_container"></div>
+
+
+<script>
+
+/////////////// Styles
+
+//d3.selectAll('#link_cont').style('float', 'right').style('padding-top', '6px');
+d3.selectAll('#link_cont')
+    .style('position', 'absolute')
+    .style('top', '0px')
+    .style('right', '0px')
+    .style('padding-right', '5px')
+    .style('padding-top', '15px');
+
+d3.selectAll('#about_link')
+          .style('font-size', '22px')
+          .style('background-color', '#B2C2CD')
+          .style('border', 'solid 2px black')
+          .style('border-radius', '6px')
+          .style('color', 'black')
+          .style('font-size', '16px')
+          .style('text-decoration', 'none')
+          .style('padding-top', '6px')
+          .style('padding-bottom', '6px')
+          .style('padding-left', '8px')
+          .style('padding-right', '8px');
+
+d3.selectAll("#top_bar")
+          .style('margin-top', '0px')
+          .style('margin-bottom', '25px')
+          .style('text-align', 'center');
+
+d3.selectAll("#controls_and_save")
+          .style('margin-top', '0px')
+          .style('display', 'inline-block')
+          .style('width', '80%');
+
+d3.selectAll("#svg_container")
+          .style('text-align', 'center')
+          .style('width', '100%');
+d3.selectAll('#slider_cont')
+          .style('float', 'left');
+
+
+d3.select('#slider_label_N_squares')
+  .style('margin-top', '0px')
+  .style('margin-bottom', '5px');
+
+d3.select('p#value_N_squares')
+  .style('margin-top', '0px')
+  .style('margin-bottom', '0px');
+
+d3.selectAll('#button_cont')
+          .style('padding-top', '10px')
+          .style('float', 'right');
+
+// Better way of figuring out window size
+var wind = window,
+    doc = document,
+    doc_el = doc.documentElement,
+    body_el = doc.getElementsByTagName('body')[0],
+    window_w = wind.innerWidth || doc_el.clientWidth || body_el.clientWidth,
+    window_h = wind.innerHeight|| doc_el.clientHeight|| body_el.clientHeight;
+
+
+var client_rect = d3.selectAll('body').node().getBoundingClientRect();
+
+var cont_dims = { w : Math.round(window_w),
+                  h : Math.round(window_h)
+                };
+
+var N_x_max = 50;
+var N_init = 12;
+
+var max_h = 0.9*cont_dims.h;
+var max_w = 0.8*cont_dims.w;
+
+var exhibit_settings = {
+  'sample' : {
+    name : 'sample',
+    w : 1000,
+    h : 800,
+    N_x : 5,
+    N_y : 4,
+    unit_sq_w : 1000/5,
+    grid_on : 1
+  },
+  'random_fullscreen' : {
+    name : 'random_fullscreen',
+    w : max_w,
+    h : Math.floor(max_h/(max_w/N_init))*max_w/N_init,
+    N_x : N_init,
+    N_y : Math.floor(max_h/(max_w/N_init)),
+    unit_sq_w : max_w/N_init,
+    grid_on : 0
+  }
+}
+
+
+var run_settings = exhibit_settings['random_fullscreen'];
+
+var width = 1000;
+
+var curve_col = 'blanchedalmond';
+var bg_col = '#257CC3';
+d3.select("body").style('background', bg_col);
+// washed out blue: #B2C2CD
+
+var x_disp, y_disp, x_sq, y_sq, arc_gen_quarter_circ, arc_gen_mid_circ, curve_gen, line_gen_sq;
+regen_scales();
+
+///////////////////////////////// Slider stuff
+
+var N_squares_range = [6, N_x_max];
+var slider_w = 200;
+var slider_h = 20;
+var slider_N_squares = d3
+  .sliderTop()
+  .min(d3.min(N_squares_range))
+  .max(d3.max(N_squares_range))
+  .width(Math.round(0.9*slider_w))
+  .tickValues([])
+  .ticks([])
+  .step(1)
+  .default(N_init)
+  .on('onchange', val => {
+    d3.select('p#value_N_squares')
+      .text("Number across: " + d3.format('.4')(val))
+      .style("font-size", "20px")
+      .style('color', '#FFEBCD');
+    change_squares_dat(val);
+  });
+
+var gFill = d3
+  .select('div#slider_N_squares')
+  .append('svg')
+  .attr('width', slider_w)
+  .attr('height', slider_h)
+  .append('g')
+  .attr('transform', 'translate(' + Math.round(0.05*slider_w) + ',' + Math.round(0.7*slider_h) + ')');
+
+gFill.call(slider_N_squares);
+
+d3.select('p#value_N_squares')
+      .text("Number across: " + d3.format('.4')(slider_N_squares.value()))
+      .style("font-size", "20px")
+      .style('color', '#FFEBCD');
+
+
+
+
+
+//////////////////// Data setup and svg stuff
+
+//var all_squares_array = reset_squares();
+var squares_dat_array = reset_squares();
+
+var svg_main = d3.select("div#svg_container")
+  .append('svg')
+  .attr('width', run_settings.w)
+  .attr('height', max_h)
+  .style('background', bg_col);
+
+
+function combo(d, i) {
+
+  var dat_sel = d3.select(this);
+
+  if (d.type1==1){
+    dat_sel
+      .attr('d', arc_gen_quarter_circ())
+      .attr('fill', 'none')
+      .attr('transform', function(d){
+        return('translate(' + x_disp(d.x) + ',' + y_disp(1 + d.y) + ') ' + 'rotate(0)');
+      });
+  }
+  if (d.type1==2){
+    dat_sel
+      .attr('d', arc_gen_quarter_circ())
+      .attr('fill', 'none')
+      .attr('transform', function(d){
+        return('translate(' + x_disp(d.x) + ',' + y_disp(d.y) + ') ' + 'rotate(90)');
+      });
+
+  }
+  if (d.type1==3){
+    dat_sel
+      .attr('d', arc_gen_quarter_circ())
+      .attr('fill', 'none')
+      .attr('transform', function(d){
+        return('translate(' + x_disp(1 + d.x) + ',' + y_disp(d.y) + ') ' + 'rotate(180)');
+      });
+  }
+  if (d.type1==4){
+    dat_sel
+      .attr('d', arc_gen_quarter_circ())
+      .attr('fill', 'none')
+      .attr('transform', function(d){
+        return('translate(' + x_disp(1 + d.x) + ',' + y_disp(1 + d.y) + ') ' + 'rotate(270)');
+      });
+  }
+  if (d.type1==5){
+    dat_sel
+      .attr('d', arc_gen_mid_circ())
+      .attr('fill', 'none')
+      .attr('transform', function(d){
+        return('translate(' + x_disp(d.x) + ',' + y_disp(0.5 + d.y) + ') ' + 'rotate(0)');
+      });
+  }
+  if (d.type1==6){
+    dat_sel
+      .attr('d', arc_gen_mid_circ())
+      .attr('fill', 'none')
+      .attr('transform', function(d){
+        return('translate(' + x_disp(0.5 + d.x) + ',' + y_disp(d.y) + ') ' + 'rotate(90)');
+      });
+  }
+  if (d.type1==7){
+    dat_sel
+      .attr('d', arc_gen_mid_circ())
+      .attr('fill', 'none')
+      .attr('transform', function(d){
+        return('translate(' + x_disp(1 + d.x) + ',' + y_disp(0.5 + d.y) + ') ' + 'rotate(180)');
+      });
+  }
+  if (d.type1==8){
+    dat_sel
+      .attr('d', arc_gen_mid_circ())
+      .attr('fill', 'none')
+      .attr('transform', function(d){
+        return('translate(' + x_disp(0.5 + d.x) + ',' + y_disp(1.0 + d.y) + ') ' + 'rotate(270)');
+      });
+  }
+
+
+  if (d.type1==9){
+    dat_sel
+    .attr('d', line_gen_sq([{x:0.5, y:0}, {x:0.5, y:1.0}]))
+    .attr('transform', function(d){
+      return('translate(' + x_disp(d.x) + ',' + y_disp(d.y) + ')');});
+  }
+
+  if (d.type1==10){
+    dat_sel
+      .attr('d', line_gen_sq([{x:0, y:0.5}, {x:1.0, y:0.5}]))
+      .attr('transform', function(d){
+        return('translate(' + x_disp(d.x) + ',' + y_disp(d.y) + ')');});
+  }
+
+  if (d.type1==11){
+    dat_sel
+      .attr('d', line_gen_sq([{x:0, y:1.0}, {x:1.0, y:0}]))
+      .attr('transform', function(d){
+        return('translate(' + x_disp(d.x) + ',' + y_disp(d.y) + ')');});
+  }
+
+  if (d.type1==12){
+    dat_sel
+      .attr('d', line_gen_sq([{x:0, y:0}, {x:1.0, y:1.0}]))
+      .attr('transform', function(d){
+        return('translate(' + x_disp(d.x) + ',' + y_disp(d.y) + ')');});
+  }
+
+
+
+  if (d.type1==13){
+
+    var c = [
+      {x:0.5, y:0},
+      {x:0.5, y:.03},
+      {x:0.56, y:.23},
+      {x:0.44, y:.7},
+      {x:0.504, y:0.98},
+      {x:0.5, y:1.0}
+    ]
+
+
+    dat_sel
+      .attr('d', curve_gen(c))
+      .attr('fill', 'none')
+      .attr('transform', function(d){
+        return('translate(' + x_disp(d.x) + ',' + y_disp(d.y) + ')');});
+  }
+
+  if (d.type1==14){
+
+    var c = [
+      {x:0, y:0.5},
+      {x:0.07, y:0.51},
+      {x:0.3, y:0.65},
+      {x:0.38, y:0.65},
+      {x:0.7, y:0.57},
+      {x:0.75, y:0.54},
+      {x:0.9, y:0.5},
+      {x:1.0, y:0.5}
+    ]
+    dat_sel
+      .attr('d', curve_gen(c))
+      .attr('fill', 'none')
+      .attr('transform', function(d){
+        return('translate(' + x_disp(d.x) + ',' + y_disp(d.y) + ')');});
+  }
+
+
+  if (d.type1==15){
+
+    var c = [
+      {x:0, y:1},
+      {x:0.11, y:0.94},
+      {x:0.2, y:0.7},
+      {x:0.25, y:0.6},
+      {x:0.43, y:0.32},
+      {x:0.9, y:0.1},
+      {x:1.0, y:0.0}
+    ]
+    dat_sel
+      .attr('d', curve_gen(c))
+      .attr('fill', 'none')
+      .attr('transform', function(d){
+        return('translate(' + x_disp(d.x) + ',' + y_disp(d.y) + ')');});
+  }
+
+  if (d.type1==16){
+
+    var c = [
+      {x:0, y:0},
+      {x:0.05, y:0.04},
+      {x:0.08, y:0.08},
+      {x:0.25, y:0.18},
+      {x:0.32, y:0.25},
+      {x:0.4, y:0.39},
+      {x:0.5, y:0.505},
+      {x:0.64, y:0.74},
+      {x:0.73, y:0.83},
+      {x:0.95, y:0.95},
+      {x:1.0, y:1.0}
+    ]
+    dat_sel
+      .attr('d', curve_gen(c))
+      .attr('fill', 'none')
+      .attr('transform', function(d){
+        return('translate(' + x_disp(d.x) + ',' + y_disp(d.y) + ')');});
+  }
+
+  var gap_w = run_settings.unit_sq_w/23;
+  var dash_str =  2*gap_w + ', ' + gap_w;
+
+  if (d.type1==17){
+    dat_sel
+    .attr('d', line_gen_sq([{x:0.5, y:0}, {x:0.5, y:1.0}]))
+    .style("stroke-dasharray", dash_str)
+    .attr('transform', function(d){
+      return('translate(' + x_disp(d.x) + ',' + y_disp(d.y) + ')');});
+  }
+
+  if (d.type1==18){
+    dat_sel
+      .attr('d', line_gen_sq([{x:0, y:0.5}, {x:1.0, y:0.5}]))
+      .style("stroke-dasharray", dash_str)
+      .attr('transform', function(d){
+        return('translate(' + x_disp(d.x) + ',' + y_disp(d.y) + ')');});
+  }
+
+  if (d.type1==19){
+    dat_sel
+      .attr('d', line_gen_sq([{x:0, y:1.0}, {x:1.0, y:0}]))
+      .style("stroke-dasharray", dash_str)
+      .attr('transform', function(d){
+        return('translate(' + x_disp(d.x) + ',' + y_disp(d.y) + ')');});
+  }
+
+  if (d.type1==20){
+    dat_sel
+      .attr('d', line_gen_sq([{x:0, y:0}, {x:1.0, y:1.0}]))
+      .style("stroke-dasharray", dash_str)
+      .attr('transform', function(d){
+        return('translate(' + x_disp(d.x) + ',' + y_disp(d.y) + ')');});
+  }
+
+}
+
+function combo_2(d, i) {
+
+  if (d.type2==1){
+    d3.select(this)
+      .attr('d', arc_gen_quarter_circ())
+      .attr('fill', 'none')
+      .attr('transform', function(d){
+        return('translate(' + x_disp(d.x) + ',' + y_disp(1 + d.y) + ') ' + 'rotate(0)');
+      });
+  }
+  if (d.type2==2){
+    d3.select(this)
+      .attr('d', arc_gen_quarter_circ())
+      .attr('fill', 'none')
+      .attr('transform', function(d){
+        return('translate(' + x_disp(d.x) + ',' + y_disp(d.y) + ') ' + 'rotate(90)');
+      });
+
+  }
+  if (d.type2==3){
+    d3.select(this)
+      .attr('d', arc_gen_quarter_circ())
+      .attr('fill', 'none')
+      .attr('transform', function(d){
+        return('translate(' + x_disp(1 + d.x) + ',' + y_disp(d.y) + ') ' + 'rotate(180)');
+      });
+  }
+  if (d.type2==4){
+    d3.select(this)
+      .attr('d', arc_gen_quarter_circ())
+      .attr('fill', 'none')
+      .attr('transform', function(d){
+        return('translate(' + x_disp(1 + d.x) + ',' + y_disp(1 + d.y) + ') ' + 'rotate(270)');
+      });
+  }
+  if (d.type2==5){
+    d3.select(this)
+      .attr('d', arc_gen_mid_circ())
+      .attr('fill', 'none')
+      .attr('transform', function(d){
+        return('translate(' + x_disp(d.x) + ',' + y_disp(0.5 + d.y) + ') ' + 'rotate(0)');
+      });
+  }
+  if (d.type2==6){
+    d3.select(this)
+      .attr('d', arc_gen_mid_circ())
+      .attr('fill', 'none')
+      .attr('transform', function(d){
+        return('translate(' + x_disp(0.5 + d.x) + ',' + y_disp(d.y) + ') ' + 'rotate(90)');
+      });
+  }
+  if (d.type2==7){
+    d3.select(this)
+      .attr('d', arc_gen_mid_circ())
+      .attr('fill', 'none')
+      .attr('transform', function(d){
+        return('translate(' + x_disp(1 + d.x) + ',' + y_disp(0.5 + d.y) + ') ' + 'rotate(180)');
+      });
+  }
+  if (d.type2==8){
+    d3.select(this)
+      .attr('d', arc_gen_mid_circ())
+      .attr('fill', 'none')
+      .attr('transform', function(d){
+        return('translate(' + x_disp(0.5 + d.x) + ',' + y_disp(1.0 + d.y) + ') ' + 'rotate(270)');
+      });
+  }
+
+
+  if (d.type2==9){
+    d3.select(this)
+    .attr('d', line_gen_sq([{x:0.5, y:0}, {x:0.5, y:1.0}]))
+    .attr('transform', function(d){
+      return('translate(' + x_disp(d.x) + ',' + y_disp(d.y) + ')');});
+  }
+
+  if (d.type2==10){
+    d3.select(this)
+      .attr('d', line_gen_sq([{x:0, y:0.5}, {x:1.0, y:0.5}]))
+      .attr('transform', function(d){
+        return('translate(' + x_disp(d.x) + ',' + y_disp(d.y) + ')');});
+  }
+
+  if (d.type2==11){
+    d3.select(this)
+      .attr('d', line_gen_sq([{x:0, y:1.0}, {x:1.0, y:0}]))
+      .attr('transform', function(d){
+        return('translate(' + x_disp(d.x) + ',' + y_disp(d.y) + ')');});
+  }
+
+  if (d.type2==12){
+    d3.select(this)
+      .attr('d', line_gen_sq([{x:0, y:0}, {x:1.0, y:1.0}]))
+      .attr('transform', function(d){
+        return('translate(' + x_disp(d.x) + ',' + y_disp(d.y) + ')');});
+  }
+
+
+
+  if (d.type2==13){
+
+    var c = [
+      {x:0.5, y:0},
+      {x:0.5, y:.03},
+      {x:0.56, y:.23},
+      {x:0.44, y:.7},
+      {x:0.504, y:0.98},
+      {x:0.5, y:1.0}
+    ]
+
+
+    d3.select(this)
+      .attr('d', curve_gen(c))
+      .attr('fill', 'none')
+      .attr('transform', function(d){
+        return('translate(' + x_disp(d.x) + ',' + y_disp(d.y) + ')');});
+  }
+
+  if (d.type2==14){
+
+    var c = [
+      {x:0, y:0.5},
+      {x:0.07, y:0.51},
+      {x:0.3, y:0.65},
+      {x:0.38, y:0.65},
+      {x:0.7, y:0.57},
+      {x:0.75, y:0.54},
+      {x:0.9, y:0.5},
+      {x:1.0, y:0.5}
+    ]
+    d3.select(this)
+      .attr('d', curve_gen(c))
+      .attr('fill', 'none')
+      .attr('transform', function(d){
+        return('translate(' + x_disp(d.x) + ',' + y_disp(d.y) + ')');});
+  }
+
+
+  if (d.type2==15){
+
+    var c = [
+      {x:0, y:1},
+      {x:0.11, y:0.94},
+      {x:0.2, y:0.7},
+      {x:0.25, y:0.6},
+      {x:0.43, y:0.32},
+      {x:0.9, y:0.1},
+      {x:1.0, y:0.0}
+    ]
+    d3.select(this)
+      .attr('d', curve_gen(c))
+      .attr('fill', 'none')
+      .attr('transform', function(d){
+        return('translate(' + x_disp(d.x) + ',' + y_disp(d.y) + ')');});
+  }
+
+  if (d.type2==16){
+
+    var c = [
+      {x:0, y:0},
+      {x:0.05, y:0.04},
+      {x:0.08, y:0.08},
+      {x:0.25, y:0.18},
+      {x:0.32, y:0.25},
+      {x:0.4, y:0.39},
+      {x:0.5, y:0.505},
+      {x:0.64, y:0.74},
+      {x:0.73, y:0.83},
+      {x:0.95, y:0.95},
+      {x:1.0, y:1.0}
+    ]
+    d3.select(this)
+      .attr('d', curve_gen(c))
+      .attr('fill', 'none')
+      .attr('transform', function(d){
+        return('translate(' + x_disp(d.x) + ',' + y_disp(d.y) + ')');});
+  }
+
+  var gap_w = run_settings.unit_sq_w/23;
+  var dash_str =  2*gap_w + ', ' + gap_w;
+
+  if (d.type2==17){
+    d3.select(this)
+    .attr('d', line_gen_sq([{x:0.5, y:0}, {x:0.5, y:1.0}]))
+    .style("stroke-dasharray", dash_str)
+    .attr('transform', function(d){
+      return('translate(' + x_disp(d.x) + ',' + y_disp(d.y) + ')');});
+  }
+
+  if (d.type2==18){
+    d3.select(this)
+      .attr('d', line_gen_sq([{x:0, y:0.5}, {x:1.0, y:0.5}]))
+      .style("stroke-dasharray", dash_str)
+      .attr('transform', function(d){
+        return('translate(' + x_disp(d.x) + ',' + y_disp(d.y) + ')');});
+  }
+
+  if (d.type2==19){
+    d3.select(this)
+      .attr('d', line_gen_sq([{x:0, y:1.0}, {x:1.0, y:0}]))
+      .style("stroke-dasharray", dash_str)
+      .attr('transform', function(d){
+        return('translate(' + x_disp(d.x) + ',' + y_disp(d.y) + ')');});
+  }
+
+  if (d.type2==20){
+    d3.select(this)
+      .attr('d', line_gen_sq([{x:0, y:0}, {x:1.0, y:1.0}]))
+      .style("stroke-dasharray", dash_str)
+      .attr('transform', function(d){
+        return('translate(' + x_disp(d.x) + ',' + y_disp(d.y) + ')');});
+  }
+
+}
+
+
+
+
+
+function change_squares_dat(new_N_x){
+  var old_N_x = run_settings.N_x;
+  var old_N_y = run_settings.N_y;
+
+  run_settings.N_x = new_N_x;
+  run_settings.unit_sq_w = run_settings.w/run_settings.N_x;
+  var new_N_y = Math.floor(max_h/run_settings.unit_sq_w);
+  run_settings.h = new_N_y*run_settings.unit_sq_w;
+  run_settings.N_y = new_N_y;
+  regen_scales();
+  squares_dat_array = squares_dat_array.filter(function(d){return ((d.x < new_N_x) && (d.y < run_settings.N_y));});
+
+  for (i=old_N_x; i<new_N_x; i++){
+    for (j=0; j<new_N_y; j++){
+      var two_rand = get_two_rand();
+      squares_dat_array.push({
+        x : i,
+        y : j,
+        type1 : two_rand[0],
+        type2 : two_rand[1]
+      });
+    }
+  }
+  for (j=old_N_y; j<new_N_y; j++){//so we don't double count
+    for (i=0; i<old_N_x; i++){
+      var two_rand = get_two_rand();
+      squares_dat_array.push({
+        x : i,
+        y : j,
+        type1 : two_rand[0],
+        type2 : two_rand[1]
+      });
+    }
+  }
+
+  plot_squares_dat(squares_dat_array, svg_main);
+}
+
+
+
+
+
+
+plot_squares_dat(squares_dat_array, svg_main);
+
+
+
+
+
+
+
+
+
+if (run_settings.grid_on == 1){
+  var grid_dat = [];
+
+  for (i=0; i<=run_settings.N_x; i++){
+    grid_dat.push([{
+      x : i,
+      y : 0
+    },{
+      x : i,
+      y : run_settings.N_y
+    }]);
+  }
+
+  for (i=0; i<=run_settings.N_y; i++){
+
+      grid_dat.push([{
+        x : 0,
+        y : i
+      },{
+        x : run_settings.N_x,
+        y : i
+      }]);
+
+  }
+
+  var line_gen_grid = d3.line()
+      .x(function(d) { return x_disp(d.x); })
+      .y(function(d) { return y_disp(d.y); });
+
+  //For drawing a grid, for graphics aligning purposes
+  var svg_grid = svg_main
+              .selectAll('grid')
+              .data(grid_dat)
+              .enter()
+              .append('path')
+              .attr("stroke", curve_col)
+              .attr('d', line_gen_grid);
+
+}
+
+function get_two_rand(){
+  var arr = []
+  while(arr.length < 2){
+      var r = Math.floor(Math.random()*20) + 1;
+      if(arr.indexOf(r) === -1) arr.push(r);
+  }
+  return (arr);
+}
+
+
+function reset_squares(){
+
+  var squares_dat_array = [];
+
+  if (run_settings.name == 'sample'){
+    // Sample board:
+    var counter = 1;
+    for (i=0; i<run_settings.N_x; i++){
+      for (j=0; j<run_settings.N_y; j++){
+        squares_dat_array.push({
+          x : i,
+          y : j,
+          type1 : counter,
+          type2 : 0
+        })
+        counter += 1;
+
+      }
+    }
+  }
+
+  if (run_settings.name == 'random_fullscreen'){
+    // Totally random
+    for (i=0; i<run_settings.N_x; i++){
+      for (j=0; j<run_settings.N_y; j++){
+        var two_rand = get_two_rand();
+        squares_dat_array.push({
+          x : i,
+          y : j,
+          type1 : two_rand[0],
+          type2 : two_rand[1]
+        })
+
+      }
+    }
+  }
+
+
+  return squares_dat_array;
+
+}
+
+
+function plot_squares_dat(data, svg){
+
+  // Keeps the old ones, adds random new ones as needed,
+  // gets rid of ones that aren't shown anymore
+
+  var stroke_width = 2.5*Math.pow(12.0/run_settings.N_x, 0.3);
+
+
+  var g_sel = svg.selectAll('g')
+          .data(data, function(d){return([d.x, d.y]);});
+
+  g_sel
+    .exit()
+    .remove();
+
+  g_enter = g_sel
+    .enter()
+    .append('g')
+    .attr('class', 'sq_cont')
+    .attr("stroke", curve_col);
+  g_enter
+    .append('path')
+    .attr('class', 'path_1');
+  g_enter
+    .append('path')
+    .attr('class', 'path_2');
+
+  g_sel = svg.selectAll('g')
+    .attr("stroke-width", stroke_width);
+
+  svg.selectAll('.path_1').each(combo);
+  svg.selectAll('.path_2').each(combo_2);
+
+}
+
+
+
+
+
+
+
+// Below are the functions that handle actual exporting:
+// getSVGString ( svgNode ) and svgString2Image( svgString, width, height, format, callback )
+function getSVGString( svgNode ) {
+	svgNode.setAttribute('xlink', 'http://www.w3.org/1999/xlink');
+	var cssStyleText = getCSSStyles( svgNode );
+	appendCSS( cssStyleText, svgNode );
+
+	var serializer = new XMLSerializer();
+	var svgString = serializer.serializeToString(svgNode);
+	svgString = svgString.replace(/(\w+)?:?xlink=/g, 'xmlns:xlink='); // Fix root xlink without namespace
+	svgString = svgString.replace(/NS\d+:href/g, 'xlink:href'); // Safari NS namespace fix
+
+	return svgString;
+
+	function getCSSStyles( parentElement ) {
+		var selectorTextArr = [];
+
+		// Add Parent element Id and Classes to the list
+		selectorTextArr.push( '#'+parentElement.id );
+		for (var c = 0; c < parentElement.classList.length; c++)
+				if ( !contains('.'+parentElement.classList[c], selectorTextArr) )
+					selectorTextArr.push( '.'+parentElement.classList[c] );
+
+		// Add Children element Ids and Classes to the list
+		var nodes = parentElement.getElementsByTagName("*");
+		for (var i = 0; i < nodes.length; i++) {
+			var id = nodes[i].id;
+			if ( !contains('#'+id, selectorTextArr) )
+				selectorTextArr.push( '#'+id );
+
+			var classes = nodes[i].classList;
+			for (var c = 0; c < classes.length; c++)
+				if ( !contains('.'+classes[c], selectorTextArr) )
+					selectorTextArr.push( '.'+classes[c] );
+		}
+
+		// Extract CSS Rules
+		var extractedCSSText = "";
+		for (var i = 0; i < document.styleSheets.length; i++) {
+			var s = document.styleSheets[i];
+
+			try {
+			    if(!s.cssRules) continue;
+			} catch( e ) {
+		    		if(e.name !== 'SecurityError') throw e; // for Firefox
+		    		continue;
+		    	}
+
+			var cssRules = s.cssRules;
+			for (var r = 0; r < cssRules.length; r++) {
+				if ( contains( cssRules[r].selectorText, selectorTextArr ) )
+					extractedCSSText += cssRules[r].cssText;
+			}
+		}
+
+
+		return extractedCSSText;
+
+		function contains(str,arr) {
+			return arr.indexOf( str ) === -1 ? false : true;
+		}
+
+	}
+
+	function appendCSS( cssText, element ) {
+		var styleElement = document.createElement("style");
+		styleElement.setAttribute("type","text/css");
+		styleElement.innerHTML = cssText;
+		var refNode = element.hasChildNodes() ? element.children[0] : null;
+		element.insertBefore( styleElement, refNode );
+	}
+}
+
+
+function svgString2Image( svgString, width, height, format, callback ) {
+	var format = format ? format : 'png';
+
+	var imgsrc = 'data:image/svg+xml;base64,'+ btoa( unescape( encodeURIComponent( svgString ) ) ); // Convert SVG string to data URL
+
+	var canvas = document.createElement("canvas");
+	var context = canvas.getContext("2d");
+
+	canvas.width = width;
+	canvas.height = height;
+
+	var image = new Image();
+	image.onload = function() {
+		context.clearRect ( 0, 0, width, height );
+		context.drawImage(image, 0, 0, width, height);
+
+		canvas.toBlob( function(blob) {
+			var filesize = Math.round( blob.length/1024 ) + ' KB';
+			if ( callback ) callback( blob, filesize );
+		});
+
+
+	};
+
+	image.src = imgsrc;
+}
+
+
+d3.select('#save_button').on('click', function(){
+	var svgString = getSVGString(svg_main.node());
+	svgString2Image( svgString, 2*run_settings.w, 2*run_settings.h, 'png', save ); // passes Blob and filesize String to the callback
+
+	function save( dataBlob, filesize ){
+    var d = new Date();
+    var date_str = d.getHours() + '-' + d.getMinutes() + '-' + d.getSeconds();
+    var fname = 'sol_lewitt_2curves_' + date_str + '.png';
+		saveAs(dataBlob, fname); // FileSaver.js function
+	}
+});
+
+function regen_scales(){
+
+
+  x_disp = d3.scaleLinear()
+      .domain([0, run_settings.N_x])
+      .range([0, run_settings.w]);
+
+  y_disp = d3.scaleLinear()
+      .domain([0, run_settings.N_y])
+      .range([0, run_settings.h]);
+
+  x_sq = d3.scaleLinear()
+      .domain([0, 1])
+      .range([0, run_settings.unit_sq_w]);
+
+  y_sq = d3.scaleLinear()
+      .domain([0, 1])
+      .range([0, run_settings.unit_sq_w]);
+
+
+  arc_gen_quarter_circ = d3.arc()
+                  .innerRadius(.99*run_settings.unit_sq_w)
+                  .outerRadius(.99*run_settings.unit_sq_w)
+                  .startAngle(0)
+                  .endAngle(Math.PI/2);
+
+  arc_gen_mid_circ = d3.arc()
+                  .innerRadius(.999*run_settings.unit_sq_w/Math.sqrt(2))
+                  .outerRadius(.999*run_settings.unit_sq_w/Math.sqrt(2))
+                  .startAngle(Math.PI/4)
+                  .endAngle(3*Math.PI/4);
+
+  curve_gen = d3.line()
+      .x(function(d) { return x_sq(d.x); })
+      .y(function(d) { return y_sq(d.y); })
+      .curve(d3.curveCatmullRom.alpha(0.5));
+
+
+  line_gen_sq = d3.line()
+      .x(function(d) { return x_sq(d.x); })
+      .y(function(d) { return y_sq(d.y); });
+
+}
+
+
+
+</script>
