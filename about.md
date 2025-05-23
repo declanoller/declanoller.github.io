@@ -11,6 +11,7 @@ permalink: /about/
 </div>
 
 
+---
 
 Hey there! My name's Declan. I like to learn stuff, make things, play music, code, and take some pictures.
 
