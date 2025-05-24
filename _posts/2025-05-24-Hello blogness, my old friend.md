@@ -84,7 +84,7 @@ I need to keep that classic taped to my monitor whenever I'm writing a post. And
 
 ## Having two sites is stupid
 
-Previously I had a Wordpress site at [](www.declanoller.com), and a Github pages site at declanoller.github.io . The GH site was kind of an afterthought where I put my "technical" posts, while the WP site was kind of a "kitchen sink" deal that had the technical posts as well as random thoughts, photos, little non-technical projects, etc.
+Previously I had a Wordpress site at [www.declanoller.com](https://www.declanoller.com), and a Github pages site at [declanoller.github.io](https://declanoller.github.io). The GH site was kind of an afterthought where I put my "technical" posts, while the WP site was kind of a "kitchen sink" deal that had the technical posts as well as random thoughts, photos, little non-technical projects, etc.
 
 I think my logic at the time was that I wanted to appear "professional" and "technical" with the GH page, and in my head a "professional" wouldn't have multiple posts about boat races with garbage boats or other silly things. 
 
