@@ -26,9 +26,9 @@ and [here's a link](https://studywolf.wordpress.com/2013/11/16/dynamic-movement-
 
 ![](assets/images/Pasted%20image%2020250523201116.png)
 
-So you probably can't compete on the straightforward information dimension anymore. 
+So you probably can't compete on the straightforward information axis anymore. 
 
-And, most social media has gotten increasingly "fast", in the sense of (lack of) depth and attention. Most people under the age of 55 don't have the patience to watch a 22 minute TV episode, let alone read a rambling blog post on abstruse math bs. Hell, even the hallowed 3B1B has caved and started making short form content. How the mighty have fallen.
+And, most social media has gotten increasingly "fast", in the sense of (lack of) depth and attention. Most people under the age of 55 don't have the patience to watch a 22 minute TV episode, let alone read a rambling blog post on abstruse math bs. Hell, even the hallowed [3B1B](https://www.youtube.com/@3blue1brown) has caved and started making short form content. How the mighty have fallen.
 
 With those caveats, I think there are still good reasons. 
 
@@ -84,7 +84,7 @@ I need to keep that classic taped to my monitor whenever I'm writing a post. And
 
 ## Having two sites is stupid
 
-Previously I had a Wordpress site at [www.declanoller.com](www.declanoller.com), and a Github pages site at [declanoller.github.io](declanoller.github.io). The GH site was kind of an afterthought where I put my "technical" posts, while the WP site was kind of a "kitchen sink" deal that had the technical posts as well as random thoughts, photos, little non-technical projects, etc.
+Previously I had a Wordpress site at www.declanoller.com, and a Github pages site at declanoller.github.io . The GH site was kind of an afterthought where I put my "technical" posts, while the WP site was kind of a "kitchen sink" deal that had the technical posts as well as random thoughts, photos, little non-technical projects, etc.
 
 I think my logic at the time was that I wanted to appear "professional" and "technical" with the GH page, and in my head a "professional" wouldn't have multiple posts about boat races with garbage boats or other silly things. 
 
