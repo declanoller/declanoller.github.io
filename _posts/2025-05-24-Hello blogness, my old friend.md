@@ -68,7 +68,11 @@ All that said, I still look back on it fondly. When I try to separate the blog f
 
 When my posting started slowing down in the past, I'd periodically have the realization that I was slowing down because it was taking too long, and that I should just post more often, polished-ness be damned. My friend [Phil](https://www.philipzucker.com/) has the right idea. He basically treats his blog the way I treat my personal notes, posting things that are very rough and often just trail off at the end with scattered thoughts.
 
-I used to spend a *lot* of time on some posts: the writing, the figures, the formatting, all that jazz. And yeah, some of them look nice. But I'll say, having seen how the sausage is made: I don't think they were worth it. There's definitely a pareto thing here where 90% of the quality comes from the first 10% of the time, and then the rest of quality comes from the remaining time. 
+I used to spend a *lot* of time on some posts: the writing, the figures, the formatting, all that jazz. And yeah, some of them look nice. But I'll say, having seen how the blog sausage is made: I don't think they were worth it. There's definitely a pareto thing here where 90% of the quality comes from the first 10% of the time, and then the rest of quality comes from the remaining time. 
+
+![](assets/images/blogsagefactory.png)
+
+(I asked GPT for a political style cartoon of the blog sausage being made.)
 
 Aside from that, I don't think there was actually much correlation between the time I spent on posts and how good they were. Some of my favorites (or ones that got some external attention) were things I just kind of threw together, and some of the ones I spent a *looong* time on turned out to be dumb and no one cared about them. That suggests that it's more that some ideas are just good and some are lousy, and *that* suggests that a better strategy is probably cranking out lots of them, to have more chances of getting a good idea out there. Also, that story about the photography class that's divided in half where one half gets graded on the best photo they can produce and the other half gets graded on their total output, blah blah.
 
