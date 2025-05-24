@@ -18,9 +18,9 @@ My lack of activity might make you think I haven't been doing any projects (outs
 
 In the age of LLMs and "fast" social media, that's a good question. 
 
-There used to be these blog posts that were like, the *canonical* source for certain topics. These posts would often be on a somewhat niche topic where there wasn't any good textbook for it, or maybe they just presented a hard topic in a particularly accessible way. One I still remember was a series of posts by "studywolf" on Dynamic Movement Primitives (DMPs) that seemed to be the best resource on the internet for learning about them. And lo and behold, in the year of our lord 2025, it's still the top google result:
+There used to be these blog posts that were like, the *canonical* source for certain topics. These posts were often on a somewhat niche topic where there wasn't any good textbook for it, or maybe they just presented a hard topic in a particularly accessible way. One I still remember was a series of posts by "studywolf" on Dynamic Movement Primitives (DMPs) that seemed to be the best resource on the internet for learning about them. And lo and behold, in the year of our lord 2025, it's still the top google result:
 
-![|400](assets/images/Pasted%20image%2020250523200703.png)
+![](assets/images/Pasted%20image%2020250523200703.png)
 
 and [here's a link](https://studywolf.wordpress.com/2013/11/16/dynamic-movement-primitives-part-1-the-basics/) to it, since it's still up. My point is that although posts like this might've been the best resource on a topic at the time, I'm guessing your favorite LLM can explain the topic about as well, and interactively too (maybe it won't have the nice figures yet). Yeah:
 
@@ -76,7 +76,7 @@ Aside from that, I don't think there was actually much correlation between the t
 
 I need to brand myself with this backwards, Memento style, so I'll see it every time I look in the mirror: you gotta keep the posts short. If you write too much, it's boring as hell and no one will read it. If you (somehow) write too little, you can just write more if people actually want it.
 
-![|400](assets/images/iaintreadingallthat.jpg)
+![](assets/images/iaintreadingallthat.jpg)
 
 I need to keep that classic taped to my monitor whenever I'm writing a post. And yeah, I appreciate the irony of how long this post is :(
 
@@ -84,7 +84,7 @@ I need to keep that classic taped to my monitor whenever I'm writing a post. And
 
 ## Having two sites is stupid
 
-Previously I had a Wordpress site at www.declanoller.com, and a Github pages site at [declanoller.github.io](declanoller.github.io). The GH site was kind of an afterthought where I put my "technical" posts, while the WP site was kind of a "kitchen sink" deal that had the technical posts as well as random thoughts, photos, little non-technical projects, etc.
+Previously I had a Wordpress site at [www.declanoller.com](www.declanoller.com), and a Github pages site at [declanoller.github.io](declanoller.github.io). The GH site was kind of an afterthought where I put my "technical" posts, while the WP site was kind of a "kitchen sink" deal that had the technical posts as well as random thoughts, photos, little non-technical projects, etc.
 
 I think my logic at the time was that I wanted to appear "professional" and "technical" with the GH page, and in my head a "professional" wouldn't have multiple posts about boat races with garbage boats or other silly things. 
 
