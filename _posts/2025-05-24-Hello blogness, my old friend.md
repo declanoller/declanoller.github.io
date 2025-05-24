@@ -80,7 +80,7 @@ I need to brand myself with this backwards, Memento style, so I'll see it every 
 
 I need to keep that classic taped to my monitor whenever I'm writing a post. And yeah, I appreciate the irony of how long this post is :(
 
-# The old and the new (site)
+# Out with the old, in with the new (site)
 
 ## Having two sites is stupid
 
