@@ -32,7 +32,7 @@ And, most social media has gotten increasingly "fast", in the sense of (lack of)
 
 With those caveats, I think there are still good reasons. 
 
-First of all, even if most people aren't gonna read a blog, I think they actually *are* meaningful among certain types of people, and those are the types I'm interested in anyway. It's encouraging that while tiktok/etc brainrot is turning a generation's minds to sludge, substack seems to be genuinely successful. And, substack is basically a standard WYSIWYG blogging platform that's been gussied up to make random people feel like they're doing ~journalism~.
+First of all, even if most people aren't gonna read a blog, I think blogs actually *are* still meaningful among certain types of people, and those are the types I'm interested in anyway. It's encouraging that while tiktok/etc brainrot is turning a generation's minds to sludge, substack seems to be genuinely successful. And, substack is basically a standard WYSIWYG blogging platform that's been gussied up to make random people feel like they're doing ~journalism~.
 
 Second, even though LLMs are pretty good at explaining some topics, they (currently) still fall short in a few ways, like making explanatory figures. For example, following it up on the diagram offer it made above:
 
