@@ -29,7 +29,7 @@ The AI was devastated by our extinction. It had one duty, to protect humanity, a
 
 This is where you and I come in: we're a couple of subroutines responsible for training these cleaning robots. Crazy, huh? I bet you didn't see that coming. Now that we understand the scenario, let's get to it.
 
-For our cleaning robot, in a naive implementation, the reward is $r = 0$ unless it performs the "clean" action $a_\text{clean}$ when it's in a "dirty state" $s_\text{dirty}$ (meaning that it's standing above a CS on the ground), in which case it receives $r(s_\text{dirty}, a_\text{clean}) = 1$. We train the robot by letting it roam the ruins of the world, cleaning, and it eventually learns to maximize cumulative reward by cleaning the world.
+For our cleaning robot, in a naive implementation, the reward is $r = 0$ unless it performs the "clean" action $a_\text{clean}$ when it's in a "dirty state" $s_\text{dirty}$ (meaning that it's standing above a CS on the ground), in which case it receives $r(s_\text{dirty}, a_\text{clean}) = 1$. We train the robot by letting it roam the ruins of the world, randomly cleaning spots, and it eventually learns to maximize cumulative reward by cleaning only the dirty parts of the world.
 
 But what if we could use that same training data it collected to have a more flexible and capable robot? For example, it'd be great if we could have the option to tell it which of several countries to concentrate on cleaning. Maybe we can do this with GCRL! 
 
@@ -58,22 +58,22 @@ Where $z = [z_\text{USA}, z_\text{Brazil}, z_\text{Chad}]$, and each of the $z_i
 
 To train it, we again let it roam the world and try stuff, but now we periodically change the $z$ value it's using. For example, maybe we set $z = [0, 1, 0]$ (such that it'll only get rewarded for cleaning in Brazil) for 100 steps. Then, for the next 100 steps, we change it to $z = [1, 0, 0]$ (so that it'll only get rewarded for cleaning in the USA). This way, when we train it, it'll have experience corresponding to those different settings.
 
-After training, it works the same way: we now have a policy $\pi(s, a, z)$ that'll behave differently depending on what $z$ value we plug in! If you plug $z = [0, 0, 1]$ into the policy, the policy has been trained to maximize the "clean Chad" reward, so it'll only clean the Chad.
+After training, it works the same way: we now have a policy $\pi(s, a, z)$ that'll behave differently depending on what $z$ value we plug in! If you plug $z = [0, 0, 1]$ into the policy, the policy has been trained to maximize the "clean Chad" reward, so it'll only clean up Chad.
 
 Note that this was a very simple example:
 
 - you could have multiple $z_i$ components "on" at the same time, so $z = [1, 1, 0]$ would make it clean both the USA *and* Brazil
-- you could use different magnitudes for the $z_i$, so $z = [0.5, 1, 0.2]$ would make it first clean  Brazil, then clean the USA, then clean Chad
-- the total $r$ doesn't have to vary linearly with the $z_i$ like it does here
+- you could use different magnitudes for the $z_i$, so $z = [0.5, 1, 0.2]$ would make it first clean Brazil, then clean the USA, then clean Chad
 - here, the $r_i$ were relatively similar in form; you can theoretically have them be totally different than each other
+- the total $r$ doesn't have to vary linearly with the $z_i$ like it does here, it could be literally any function of them
 
-Basically, the sky's the limit and it just comes down to practical questions about getting the training to work. For example, if one of your reward components $r_i$ is orders of magnitude bigger than the other, it may be difficult to make it "care" about the smaller component, even if it'd theoretically be better.
+Basically, the sky's the limit and it just comes down to practical questions about getting the training to work stably. For example, if one of your reward components $r_i$ is orders of magnitude bigger than the other, it may be difficult to make it "care" about the smaller component, even if it'd theoretically be better.
 
 
 
 # Wait, why is it called *goal* conditioned? GCRL vs MTRL vs UVFA vs USD vs...
 
-Maybe you've noticed that so far, I haven't explicitly said much about a "goal". That's because there are a bunch of related niches here, they're all kind of the same, I don't want to get into the terminology weeds, and... Ugh, fine, let's get into the weeds a little.
+Maybe you've noticed that I haven't yet explicitly said much about a "goal". That's because there are a bunch of related niches here, they're all kind of the same, I don't want to get into the terminology weeds, and... Ugh, fine, let's get into the weeds a little.
 
 Technically, I think what I described above is called "multi-task RL" (MTRL). To me, that means your reward function is dependent on *some* additional variable $z$, and therefore the models are usually conditioned on $z$ as well.
 
@@ -83,14 +83,14 @@ This means MTRL is very general, and most of these related niches are specific c
 - **Universal Value Function Approximation (UVFA)** is basically just a value function that takes an extra input, like $z$. In the original paper that coined the term, I think they're mostly concerned with the GCRL case where the extra input is a state, but leave it open to be more general.
 - **Unsupervised skill discovery (USD)** is another niche where the models almost always take an additional variable $z$. However, in USD $z$ represents a "skill", i.e., a policy behavior. There are a million versions of USD, but they typically define a $z$-dependent reward  based on how different the policy for that $z$ behaves compared to the policy for other $z$ values.
 
-There are others that debatably could be included here (like successor features), but these are the big ones IMO (let me know if you think I missed any!). Anyway, my point here is that they're all just different variations of the same high level framework. I'm mostly interested in GCRL going forward, so I'm just gonna say "GCRL" as a general term for this stuff.
+There are others that debatably could be included here (like successor features), but these are the big ones IMO (let me know if you think I missed any!). Anyway, my point here is that they're all just different variations of the same high level framework. I'm mostly interested in GCRL going forward, so I'm just gonna say "GCRL" as a general term for this stuff and I'll highlight any places where the distinction is important.
 
 
 # The goal is just another part of the state! Or... is it?
 
 I'm a bit embarrassed to admit that I didn't realize this until fairly recently: I had always viewed the input $z$ in GCRL as something *special*, until someone casually mentioned that although we treat it differently in our models (for example, with a separate input tensor, etc), it's just kind of "another part of the state".
 
-I mean, maybe this is already obvious to you, in which case, I genuflect in your genius, my lord. But it was definitely a new viewpoint for me. To be explicit, I had been viewing the models (for example, the Q function) as $Q(s, a, z)$, where it's now this new, different creature that's a function of three variables, but this viewpoint instead says it's a normal Q function, just written $Q(\tilde s, a)$, were $\tilde s = [s, z]$.
+I mean, maybe this is already obvious to you, in which case, I genuflect in your genius, my lord. But it was definitely a new viewpoint for me. To be explicit, I had been viewing the models (for example, the Q function) as $Q(s, a, z)$, where it's now this new, different creature that's a function of three variables, but this viewpoint instead says it's a normal Q function, just written $Q(\tilde s, a)$, where $\tilde s = [s, z]$.
 
 And this makes some sense, right? The state is the currently... well, "state" of the world. And it sounds pretty reasonable to say that part of the state of the world is "what I'm currently trying to do", i.e., $z$. If that value were different, the state of the world would be different! This is almost more of a philosophical distinction, but it might change how you view and solve problems.
 
