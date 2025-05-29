@@ -40,14 +40,13 @@ r_\text{USA}([s_\text{USA}, s_\text{dirty}], a_\text{clean}) & = 1\\
 
 r_\text{Brazil}([s_\text{Brazil}, s_\text{dirty}], a_\text{clean}) & = 1\\
 
-r_\text{Chad}([s_\text{Chad}, s_\text{dirty}], a_\text{clean}) & = 1\\
+r_\text{Chad}([s_\text{Chad}, s_\text{dirty}], a_\text{clean}) & = 1
 
 \end{aligned}
 $$
 Now for our reward, we consider state information not only about whether it's in a dirty spot, but also what country it's in. So, it only gets $r_\text{USA} = 1$ if it cleans a dirty spot *in the USA*, and not if it cleans a dirty spot in Brazil.
 
 Then, we make our GCRL reward be composed of these three parts:
-
 $$
 \begin{aligned}
 r(s, a, z) &= r(s, a, [z_\text{USA}, z_\text{Brazil}, z_\text{Chad}]) \\
