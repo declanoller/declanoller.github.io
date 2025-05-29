@@ -37,11 +37,8 @@ We'll now make three versions of the reward above:
 $$
 \begin{aligned}
 r_\text{USA}([s_\text{USA}, s_\text{dirty}], a_\text{clean}) & = 1\\
-
 r_\text{Brazil}([s_\text{Brazil}, s_\text{dirty}], a_\text{clean}) & = 1\\
-
 r_\text{Chad}([s_\text{Chad}, s_\text{dirty}], a_\text{clean}) & = 1
-
 \end{aligned}
 $$
 Now for our reward, we consider state information not only about whether it's in a dirty spot, but also what country it's in. So, it only gets $r_\text{USA} = 1$ if it cleans a dirty spot *in the USA*, and not if it cleans a dirty spot in Brazil.
@@ -75,17 +72,17 @@ Basically, the sky's the limit and it just comes down to practical questions abo
 
 # Wait, why is it called *goal* conditioned? GCRL vs MTRL vs UVFA vs USD vs...
 
-Maybe you've noticed that so far, I haven't explicitly said much about a "goal". That's because there are a bunch of related niches here, I don't want to get into the terminology weeds, and... they're all kind of the same. Ugh, fine, let's get into the weeds a little.
+Maybe you've noticed that so far, I haven't explicitly said much about a "goal". That's because there are a bunch of related niches here, they're all kind of the same, I don't want to get into the terminology weeds, and... Ugh, fine, let's get into the weeds a little.
 
-Technically, I think what I described above is called "multi-task RL", i.e., MTRL. To me, that means your reward function is dependent on *some* additional variable $z$, and therefore the models are usually conditioned on $z$ as well.
+Technically, I think what I described above is called "multi-task RL" (MTRL). To me, that means your reward function is dependent on *some* additional variable $z$, and therefore the models are usually conditioned on $z$ as well.
 
-This means MTRL is very general, and most of these related niches are specific cases encompassed by the MTRL framework. Their differences are usually based on what $z$ corresponds to and the form of the reward function:
+This means MTRL is very general, and most of these related niches are specific cases of it. Their differences are usually based on what $z$ corresponds to and the form of the reward function:
 
 - **GCRL** is usually when $z$ corresponds to a *goal* state, so the reward is often based on some distance of the current state from the goal state. It's often the sparse "indicator" function $r(s, g) = \mathbb 1[s = g]$ or a dense version like $r(s, g) = -\|s - g\|^2$.
 - **Universal Value Function Approximation (UVFA)** is basically just a value function that takes an extra input, like $z$. In the original paper that coined the term, I think they're mostly concerned with the GCRL case where the extra input is a state, but leave it open to be more general.
 - **Unsupervised skill discovery (USD)** is another niche where the models almost always take an additional variable $z$. However, in USD $z$ represents a "skill", i.e., a policy behavior. There are a million versions of USD, but they typically define a $z$-dependent reward  based on how different the policy for that $z$ behaves compared to the policy for other $z$ values.
 
-There are others that debateably could be included here (like successor features), but these are the big ones IMO (let me know if you think I missed any!). Anyway, my point here is that they're all just different variations of the same high level framework. I'm mostly interested in GCRL going forward, so I'm just gonna say "GCRL" as a general term for this stuff.
+There are others that debatably could be included here (like successor features), but these are the big ones IMO (let me know if you think I missed any!). Anyway, my point here is that they're all just different variations of the same high level framework. I'm mostly interested in GCRL going forward, so I'm just gonna say "GCRL" as a general term for this stuff.
 
 
 # The goal is just another part of the state! Or... is it?
