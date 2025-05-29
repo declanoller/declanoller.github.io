@@ -34,17 +34,20 @@ For our cleaning robot, in a naive implementation, the reward is $r = 0$ unless 
 But what if we could use that same training data it collected to have a more flexible and capable robot? For example, it'd be great if we could have the option to tell it which of several countries to concentrate on cleaning. Maybe we can do this with GCRL! 
 
 We'll now make three versions of the reward above:
-$$\begin{aligned}
+$$
+\begin{aligned}
 r_\text{USA}([s_\text{USA}, s_\text{dirty}], a_\text{clean}) & = 1\\
 
 r_\text{Brazil}([s_\text{Brazil}, s_\text{dirty}], a_\text{clean}) & = 1\\
 
 r_\text{Chad}([s_\text{Chad}, s_\text{dirty}], a_\text{clean}) & = 1\\
 
-\end{aligned}$$
+\end{aligned}
+$$
 Now for our reward, we consider state information not only about whether it's in a dirty spot, but also what country it's in. So, it only gets $r_\text{USA} = 1$ if it cleans a dirty spot *in the USA*, and not if it cleans a dirty spot in Brazil.
 
-Then, we make our GCRL reward be composed of these three parts: 
+Then, we make our GCRL reward be composed of these three parts:
+
 $$
 \begin{aligned}
 r(s, a, z) &= r(s, a, [z_\text{USA}, z_\text{Brazil}, z_\text{Chad}]) \\
@@ -53,6 +56,7 @@ r(s, a, z) &= r(s, a, [z_\text{USA}, z_\text{Brazil}, z_\text{Chad}]) \\
           &\phantom{= z_\text{USA}}+ z_\text{Chad} \cdot r_\text{Chad}(s, a)
 \end{aligned}
 $$
+
 Where $z = [z_\text{USA}, z_\text{Brazil}, z_\text{Chad}]$, and each of the $z_i \in \{0, 1\}$. Now we can express any combinations of the country-specific rewards by changing $z$.
 
 To train it, we again let it roam the world and try stuff, but now we periodically change the $z$ value it's using. For example, maybe we set $z = [0, 1, 0]$ (such that it'll only get rewarded for cleaning in Brazil) for 100 steps. Then, for the next 100 steps, we change it to $z = [1, 0, 0]$ (so that it'll only get rewarded for cleaning in the USA). This way, when we train it, it'll have experience corresponding to those different settings.
