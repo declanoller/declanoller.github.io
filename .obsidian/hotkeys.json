@@ -16,5 +16,14 @@
       ],
       "key": "ArrowUp"
     }
+  ],
+  "editor:open-link-in-new-leaf": [],
+  "editor:insert-callout": [
+    {
+      "modifiers": [
+        "Mod"
+      ],
+      "key": "Enter"
+    }
   ]
 }
