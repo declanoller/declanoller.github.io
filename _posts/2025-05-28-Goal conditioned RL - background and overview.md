@@ -5,7 +5,7 @@ permalink: 2025-05-28-Goal_conditioned_RL_background_and_overview
 thumbnail: /assets/images/thumbnails/cryingrobot.png
 title: Goal conditioned RL - background and overview
 ---
-I've recently been reading a bunch of the Goal Conditioned Reinforcement Learning (GCRL) literature. I think that there's a good chance that the future of RL will heavily involve GCRL and I want to do a few posts on little experiments with it, so I'm gonna write up a few posts as an overview of GCRL and a smattering of random thoughts on it. I'm going to assume some knowledge of the basics of RL.
+I've recently been reading a bunch of the Goal Conditioned Reinforcement Learning (GCRL) literature. I think that there's a good chance that the future of RL will heavily involve GCRL and I want to do a few little experiments with it, so I'm gonna write up a few posts as an overview of GCRL and a smattering of random thoughts on it. I'm going to assume you have some knowledge of the basics of RL.
 
 # The main idea
 
@@ -27,7 +27,7 @@ The AI was devastated by our extinction. It had one duty, to protect humanity, a
 
 ![](/assets/images/cryingrobot.png)
 
-This is where you and I come in: we're a couple of subroutines responsible for training these cleaning robots. Crazy, huh? I bet you didn't see that coming. Now that we understand the scenario, let's get to it.
+This is where you and I come in: we're actually a couple of subroutines responsible for training these cleaning robots. Crazy, huh? I bet you didn't see that coming. Now that we understand the scenario, let's get to it.
 
 For our cleaning robot, in a naive implementation, the reward is $r = 0$ unless it performs the "clean" action $a_\text{clean}$ when it's in a "dirty state" $s_\text{dirty}$ (meaning that it's standing above a CS on the ground), in which case it receives $r(s_\text{dirty}, a_\text{clean}) = 1$. We train the robot by letting it roam the ruins of the world, randomly cleaning spots, and it eventually learns to maximize cumulative reward by cleaning only the dirty parts of the world.
 
@@ -54,7 +54,7 @@ r(s, a, z) &= r(s, a, [z_\text{USA}, z_\text{Brazil}, z_\text{Chad}]) \\
 \end{aligned}
 $$
 
-Where $z = [z_\text{USA}, z_\text{Brazil}, z_\text{Chad}]$, and each of the $z_i \in \{0, 1\}$. Now we can express any combinations of the country-specific rewards by changing $z$.
+Where $z = [z_\text{USA}, z_\text{Brazil}, z_\text{Chad}]$, and each of the $z_i \in \{0, 1\}$. Now we can express any combination of the country-specific rewards by changing $z$.
 
 To train it, we again let it roam the world and try stuff, but now we periodically change the $z$ value it's using. For example, maybe we set $z = [0, 1, 0]$ (such that it'll only get rewarded for cleaning in Brazil) for 100 steps. Then, for the next 100 steps, we change it to $z = [1, 0, 0]$ (so that it'll only get rewarded for cleaning in the USA). This way, when we train it, it'll have experience corresponding to those different settings.
 
@@ -75,11 +75,11 @@ Basically, the sky's the limit and it just comes down to practical questions abo
 
 Maybe you've noticed that I haven't yet explicitly said much about a "goal". That's because there are a bunch of related niches here, they're all kind of the same, I don't want to get into the terminology weeds, and... Ugh, fine, let's get into the weeds a little.
 
-Technically, I think what I described above is called "multi-task RL" (MTRL). To me, that means your reward function is dependent on *some* additional variable $z$, and therefore the models are usually conditioned on $z$ as well.
+Technically, I think what I described above is called "multi-task RL" (MTRL). To me, that means your reward function depends on *some* additional variable $z$, and therefore the models are usually conditioned on $z$ as well.
 
 This means MTRL is very general, and most of these related niches are specific cases of it. Their differences are usually based on what $z$ corresponds to and the form of the reward function:
 
-- **GCRL** is usually when $z$ corresponds to a *goal* state, so the reward is often based on some distance of the current state from the goal state. It's often the sparse "indicator" function $r(s, g) = \mathbb 1[s = g]$ or a dense version like $r(s, g) = -\|s - g\|^2$.
+- **GCRL** is usually when $z$ corresponds to a *goal* state, so the reward is often based on some measure of distance between the current state and the goal state. It's often the sparse "indicator" function $r(s, g) = \mathbb 1[s = g]$ or a dense version like $r(s, g) = -\|s - g\|^2$.
 - **Universal Value Function Approximation (UVFA)** is basically just a value function that takes an extra input, like $z$. In the original paper that coined the term, I think they're mostly concerned with the GCRL case where the extra input is a state, but leave it open to be more general.
 - **Unsupervised skill discovery (USD)** is another niche where the models almost always take an additional variable $z$. However, in USD $z$ represents a "skill", i.e., a policy behavior. There are a million versions of USD, but they typically define a $z$-dependent reward  based on how different the policy for that $z$ behaves compared to the policy for other $z$ values.
 
@@ -96,7 +96,7 @@ And this makes some sense, right? The state is the currently... well, "state" of
 
 Funnily enough, this made me realize that long ago when I was just learning about RL and [made a physical robot learn the "puckworld" game from real experience]({{ site.baseurl }}/2019-03-27-training-a-real-robot-to-play-puckworld-with-reinforcement-learning), I had actually done this without thinking about it (hell, I probably hadn't even heard of GCRL at that point). Basically, the agent's state was $(x, y, \theta, x_t, y_t)$, where $(x_t, y_t)$ was the location of the target. That was just what seemed like the natural way to do it given that I wanted the target to move around, and it ends up being identical to instead doing $Q(s, a, z)$.
 
-Or... is it? Re-considering my "original" viewpoint that the $z$ input actually *is* special and not just "another part of the state", it does have some unique features that might make it worth treating differently. The most notable is that it's less "grounded" to reality compared to the rest of the state. In the robot example above, if your GCRL robot does an action in some state, it's undebatable was state it was in, what action it did, and what the state it ended up in is. Maybe it would've *chosen* a different action depending on which $z$ value happened to be set in that step, but that $z$ value isn't a physical "measurement" in the same way the state or action is.
+Or... is it? Re-considering my "original" viewpoint that the $z$ input actually *is* special and not just "another part of the state", it does have some unique features that might make it worth treating differently. The most notable is that it's less "grounded" to reality compared to the rest of the state. In the robot example above, if your GCRL robot does an action in some state, it's undebatable what state it was in, what action it did, and what the state it ended up in is. Maybe it would've *chosen* a different action depending on which $z$ value happened to be set in that step, but that $z$ value isn't a physical "measurement" in the same way the state or action is.
 
 This view is the inspiration for many "goal relabeling" techniques in GCRL, such as HER, which are one of the big motivations of GCRL. This post is already crazy long, so I'll talk about that next time. See ya then!
 
