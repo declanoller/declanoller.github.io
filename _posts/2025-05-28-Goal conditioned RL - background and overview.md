@@ -90,7 +90,9 @@ There are others that debatably could be included here (like successor features)
 
 I'm a bit embarrassed to admit that I didn't realize this until fairly recently: I had always viewed the input $z$ in GCRL as something *special*, until someone casually mentioned that although we treat it differently in our models (for example, with a separate input tensor, etc), it's just kind of "another part of the state".
 
-I mean, maybe this is already obvious to you, in which case, I genuflect in your genius, my lord. But it was definitely a new viewpoint for me. To be explicit, I had been viewing the models (for example, the Q function) as $Q(s, a, z)$, where it's now this new, different creature that's a function of three variables, but this viewpoint instead says it's a normal Q function, just written $Q(\tilde s, a)$, where $\tilde s = [s, z]$.
+I mean, maybe this is already obvious to you, in which case, I genuflect in your genius, my lord. But it was definitely a new viewpoint for me! To be explicit, I had been viewing the models (for example, the Q function) as $Q(s, a, z)$, where it's now this new, different creature that's a function of three variables, but this viewpoint instead says it's a normal Q function, just written $Q(\tilde s, a)$, where $\tilde s = [s, z]$.
+
+![](assets/images/genuflect_with_eqns.png)
 
 And this makes some sense, right? The state is the currently... well, "state" of the world. And it sounds pretty reasonable to say that part of the state of the world is "what I'm currently trying to do", i.e., $z$. If that value were different, the state of the world would be different! This is almost more of a philosophical distinction, but it might change how you view and solve problems.
 
