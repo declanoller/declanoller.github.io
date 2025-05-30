@@ -1,0 +1,29 @@
+#!/bin/bash
+
+echo "🔧 Rewriting image paths in staged Markdown files..."
+
+# Get list of staged .md files (new or modified)
+files=$(git diff --cached --name-only --diff-filter=ACM | grep '\.md$')
+
+for file in $files; do
+  if [ -f "$file" ]; then
+    echo "  🔍 Checking $file"
+    tmpfile=$(mktemp)
+
+    # Rewrite relative Markdown image paths to root-relative
+    sed -E 's|!\[\]\(assets/images/([^)]+)\)|![](/assets/images/\1)|g' "$file" > "$tmpfile"
+
+    # If changes occurred, update file and restage it
+    if ! cmp -s "$file" "$tmpfile"; then
+      echo "  ✅ Fixed: $file"
+      mv "$tmpfile" "$file"
+      git add "$file"
+    else
+      echo "  ⏩ No changes needed for $file"
+      rm "$tmpfile"
+    fi
+  fi
+done
+
+echo "✅ Image path rewrite complete."
+
