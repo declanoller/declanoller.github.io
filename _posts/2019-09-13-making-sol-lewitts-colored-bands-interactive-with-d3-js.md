@@ -69,19 +69,19 @@ $$b = 2 \textrm{sin}(2\pi f_0 f_{mult} x)$$
 $$a_i = 1$$
 
 The first thing is that the bands are obviously different thicknesses. To to this, I just made each $a_i$ a random term:
-$ t_i = 1 + 1.2 \mathcal{U} (0, 1)
+$$t_i = 1 + 1.2 \mathcal{U} (0, 1)$$
 
-a_i = t_i $
+$$a_i = t_i$$
 
 where $\mathcal{U} (0, 1)$ is a uniform distribution. I'll leave the $b$ term as it is above for now, as we can get most of the interesting behavior by changing the $a_i$ terms. I'm including the $t_i$ here for reasons you'll see shortly. This gives:
 ![](/assets/images/diff_thickness_noturb-1024x491.png)
 
 Slightly better. The next pretty obvious thing is that they're not regular sine waves, they have variations across the length. To do that, I made $a_i$ have spatial dependence:
-$ t_i = 1 + 1.2 \mathcal{U} (0, 1)
+$$t_i = 1 + 1.2 \mathcal{U} (0, 1)$$
 
-f_{band} = 2
+$$f_{band} = 2$$
 
-a_i = t_i (1 + 0.6 \textrm{sin}(2\pi f_0 f_{band} x) ) $
+$$a_i = t_i (1 + 0.6 \textrm{sin}(2\pi f_0 f_{band} x) )$$
 
 ![](/assets/images/ai_pos_based_noturb-1024x491.png)
 
@@ -97,23 +97,23 @@ a_i = t_i (1 + 0.6 \textrm{sin}(2\pi f_0 f_{band} x + \phi_i) ) $
 ![](/assets/images/ai_phase_only_noturb-1024x491.png)
 
 Hot daaaamn! We're getting there. That has the effect of making the modulation to $a_i$ just shift for each band, but it's still actually the same amount and happening at the same rate. Alternatively, we can do a similar idea, but for $f_{band}$ instead:
-$ t_i = 1 + 1.2 \mathcal{U} (0, 1)
+$$t_i = 1 + 1.2 \mathcal{U} (0, 1)$$
 
-f_{band_i} = 1 + \mathcal{U} (0, 1)
+$$f_{band_i} = 1 + \mathcal{U} (0, 1)$$
 
-a_i = t_i (1 + 0.6 \textrm{sin}(2\pi f_0 f_{band_i} x) ) $
+$$a_i = t_i (1 + 0.6 \textrm{sin}(2\pi f_0 f_{band_i} x) )$$
 
 ![](/assets/images/ai_fband_only_noturb-1024x491.png)
 
 DANG. In my opinion, that looks even better. And, together:
 
-$ t_i = 1 + 1.2 \mathcal{U} (0, 1)
+$$t_i = 1 + 1.2 \mathcal{U} (0, 1)$$
 
-\phi_i = 2\pi \mathcal{U} (0, 1)
+$$\phi_i = 2\pi \mathcal{U} (0, 1)$$
 
-f_{band_i} = 1 + \mathcal{U} (0, 1)
+$$f_{band_i} = 1 + \mathcal{U} (0, 1)$$
 
-a_i = t_i (1 + 0.6 \textrm{sin}(2\pi f_0 f_{band_i} x + \phi_i) ) $
+$$a_i = t_i (1 + 0.6 \textrm{sin}(2\pi f_0 f_{band_i} x + \phi_i) )$$
 
 ![](/assets/images/ai_phase_and_fband_noturb-1024x491.png)
 
@@ -121,17 +121,17 @@ Now we're cookin.
 
 At this point, the following were basically a bunch of little tweaks I did by hand, to taste. To make a long story short, at this point I adjust the base sine again. I make it have a larger amplitude, a few randomly sampled phases, an amplitude that varies with position, and a *frequency* that varies with position:
 
-$ \phi_b = 2\pi \mathcal{U} (0, 1)
+$$\phi_b = 2\pi \mathcal{U} (0, 1)$$
 
-\phi_0 = 2\pi \mathcal{U} (0, 1)
+$$\phi_0 = 2\pi \mathcal{U} (0, 1)$$
 
-\phi_f = 2\pi \mathcal{U} (0, 1)
+$$\phi_f = 2\pi \mathcal{U} (0, 1)$$
 
-A = 4 (1 + 0.3 \textrm{sin}(\phi_b + 2\pi f_0 x) )
+$$A = 4 (1 + 0.3 \textrm{sin}(\phi_b + 2\pi f_0 x) )$$
 
-f_b = 2.5 (1 + 0.2 \textrm{sin}(\phi_f + 2\pi f_0 x) )
+$$f_b = 2.5 (1 + 0.2 \textrm{sin}(\phi_f + 2\pi f_0 x) )$$
 
-b = A \textrm{sin}(\phi_0 + 2\pi f_0 f_b x) $
+$$b = A \textrm{sin}(\phi_0 + 2\pi f_0 f_b x)$$
 
 Note that this has the effect of making $b$ have a nested sine!
 ![](/assets/images/full_no_turb-1024x491.png)
@@ -140,15 +140,15 @@ Pretty close to the main idea in my opinion!
 
 However, this is just one part. To make mine a little more fun, I wanted to have it be time varying. To do this, I made it so it periodically updates a few of the variables that should give some shape change, especially in aggregate. Each time step, it does:
 
-$ C = 1
+$$C = 1$$
 
-\phi_0 \rightarrow \phi_0 + 0.02 C
+$$\phi_0 \rightarrow \phi_0 + 0.02 C$$
 
-\phi_b \rightarrow \phi_b - 0.04 C
+$$\phi_b \rightarrow \phi_b - 0.04 C$$
 
-t_i \rightarrow t_i + 0.02 C \mathcal{U} (-0.5, 0.5)
+$$t_i \rightarrow t_i + 0.02 C \mathcal{U} (-0.5, 0.5)$$
 
-f_{band_i} \rightarrow f_{band_i} + 0.005 C \mathcal{U} (-0.5, 0.5) $
+$$f_{band_i} \rightarrow f_{band_i} + 0.005 C \mathcal{U} (-0.5, 0.5)$$
 
 I also wanted to make it so the user could control how much it changes, but not have them mess with actual numbers. To do this, I have it capture the current mouse position. There's a "band" in the middle of the window where, if the cursor is within that band, it won't change at all. Outside that band, it changes faster depending on how far outside of it you are (to the maximum at the edge of the screen). That's why that $C$ is up there! It's dependent on the mouse position. I'm curious if people will figure that out or not?
 Another interesting aspect to this is that, due to how I'm updating $t_i$ and $f_{band_i}$ above, they'll act as random walkers: having average 0 change in value over infinity, but large fluctuations too.
