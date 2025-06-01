@@ -6,7 +6,7 @@ thumbnail: /assets/images/thumbnails/full_withturb.png
 title: Making Sol LeWitt's colored bands interactive with d3.js
 ---
 
-[Skip to the full page interactive version](assets/html/bands_1.html) if you don't want to read!
+[Skip to the full page interactive version](https://www.declanoller.com/wp-content/uploads/2019/09/bands_1.html) if you don't want to read!
 
 [I made a post a while ago about recreating a Sol LeWitt piece using d3.js]({{ site.baseurl }}/2019-06-21-programmatically-recreating-sol-lewitts-all-two-part-combinations-of-arcs-from-corners-and-sides-and-straight-not-straight-and-broken-lines-with-d3-js), and making it interactive. I had a lot of fun doing that one, and it wasn't even my favorite of his stuff that I saw! So, I knew I'd be back.
 
@@ -62,11 +62,11 @@ function sine_bottom_stack(n, m){
 ![](/assets/images/simple_sine_noturb-1024x491.png)
 
 Of course, there's a lot more going on in the real thing. The first thing is that it's obviously not a simple sine wave, it has some pretty funky variation.  For the sake of not having this be a huge wall of mostly repetitive code, I'll just use latex from here on out. $x$ is the position that the curve is determined by, $b$ is the equation for the base sine layer, $a_i$ will be the thickness of curve $i$, and I'll define other things on the way. So, what I have above is simply:
-$ f_{mult} = 2.5
+$$f_{mult} = 2.5$$
 
-b = 2 \textrm{sin}(2\pi f_0 f_{mult} x)
+$$b = 2 \textrm{sin}(2\pi f_0 f_{mult} x)$$
 
-a_i = 1$
+$$a_i = 1$$
 
 The first thing is that the bands are obviously different thicknesses. To to this, I just made each $a_i$ a random term:
 $ t_i = 1 + 1.2 \mathcal{U} (0, 1)

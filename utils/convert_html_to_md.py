@@ -1149,4 +1149,31 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    # main()
+
+    """
+    python misc/convert_html_to_md.py 
+    /home/declan/Documents/code/wordpress_site_export/_posts/ 
+    /home/declan/Documents/code/declanoller.github.io/_posts/ 
+    --source-image-path /home/declan/Documents/code/wordpress_site_export/assets/ 
+    --target-image-path /home/declan/Documents/code/declanoller.github.io/assets/images/ 
+    --source-thumbnail-path /home/declan/Documents/code/wordpress_site_export/assets/ 
+    --target-thumbnail-path /home/declan/Documents/code/declanoller.github.io/assets/images/thumbnails/
+    """
+
+    process_directory(
+        input_dir="/home/declan/Documents/code/wordpress_site_export/_posts/",
+        output_dir="/home/declan/Documents/code/declanoller.github.io/_posts/",
+        source_image_path=Path(
+            "/home/declan/Documents/code/wordpress_site_export/assets/"
+        ),
+        target_image_path=Path(
+            "/home/declan/Documents/code/declanoller.github.io/assets/images/"
+        ),
+        source_thumbnail_path=Path(
+            "/home/declan/Documents/code/wordpress_site_export/assets/"
+        ),
+        target_thumbnail_path=Path(
+            "/home/declan/Documents/code/declanoller.github.io/assets/images/thumbnails/"
+        ),
+    )
