@@ -559,7 +559,7 @@ def paragraphs_to_markdown(html_text: str) -> str:
         if is_block_math_expression(text):
             eq = text.strip("$").strip()
             eq = eq.replace("|", " \\mid ")
-            new_text = f"$${eq}$$\n"
+            new_text = f"\n$${eq}$$\n"
         elif text.count("$") >= 2:
             """
             print_warning(f"\nHas inline math exprs:\n\t{text}")

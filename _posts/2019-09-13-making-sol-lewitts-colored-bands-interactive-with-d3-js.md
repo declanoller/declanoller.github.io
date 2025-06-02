@@ -62,6 +62,7 @@ function sine_bottom_stack(n, m){
 ![](/assets/images/simple_sine_noturb-1024x491.png)
 
 Of course, there's a lot more going on in the real thing. The first thing is that it's obviously not a simple sine wave, it has some pretty funky variation.  For the sake of not having this be a huge wall of mostly repetitive code, I'll just use latex from here on out. $x$ is the position that the curve is determined by, $b$ is the equation for the base sine layer, $a_i$ will be the thickness of curve $i$, and I'll define other things on the way. So, what I have above is simply:
+
 $$f_{mult} = 2.5$$
 
 $$b = 2 \textrm{sin}(2\pi f_0 f_{mult} x)$$
@@ -69,6 +70,7 @@ $$b = 2 \textrm{sin}(2\pi f_0 f_{mult} x)$$
 $$a_i = 1$$
 
 The first thing is that the bands are obviously different thicknesses. To to this, I just made each $a_i$ a random term:
+
 $$t_i = 1 + 1.2 \mathcal{U} (0, 1)$$
 
 $$a_i = t_i$$
@@ -77,6 +79,7 @@ where $\mathcal{U} (0, 1)$ is a uniform distribution. I'll leave the $b$ term as
 ![](/assets/images/diff_thickness_noturb-1024x491.png)
 
 Slightly better. The next pretty obvious thing is that they're not regular sine waves, they have variations across the length. To do that, I made $a_i$ have spatial dependence:
+
 $$t_i = 1 + 1.2 \mathcal{U} (0, 1)$$
 
 $$f_{band} = 2$$
@@ -86,6 +89,7 @@ $$a_i = t_i (1 + 0.6 \textrm{sin}(2\pi f_0 f_{band} x) )$$
 ![](/assets/images/ai_pos_based_noturb-1024x491.png)
 
 Looking better! This is definitely the "Pareto jump" of this problem. However, it's still not quite there. The base thicknesses of each layer ($t_i$) are all different, and now each thickness is being modulated by position, which looks better, but they're still being modified by position *by the same amount* and *in the same places*. One easy way to change this is to add a phase term, $\phi_i$, that's constant for each band, but selected randomly for each:
+
 $$t_i = 1 + 1.2 \mathcal{U} (0, 1)$$
 
 $$\phi_i = 2\pi \mathcal{U} (0, 1)$$
@@ -97,6 +101,7 @@ $$a_i = t_i (1 + 0.6 \textrm{sin}(2\pi f_0 f_{band} x + \phi_i) )$$
 ![](/assets/images/ai_phase_only_noturb-1024x491.png)
 
 Hot daaaamn! We're getting there. That has the effect of making the modulation to $a_i$ just shift for each band, but it's still actually the same amount and happening at the same rate. Alternatively, we can do a similar idea, but for $f_{band}$ instead:
+
 $$t_i = 1 + 1.2 \mathcal{U} (0, 1)$$
 
 $$f_{band_i} = 1 + \mathcal{U} (0, 1)$$
