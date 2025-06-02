@@ -1161,6 +1161,14 @@ if __name__ == "__main__":
     --target-thumbnail-path /home/declan/Documents/code/declanoller.github.io/assets/images/thumbnails/
     """
 
+    parser = argparse.ArgumentParser(
+        description="Convert HTML files to Markdown for Jekyll."
+    )
+    parser.add_argument(
+        "--name-filter", help="Filter by filename contains", default=None, type=str
+    )
+    args = parser.parse_args()
+
     process_directory(
         input_dir="/home/declan/Documents/code/wordpress_site_export/_posts/",
         output_dir="/home/declan/Documents/code/declanoller.github.io/_posts/",
@@ -1176,4 +1184,5 @@ if __name__ == "__main__":
         target_thumbnail_path=Path(
             "/home/declan/Documents/code/declanoller.github.io/assets/images/thumbnails/"
         ),
+        name_filter=args.name_filter,
     )
