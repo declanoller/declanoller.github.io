@@ -29,6 +29,7 @@ So, what can you do? Even though there was a higher spot than where you finished
 Free again! You can see the dot wobble a little at the second little valley, where it has to get lucky several times in a row to overcome it.
 
 So this is the basic idea: always accept a better solution offered, but also sometimes accept a worse one. The classic way of determining that "sometimes" is by calling your current height $E$, the height you're considering going to $E_{new}$, choosing a "temperature" $T$, and calculating:
+
 $$p = e^{\frac{E_{new} - E}{T}}$$
 
 which represents the probability that you'll take a step that takes you from $E$ to $E_{new}$. So for $E_{new} > E$, $p > 1$, for which we just take the step (so if you want to be precise, $p = \min(e^{\frac{E_{new} - E}{T}}, 1)$), but if $E_{new} < E$, we only take the step with probability $p < 1$.
