@@ -3,6 +3,7 @@ import sys
 from PIL import Image
 from typing import Optional, Tuple
 from termcolor import colored
+import argparse
 
 FILESIZE_THRESHOLD_KB = 400
 FILESIZE_THRESHOLD_TOLERANCE = 1.05
@@ -20,11 +21,25 @@ def get_image_info(file_path: str) -> Optional[Tuple[float, int, int]]:
 
 
 def main() -> None:
-    if len(sys.argv) != 2:
-        print("Usage: python resize_thumbnails.py <directory_path>")
-        sys.exit(1)
+    parser = argparse.ArgumentParser(
+        description="Resize images in a directory if they exceed a filesize threshold."
+    )
+    parser.add_argument(
+        "directory_path",
+        type=str,
+        help="Path to the directory containing images to resize.",
+    )
 
-    directory_path = sys.argv[1]
+    parser.add_argument(
+        "--max-size-kb",
+        type=float,
+        default=FILESIZE_THRESHOLD_KB,
+        help=f"Maximum allowed file size in kB (default: {FILESIZE_THRESHOLD_KB})",
+    )
+    args = parser.parse_args()
+
+    filesize_threshold_kb = args.max_size_kb
+    directory_path = args.directory_path
 
     if not os.path.isdir(directory_path):
         print(f"Error: {directory_path} is not a valid directory.")
@@ -39,12 +54,12 @@ def main() -> None:
                     file_size_kb, width, height = image_info
                     if (
                         file_size_kb
-                        > FILESIZE_THRESHOLD_TOLERANCE * FILESIZE_THRESHOLD_KB
+                        > FILESIZE_THRESHOLD_TOLERANCE * filesize_threshold_kb
                     ):
                         print(colored(f"{file}", "red"))
                         print(
                             colored(
-                                f"    over tolerance of {FILESIZE_THRESHOLD_TOLERANCE * FILESIZE_THRESHOLD_KB:.0f} kB",
+                                f"    over tolerance of {FILESIZE_THRESHOLD_TOLERANCE * filesize_threshold_kb:.0f} kB",
                                 "red",
                             )
                         )
@@ -54,7 +69,7 @@ def main() -> None:
                                 "red",
                             )
                         )
-                        target_size_kb = FILESIZE_THRESHOLD_KB
+                        target_size_kb = filesize_threshold_kb
                         resize_ratio = (target_size_kb / file_size_kb) ** 0.5
                         new_width = int(width * resize_ratio)
                         new_height = int(height * resize_ratio)
@@ -66,7 +81,7 @@ def main() -> None:
                             image_info = get_image_info(file_path)
                             print(
                                 colored(
-                                    f"    Resized to {new_width}x{new_height}, now under {FILESIZE_THRESHOLD_KB} kB",
+                                    f"    Resized to {new_width}x{new_height}, now under {filesize_threshold_kb} kB",
                                     "green",
                                 )
                             )
