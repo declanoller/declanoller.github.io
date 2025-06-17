@@ -19,7 +19,7 @@ Here's an inline equation with mathjax:
 
 The score function \\(\nabla_\theta \log p_\theta(x)\\) is pretty cool!
 
-Here's a block equation with mathjax:
+Here's a block equation with mathjax (kind of messed up?):
 \\[
 \begin{bmatrix}
 a & b \\
@@ -65,14 +65,20 @@ Here's a callout (doesn't work):
 # Links to pages and headings
 
 
-Here's a link using `{{site.baseurl}}` (with spaces around it) and the permalink:
+Here's a link using `{{site(dot)baseurl}}` (with spaces around it, dot replaced with period) and the permalink (works):
 
-[lenses post]({{ site.baseurl }}/2021-01-01-making-diy-lenses)
+[lenses post, permalink]({{ site.baseurl }}/2021-01-01-making-diy-lenses)
 
-Here's a link using that and the heading with a `#`:
+Here it is with the direct post location (i.e., `_posts/_posts/2021-01-01-making-diy-lenses.md`):
+
+[lenses post, direct](_posts/2021-01-01-making-diy-lenses.md)
+
+Here's a link using the curly braces method and the heading with a `#`:
+
+[DIY lenses post, permalink, the light ray box heading]({{ site.baseurl }}/2021-01-01-making-diy-lenses#the-light-ray-box)
 
 
-Here's an obsidian-style markdown link:
+Here's an obsidian-style markdown link (doesn't work):
 
 [2021-01-01-making-diy-lenses](_posts/2021-01-01-making-diy-lenses.md)
 
