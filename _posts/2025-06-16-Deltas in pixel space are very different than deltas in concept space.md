@@ -1,5 +1,5 @@
 ---
-date: 2025-06-01 00:00:00-05:00
+date: 2025-06-16 00:00:00-05:00
 layout: post
 permalink: deltas_pixel_concept_space
 thumbnail: /assets/images/thumbnails/pixel_concept_space_thumbnail.png

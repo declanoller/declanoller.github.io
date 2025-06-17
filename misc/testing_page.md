@@ -69,14 +69,13 @@ Here's a link using `{{site(dot)baseurl}}` (with spaces around it, dot replaced 
 
 [lenses post, permalink]({{ site.baseurl }}/2021-01-01-making-diy-lenses)
 
-Here it is with the direct post location (i.e., `_posts/_posts/2021-01-01-making-diy-lenses.md`):
+Here it is with the direct post location (i.e., `_posts/2021-01-01-making-diy-lenses.md`), doesn't work:
 
 [lenses post, direct](_posts/2021-01-01-making-diy-lenses.md)
 
-Here's a link using the curly braces method and the heading with a `#`:
+Here's a link using the curly braces method and the heading with a `#` (works):
 
 [DIY lenses post, permalink, the light ray box heading]({{ site.baseurl }}/2021-01-01-making-diy-lenses#the-light-ray-box)
-
 
 Here's an obsidian-style markdown link (doesn't work):
 
