@@ -87,6 +87,50 @@ Here's an obsidian-style markdown link (doesn't work):
 Here's a little javascript sim hopefully:
 
 
+{% raw %}
+<div style="margin:0; overflow:hidden;">
+  <canvas id="canvas"></canvas>
+  <script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const balls = Array.from({ length: 30 }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      vx: (Math.random() - 0.5) * 6,
+      vy: (Math.random() - 0.5) * 6,
+      r: 10 + Math.random() * 10,
+      color: `hsl(${Math.random() * 360}, 100%, 60%)`
+    }));
+
+    function draw() {
+      ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      for (let b of balls) {
+        b.vx += (Math.random() - 0.5) * 0.5;
+        b.vy += (Math.random() - 0.5) * 0.5;
+        b.x += b.vx;
+        b.y += b.vy;
+
+        if (b.x < b.r || b.x > canvas.width - b.r) b.vx *= -1;
+        if (b.y < b.r || b.y > canvas.height - b.r) b.vy *= -1;
+
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+        ctx.fillStyle = b.color;
+        ctx.fill();
+      }
+
+      requestAnimationFrame(draw);
+    }
+
+    draw();
+  </script>
+</div>
+{% endraw %}
 
 
 
