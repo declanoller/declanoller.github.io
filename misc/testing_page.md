@@ -84,7 +84,7 @@ Here's an obsidian-style markdown link (doesn't work):
 # Embedded code on page
 
 
-Here's a little javascript sim hopefully:
+Here's a little javascript sim using "raw" and "endraw" jekyll tags (works):
 
 
 {% raw %}
