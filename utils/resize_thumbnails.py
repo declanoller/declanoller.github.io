@@ -5,7 +5,7 @@ from typing import Optional, Tuple
 from termcolor import colored
 import argparse
 
-FILESIZE_THRESHOLD_KB = 400
+FILESIZE_THRESHOLD_KB = 500
 FILESIZE_THRESHOLD_TOLERANCE = 1.05
 
 
@@ -25,8 +25,9 @@ def main() -> None:
         description="Resize images in a directory if they exceed a filesize threshold."
     )
     parser.add_argument(
-        "directory_path",
+        "--path",
         type=str,
+        default="/home/declan/Documents/code/declanoller.github.io/assets/images/thumbnails/",
         help="Path to the directory containing images to resize.",
     )
 
@@ -39,7 +40,7 @@ def main() -> None:
     args = parser.parse_args()
 
     filesize_threshold_kb = args.max_size_kb
-    directory_path = args.directory_path
+    directory_path = args.path
 
     if not os.path.isdir(directory_path):
         print(f"Error: {directory_path} is not a valid directory.")
