@@ -1,3 +1,10 @@
+---
+date: 2055-06-24 00:00:00-05:00
+layout: post
+permalink: 2055-06-24-POST_NAME_HERE
+thumbnail: /assets/images/thumbnails/THUMBNAIL_NAME_HERE
+title: testing_page
+---
 
 
 # Equations
