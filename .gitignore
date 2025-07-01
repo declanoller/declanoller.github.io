@@ -4,3 +4,6 @@
 .vscode/settings.json
 /misc/__pycache__/
 /_draft_posts/
+__pycache__/
+/utils/__pycache__/
+/.pytest_cache__/
