@@ -1,9 +1,10 @@
 ---
-date: 2050-06-24 00:00:00-05:00
+date: 2024-06-24 00:00:00-05:00
 layout: post
-permalink: /misc/testing_page2
+permalink: testing_page2_navorder
 thumbnail: /assets/images/thumbnails/THUMBNAIL_NAME_HERE
-title: testing_page2_in_misc
+title: testing_page2_navorder
+navorder: -1
 ---
 
 
