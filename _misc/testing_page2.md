@@ -1,9 +1,7 @@
 ---
-date: 2050-06-24 00:00:00-05:00
-layout: post
-permalink: /misc/testing_page2
-thumbnail: /assets/images/thumbnails/THUMBNAIL_NAME_HERE
 title: testing_page2
+layout: page
+permalink: /misc/testing_page2/
 ---
 
 
