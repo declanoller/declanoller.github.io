@@ -40,3 +40,5 @@ nav_order: 2
 - [Effect pedals](/misc/effect_pedals)
 - [Simulations](/misc/simulations)
 
+
+[Testing page](/misc/testing_page)

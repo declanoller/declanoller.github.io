@@ -1,7 +1,7 @@
 ---
-title: testing_page2
+title: Testing page
 layout: page
-permalink: /misc/testing_page2/
+permalink: /misc/testing_page/
 ---
 
 
