@@ -1,3 +1,6 @@
 title: Declan's learning nook
 description: Welcome!
 remote_theme: "jekyll/minima@1e8a445"
+collections:
+  misc:
+    output: true
