@@ -165,7 +165,7 @@ Okay, enough fooling around. I promised you a dogtail party and a dogtail party 
 
 Below are eight 2.5 second clips, the original sources. For added fun, don't listen to them yet, and instead skip down to the mixed signals! See what you can pick out from the voices in the party.
 
-[0]({{site.baseurl}}/audio/original_source_0.wav), [1]({{site.baseurl}}/audio/original_source_1.wav), [2]({{site.baseurl}}/audio/original_source_2.wav), [3]({{site.baseurl}}/audio/original_source_3.wav), [4]({{site.baseurl}}/audio/original_source_4.wav), [5]({{site.baseurl}}/audio/original_source_5.wav), [6]({{site.baseurl}}/audio/original_source_6.wav), [7]({{site.baseurl}}/audio/original_source_7.wav)
+[0]({{site.baseurl}}/assets/audio/original_source_0.wav), [1]({{site.baseurl}}/assets/audio/original_source_1.wav), [2]({{site.baseurl}}/assets/audio/original_source_2.wav), [3]({{site.baseurl}}/assets/audio/original_source_3.wav), [4]({{site.baseurl}}/assets/audio/original_source_4.wav), [5]({{site.baseurl}}/assets/audio/original_source_5.wav), [6]({{site.baseurl}}/assets/audio/original_source_6.wav), [7]({{site.baseurl}}/assets/audio/original_source_7.wav)
 
 Then we mix them. Here you can see the original source and mixed signals:
 
@@ -173,7 +173,7 @@ Then we mix them. Here you can see the original source and mixed signals:
 
 And here are the mixed signals:
 
-[0]({{site.baseurl}}/audio/mixed_signal_0.wav), [1]({{site.baseurl}}/audio/mixed_signal_1.wav), [2]({{site.baseurl}}/audio/mixed_signal_2.wav), [3]({{site.baseurl}}/audio/mixed_signal_3.wav), [4]({{site.baseurl}}/audio/mixed_signal_4.wav), [5]({{site.baseurl}}/audio/mixed_signal_5.wav), [6]({{site.baseurl}}/audio/mixed_signal_6.wav), [7]({{site.baseurl}}/audio/mixed_signal_7.wav)
+[0]({{site.baseurl}}/assets/audio/mixed_signal_0.wav), [1]({{site.baseurl}}/assets/audio/mixed_signal_1.wav), [2]({{site.baseurl}}/assets/audio/mixed_signal_2.wav), [3]({{site.baseurl}}/assets/audio/mixed_signal_3.wav), [4]({{site.baseurl}}/assets/audio/mixed_signal_4.wav), [5]({{site.baseurl}}/assets/audio/mixed_signal_5.wav), [6]({{site.baseurl}}/assets/audio/mixed_signal_6.wav), [7]({{site.baseurl}}/assets/audio/mixed_signal_7.wav)
 
 Give a couple of them a listen, it's absolute chaos!
 
@@ -187,7 +187,7 @@ How does the algo do on these? Same plots as before, same scales:
 
 It absolutely nails it! Here are the decoded signals:
 
-[0]({{site.baseurl}}/audio/source_decoded_0.wav), [1]({{site.baseurl}}/audio/source_decoded_1.wav), [2]({{site.baseurl}}/audio/source_decoded_2.wav), [3]({{site.baseurl}}/audio/source_decoded_3.wav), [4]({{site.baseurl}}/audio/source_decoded_4.wav), [5]({{site.baseurl}}/audio/source_decoded_5.wav), [6]({{site.baseurl}}/audio/source_decoded_6.wav), [7]({{site.baseurl}}/audio/source_decoded_7.wav)
+[0]({{site.baseurl}}/assets/audio/source_decoded_0.wav), [1]({{site.baseurl}}/assets/audio/source_decoded_1.wav), [2]({{site.baseurl}}/assets/audio/source_decoded_2.wav), [3]({{site.baseurl}}/assets/audio/source_decoded_3.wav), [4]({{site.baseurl}}/assets/audio/source_decoded_4.wav), [5]({{site.baseurl}}/assets/audio/source_decoded_5.wav), [6]({{site.baseurl}}/assets/audio/source_decoded_6.wav), [7]({{site.baseurl}}/assets/audio/source_decoded_7.wav)
 
 ---
 
@@ -195,7 +195,7 @@ One last experiment, because this surprised me a lot (I'm still wondering if I j
 
 Since these were from the same recording, they're of the same speaker. Here are just two of them:
 
-[0]({{site.baseurl}}/audio/original_source_0.wav), [1]({{site.baseurl}}/audio/original_source_1_bad.wav)
+[0]({{site.baseurl}}/assets/audio/original_source_0.wav), [1]({{site.baseurl}}/assets/audio/original_source_1_bad.wav)
 
 and their waveforms:
 
@@ -207,7 +207,7 @@ you can see that the voice sounds the same, but the waveforms do look pretty dif
 
 and there are only two signals! So I thought this shouldn't be too hard. Here's what the mixed signals sound like:
 
-[0]({{site.baseurl}}/audio/mixed_signal_0_bad.wav), [1]({{site.baseurl}}/audio/mixed_signal_1_bad.wav)
+[0]({{site.baseurl}}/assets/audio/mixed_signal_0_bad.wav), [1]({{site.baseurl}}/assets/audio/mixed_signal_1_bad.wav)
 
 I think I can even tell them apart, after a few listens. But, decoding it does *terribly*:
 
@@ -219,7 +219,7 @@ I think I can even tell them apart, after a few listens. But, decoding it does *
 
 and this is reflected in how the decoded signals sound:
 
-[0]({{site.baseurl}}/audio/source_decoded_0_bad.wav), [1]({{site.baseurl}}/audio/source_decoded_1_bad.wav)
+[0]({{site.baseurl}}/assets/audio/source_decoded_0_bad.wav), [1]({{site.baseurl}}/assets/audio/source_decoded_1_bad.wav)
 
 On one hand, this makes intuitive sense. It's way harder to distinguish the same voice layered than different voices. 
 
