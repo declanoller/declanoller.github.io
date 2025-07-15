@@ -80,11 +80,11 @@ Getting a bit more general, sometimes the goal isn't to necessarily produce new 
 
 # Back to Mr. Lewitt
 
-The Sol Lewitt game I opened with is an extreme case of the simple examples above. What I've done is made a deterministic mapping from a single parameter $t$ to *alllllll* those different images. Here are of the images for some of the values:
+The Sol Lewitt game I opened with is an extreme case of the simple examples above. What I've done is made a deterministic mapping from a single parameter $t$ to *alllllll* those different images. Here are the images for some values of $t$:
 
 ![](assets/images/sol_lewitt_bands_grid.png)
 
-To be clear, there's no randomness here, it's just mapping $t \in \mathbb R$ to these different images, and if I rerun it with the same $t$ value, it'll produce the same image again. And I'm pretty confident that A) it'll never make the same image twice, and B) the "invalid" image I made above won't even get produced.
+To be clear, there's no randomness here, it's just mapping $t \in \mathbb R$ to these different images, and if I rerun it with the same $t$ value, it'll produce the same image again. And I'm pretty confident that A) it'll never make the same image twice, and B) the "invalid" image I made above won't ever get produced.
 
 Skipping over a few details, here's what I did:
 
