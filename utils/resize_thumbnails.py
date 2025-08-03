@@ -80,6 +80,8 @@ def main() -> None:
                                 img = img.resize((new_width, new_height), Image.LANCZOS)
                                 img.save(file_path, optimize=True)
                             image_info = get_image_info(file_path)
+                            assert image_info is not None
+                            file_size_kb, width, height = image_info
                             print(
                                 colored(
                                     f"    Resized to {new_width}x{new_height}, now under {filesize_threshold_kb} kB",
