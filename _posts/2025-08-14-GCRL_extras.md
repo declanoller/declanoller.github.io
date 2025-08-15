@@ -29,7 +29,7 @@ Below I'll go over two big reasons embeddings are used in GCRL, but it's really 
 
 ## Rewards
 
-Last time when I [mentioned some of the problems GCRL has](_posts/2025-06-23-GCRL%20-%20Motivations.md#goals-have-problems-too), I gave an example of the commonly used "dense" distance from the goal reward function, $r(s, g) = -\Vert s - g \Vert^2$. There, I pointed out that it doesn't make a lot of sense if your state contains features with different units and types of measurements; some quantities just aren't comparable.
+Last time when I [mentioned some of the problems GCRL has]({{site.baseurl}}/GCRL_motivations#goals-have-problems-too), I gave an example of the commonly used "dense" distance from the goal reward function, $r(s, g) = -\Vert s - g \Vert^2$. There, I pointed out that it doesn't make a lot of sense if your state contains features with different units and types of measurements; some quantities just aren't comparable.
 
 The problem gets even worse though when you consider having raw images as inputs! With image inputs we don't even have features, so the issue about units or scales is irrelevant. The problem with image inputs is that the aspects that determine the difference between states are high level contents of the image, like "is the dog inside the doghouse or on top of the doghouse?"
 
@@ -90,7 +90,7 @@ Which brings me to my last point. Without going into the whole ball of worms tha
 
 # The different ways $z$ gets used
 
-Like I [mentioned in the first post]({{site.baseurl}}/Goal_conditioned_RL_background_and_overview#wait-why-is-it-called-goal-conditioned-gcrl-vs-mtrl-vs-uvfa-vs-usd-vs) in this series, these methods are all birds of a feather and kind of the same if you're willing to be reductive enough. I.e., at the end of the day we input some extra variable to our policy and it should act differently. But of course, people *are* doing slightly different things with them and give them different names based on that.
+Like I [mentioned in the first post]({{site.baseurl}}/2025-05-28-Goal_conditioned_RL_background_and_overview#wait-why-is-it-called-goal-conditioned-gcrl-vs-mtrl-vs-uvfa-vs-usd-vs) in this series, these methods are all birds of a feather and kind of the same if you're willing to be reductive enough. I.e., at the end of the day we input some extra variable to our policy and it should act differently. But of course, people *are* doing slightly different things with them and give them different names based on that.
 
 The main aspects that distinguish them are what rewards get used, and as an extension, the "meaning" behind the conditioning variable (I'll just stick with $z$ here). I'll briefly go over these.
 
