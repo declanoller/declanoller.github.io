@@ -107,9 +107,7 @@ The main point here is that what $z$ "represents" is just kind of a general cont
 
 This is the more specific case I've mostly been talking about, where $z$ corresponds to a *goal state*, whether it's a literal state or a latent state (I'm distinguishing between those here, because a latent state almost certainly corresponds to more than one literal state in most practical cases). So although we have choice in how we want to represent the state for the models, GCRL is somewhat constrained in what the conditioning variable *means*.
 
-Similarly, although you of course can do whatever the hell you want, in GCRL the reward functions almost always reflect some interpretation of a *distance*.
-
-`<link to some canonical GCRL paper>`
+Similarly, although you of course can do whatever the hell you want, in GCRL the reward functions almost always reflect some interpretation of a *distance*. A classic paper that is almost synonymous with GCRL for many is [the UVFA paper](https://proceedings.mlr.press/v37/schaul15.html) from 2015.
 
 ### USD
 
@@ -154,7 +152,7 @@ Another reason also kind of relies on generalization as an argument, but in a di
 
 Since this will scale exponentially with the number $T$ of different types of settings you want to have, we're clearly not going to have $N^T$ models, and then the straightforward first reason above would apply.
 
-However, you might notice a wrinkle here. We're using a single model that learns to do all the $N^T$ combinations of tasks because it'd be infeasible to have that many models, but we still have to actually get experience from doing these different tasks to train this mega-model. If $N^T$ is that massive, there's no way we'll be able to collect enough data for each task (sure, [relabeling](_posts/2025-06-23-GCRL%20-%20Motivations.md#Data%20efficiency%20with%20relabeling) will help some if you can do it, but... $N^T$).
+However, you might notice a wrinkle here. We're using a single model that learns to do all the $N^T$ combinations of tasks because it'd be infeasible to have that many models, but we still have to actually get experience from doing these different tasks to train this mega-model. If $N^T$ is that massive, there's no way we'll be able to collect enough data for each task (sure, [relabeling]({{site.baseurl}}/GCRL_motivations#data-efficiency-with-relabeling) will help some if you can do it, but... $N^T$).
 
 ![](/assets/images/rl_gobble_data_vaneyck.png "Apparently this is what the image gen thinks Jan Van Eyck's style was")
 
