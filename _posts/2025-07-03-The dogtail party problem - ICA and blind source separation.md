@@ -3,6 +3,7 @@ date: 2025-07-03 00:00:00-05:00
 layout: post
 permalink: the-dogtail-party-problem
 thumbnail: /assets/images/thumbnails/radio_dogs_thumbnail.png
+image: /assets/images/thumbnails/radio_dogs_thumbnail.png
 title: "The dogtail party problem: ICA and blind source separation"
 ---
 # Background

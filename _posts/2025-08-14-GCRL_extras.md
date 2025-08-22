@@ -3,6 +3,7 @@ date: 2025-08-14 00:00:00-05:00
 layout: post
 permalink: GCRL_extras
 thumbnail: /assets/images/thumbnails/seurat_goldilocks_reward_fn_thumbnail.png
+image: /assets/images/thumbnails/seurat_goldilocks_reward_fn_thumbnail.png
 title: GCRL - extras
 ---
 

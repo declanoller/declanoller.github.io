@@ -3,6 +3,7 @@ date: 2025-06-23 00:00:00-05:00
 layout: post
 permalink: GCRL_motivations
 thumbnail: /assets/images/thumbnails/robot_ruler_led_renoir_thumbnail.png
+image: /assets/images/thumbnails/robot_ruler_led_renoir_thumbnail.png
 title: GCRL - Motivations
 ---
 

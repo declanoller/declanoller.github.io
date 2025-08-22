@@ -3,6 +3,7 @@ date: 2025-07-15 00:00:00-05:00
 layout: post
 permalink: thin_manifolds
 thumbnail: /assets/images/thumbnails/manifold_hypothesis_thumbnail.png
+image: /assets/images/thumbnails/manifold_hypothesis_thumbnail.png
 title: A guessing game with thin manifolds
 ---
 
