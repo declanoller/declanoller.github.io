@@ -123,6 +123,7 @@ They have a diagram of the CC-VAE, but I actually found theirs a bit unclear, so
 
 
 
+
 ## LEAP (2019)
 
 LEAP stands for "Latent Embeddings for Abstracted Planning" and comes from ["Planning with Goal-Conditioned Policies"](https://arxiv.org/abs/1911.08453).
