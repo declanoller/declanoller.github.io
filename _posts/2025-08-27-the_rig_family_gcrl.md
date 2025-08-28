@@ -117,11 +117,9 @@ They have this helpful example figure:
 
 You can see that the VAE samples (bottom row) don't seem achievable from the context in the top row (the block color changes), whereas the CVAE samples seem like plausible following states. 
 
-They have a diagram of the CC-VAE, but I actually found theirs a bit unclear, so made this one:
+They have a diagram of the CC-VAE, but I actually found theirs a bit unclear, so I made this one:
 
-![CCRIG.excalidraw](assets/Excalidraw/CCRIG.excalidraw.md)
-
-
+![CCRIG.excalidraw](assets/Excalidraw/CCRIG.excalidraw.png)
 
 
 ## LEAP (2019)

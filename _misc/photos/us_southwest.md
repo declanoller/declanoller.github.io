@@ -2,7 +2,7 @@
 title: Us Southwest
 layout: page
 permalink: /misc/photos/us_southwest
-image: assets/photos/us_southwest/img_0034.jpg
+image: /assets/photos/us_southwest/img_1091.jpg
 ---
 
 ![](/assets/photos/us_southwest/img_0034.jpg)
