@@ -2,8 +2,8 @@
 date: 2017-08-14 19:27:23-04:00
 layout: post
 permalink: 2017-08-14-my-first-boat
-thumbnail: /assets/images/thumbnails/img_6408.jpg
-image: /assets/images/thumbnails/img_6408.jpg
+thumbnail: /assets/thumbnails/img_6408.jpg
+image: /assets/thumbnails/img_6408.jpg
 title: My first boat
 ---
 

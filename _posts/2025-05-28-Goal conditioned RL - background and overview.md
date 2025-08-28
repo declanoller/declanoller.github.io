@@ -2,8 +2,8 @@
 date: 2025-05-28 00:00:00-05:00
 layout: post
 permalink: 2025-05-28-Goal_conditioned_RL_background_and_overview
-thumbnail: /assets/images/thumbnails/cryingrobot.png
-image: /assets/images/thumbnails/cryingrobot.png
+thumbnail: /assets/thumbnails/cryingrobot.png
+image: /assets/thumbnails/cryingrobot.png
 title: Goal conditioned RL - background and overview
 ---
 I've recently been reading a bunch of the Goal Conditioned Reinforcement Learning (GCRL) literature. I think that there's a good chance that the future of RL will heavily involve GCRL and I want to do a few little experiments with it, so I'm gonna write up a few posts as an overview of GCRL and a smattering of random thoughts on it. I'm going to assume you have some knowledge of the basics of RL.
@@ -102,4 +102,3 @@ Funnily enough, this made me realize that long ago when I was just learning abou
 Or... is it? Re-considering my "original" viewpoint that the $z$ input actually *is* special and not just "another part of the state", it does have some unique features that might make it worth treating differently. The most notable is that it's less "grounded" to reality compared to the rest of the state. In the robot example above, if your GCRL robot does an action in some state, it's undebatable what state it was in, what action it did, and what the state it ended up in is. Maybe it would've *chosen* a different action depending on which $z$ value happened to be set in that step, but that $z$ value isn't a physical "measurement" in the same way the state or action is.
 
 This view is the inspiration for many "goal relabeling" techniques in GCRL, such as HER, which are one of the big motivations of GCRL. This post is already crazy long, so I'll talk about that next time. See ya then!
-

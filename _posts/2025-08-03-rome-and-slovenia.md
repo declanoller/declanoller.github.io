@@ -2,8 +2,8 @@
 date: 2025-08-03 00:00:00-05:00
 layout: post
 permalink: 2025-08-03-rome-and-slovenia
-thumbnail: /assets/images/thumbnails/slovenia_thumbnail.jpg
-image: /assets/images/thumbnails/slovenia_thumbnail.jpg
+thumbnail: /assets/thumbnails/slovenia_thumbnail.jpg
+image: /assets/thumbnails/slovenia_thumbnail.jpg
 title: Are you Tronky or are you Frondi? Rome and Slovenia
 ---
 My wife and I recently went to Rome for a few days and then Slovenia. It was awesome! In the past I've written walls of text with a few pics. Ain't nobody got time for that! This time I'll focus on the pics.
@@ -333,7 +333,6 @@ I've been in a few big caves before, but this one had some features I hadn't see
 ![](/assets/images/PXL_20250726_110911570.jpg)
 
 That's all! Rome and Slovenia were both awesome, in their own ways. I'd definitely go back to both someday in the future.
-
 
 
 

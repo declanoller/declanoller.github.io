@@ -2,8 +2,8 @@
 date: 2017-08-10 17:04:30-04:00
 layout: post
 permalink: 2017-08-10-low-power-arduino-experiments-part-1
-thumbnail: /assets/images/thumbnails/pro_mini_led.jpg
-image: /assets/images/thumbnails/pro_mini_led.jpg
+thumbnail: /assets/thumbnails/pro_mini_led.jpg
+image: /assets/thumbnails/pro_mini_led.jpg
 title: Low power Arduinos, part 1
 ---
 

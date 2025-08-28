@@ -2,8 +2,8 @@
 date: 2018-08-08 21:33:53-04:00
 layout: post
 permalink: 2018-08-08-fun-with-genetic-algorithms-and-the-n-queens-problem
-thumbnail: /assets/images/thumbnails/30queens_sol1.png
-image: /assets/images/thumbnails/30queens_sol1.png
+thumbnail: /assets/thumbnails/30queens_sol1.png
+image: /assets/thumbnails/30queens_sol1.png
 title: Fun with Genetic Algorithms and the N Queens Problem
 ---
 

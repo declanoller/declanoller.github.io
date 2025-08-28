@@ -2,8 +2,8 @@
 date: 2025-06-16 00:00:00-05:00
 layout: post
 permalink: deltas_pixel_concept_space
-thumbnail: /assets/images/thumbnails/pixel_concept_space_thumbnail.png
-image: /assets/images/thumbnails/pixel_concept_space_thumbnail.png
+thumbnail: /assets/thumbnails/pixel_concept_space_thumbnail.png
+image: /assets/thumbnails/pixel_concept_space_thumbnail.png
 title: Deltas in pixel space are very different than deltas in concept space
 ---
 

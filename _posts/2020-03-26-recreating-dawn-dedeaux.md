@@ -2,8 +2,8 @@
 date: 2020-03-26 14:59:36-04:00
 layout: post
 permalink: 2020-03-26-recreating-dawn-dedeaux
-thumbnail: /assets/images/thumbnails/euler_smeared-4.jpg
-image: /assets/images/thumbnails/euler_smeared-4.jpg
+thumbnail: /assets/thumbnails/euler_smeared-4.jpg
+image: /assets/thumbnails/euler_smeared-4.jpg
 title: Recreating Dawn DeDeaux
 ---
 

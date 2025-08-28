@@ -2,8 +2,8 @@
 date: 2019-09-26 04:42:39-04:00
 layout: post
 permalink: 2019-09-26-a-fun-little-combinatorics-puzzle
-thumbnail: /assets/images/thumbnails/naive.png
-image: /assets/images/thumbnails/naive.png
+thumbnail: /assets/thumbnails/naive.png
+image: /assets/thumbnails/naive.png
 title: A fun little combinatorics puzzle
 ---
 

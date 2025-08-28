@@ -2,8 +2,8 @@
 date: 2021-01-01 19:39:51-05:00
 layout: post
 permalink: 2021-01-01-making-diy-lenses
-thumbnail: /assets/images/thumbnails/IMG_20200117_181132-1.jpg
-image: /assets/images/thumbnails/IMG_20200117_181132-1.jpg
+thumbnail: /assets/thumbnails/IMG_20200117_181132-1.jpg
+image: /assets/thumbnails/IMG_20200117_181132-1.jpg
 title: Making DIY lenses
 ---
 

@@ -2,8 +2,8 @@
 date: 2018-06-05 20:19:28-04:00
 layout: post
 permalink: 2018-06-05-squall-moan-small-clone-clone
-thumbnail: /assets/images/thumbnails/squallmoan.jpg
-image: /assets/images/thumbnails/squallmoan.jpg
+thumbnail: /assets/thumbnails/squallmoan.jpg
+image: /assets/thumbnails/squallmoan.jpg
 title: 'Squall Moan: Small Clone clone'
 ---
 

@@ -2,8 +2,8 @@
 date: 2018-05-05 16:14:35-04:00
 layout: post
 permalink: 2018-05-05-reading-a-book-in-one-hour
-thumbnail: /assets/images/thumbnails/book.png
-image: /assets/images/thumbnails/book.png
+thumbnail: /assets/thumbnails/book.png
+image: /assets/thumbnails/book.png
 title: Reading a book in one hour!
 ---
 

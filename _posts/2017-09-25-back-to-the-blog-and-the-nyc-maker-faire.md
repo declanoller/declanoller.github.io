@@ -2,8 +2,8 @@
 date: 2017-09-25 14:08:53-04:00
 layout: post
 permalink: 2017-09-25-back-to-the-blog-and-the-nyc-maker-faire
-thumbnail: /assets/images/thumbnails/opilioneslarge.jpeg
-image: /assets/images/thumbnails/opilioneslarge.jpeg
+thumbnail: /assets/thumbnails/opilioneslarge.jpeg
+image: /assets/thumbnails/opilioneslarge.jpeg
 title: Back to the blog and the NYC Maker Faire
 ---
 

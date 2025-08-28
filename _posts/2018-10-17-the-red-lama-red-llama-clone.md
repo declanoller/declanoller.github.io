@@ -2,8 +2,8 @@
 date: 2018-10-17 13:55:51-04:00
 layout: post
 permalink: 2018-10-17-the-red-lama-red-llama-clone
-thumbnail: /assets/images/thumbnails/redlama.jpg
-image: /assets/images/thumbnails/redlama.jpg
+thumbnail: /assets/thumbnails/redlama.jpg
+image: /assets/thumbnails/redlama.jpg
 title: The Red Lama (Red Llama clone)
 ---
 

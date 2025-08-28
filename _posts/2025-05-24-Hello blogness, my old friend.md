@@ -2,8 +2,8 @@
 date: 2025-05-24 00:00:00-05:00
 layout: post
 permalink: 2025-05-24-hello-blogness
-thumbnail: /assets/images/thumbnails/iaintreadingallthat_thumb.jpg
-image: /assets/images/thumbnails/iaintreadingallthat_thumb.jpg
+thumbnail: /assets/thumbnails/iaintreadingallthat_thumb.jpg
+image: /assets/thumbnails/iaintreadingallthat_thumb.jpg
 title: Hello blogness, my old friend
 ---
 

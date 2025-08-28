@@ -2,8 +2,8 @@
 date: 2019-11-15 22:56:11-05:00
 layout: post
 permalink: 2019-11-15-variational-autoencoders-in-haskell-or-how-i-learned-to-stop-worrying-and-turn-my-friends-into-dogs
-thumbnail: /assets/images/thumbnails/dogs_vae_cover_smaller.png
-image: /assets/images/thumbnails/dogs_vae_cover_smaller.png
+thumbnail: /assets/thumbnails/dogs_vae_cover_smaller.png
+image: /assets/thumbnails/dogs_vae_cover_smaller.png
 title: 'Variational Autoencoders in Haskell, or: How I Learned to Stop Worrying and
   Turn My Friends Into Dogs'
 ---

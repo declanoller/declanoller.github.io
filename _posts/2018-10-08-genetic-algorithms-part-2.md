@@ -2,8 +2,8 @@
 date: 2018-10-08 18:05:47-04:00
 layout: post
 permalink: 2018-10-08-genetic-algorithms-part-2
-thumbnail: /assets/images/thumbnails/evolve_BoardUnconstrained__pop20__gen2000__N30__00-30-09.png
-image: /assets/images/thumbnails/evolve_BoardUnconstrained__pop20__gen2000__N30__00-30-09.png
+thumbnail: /assets/thumbnails/evolve_BoardUnconstrained__pop20__gen2000__N30__00-30-09.png
+image: /assets/thumbnails/evolve_BoardUnconstrained__pop20__gen2000__N30__00-30-09.png
 title: Genetic Algorithms, part 2
 ---
 
