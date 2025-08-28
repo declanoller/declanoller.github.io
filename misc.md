@@ -5,8 +5,6 @@ permalink: /misc/
 nav_order: 2
 ---
 
----
-
 <div style="display: flex; align-items: center; gap: 1em; margin-bottom: 2em;">
   <a href="/misc/photos" style="flex-shrink: 0;">
     <img src="/assets/thumbnails/IMG_5225.jpg" style="width: 500px; height: auto; border-radius: 8px;">
