@@ -147,6 +147,7 @@ So, a standard approach is to break down the task of navigating to a faraway goa
 That leaves one question: how to select the subgoals sequence? It has to be feasible to actually go from one to the other and eventually reach the goal. This is their clever contribution. Since it's assumed that the RL training above produced a GCVF $V(s, g)$ and it's relatively reliable for short horizons, if we're in state $s$ and there's a nearby state $s'$, plugging them in as $V(s, s')$ gives us a measure of how easy it is to get from $s$ to $s'$.
 
 Therefore, if we have a current state $s$, a faraway final goal $g$, and a sequence of subgoals $g_i$, $i \in 1, 2, \dots, K$, they define the "feasibility vector" as:
+
 $$
 \vec{V}(s, g_{1:K}, g) =
 \begin{bmatrix}
@@ -157,6 +158,7 @@ V(g_{K-1}, g_K) \\
 V(g_K, g) \\
 \end{bmatrix}
 $$
+
 So, if we can find a subgoals sequence $g_{1:K}$ that minimizes (the norm of) this vector, each segment should be doable by the GCP, but only "aiming for" the current next subgoal. To optimize the feasibility vector, they just use CEM in the latent space.
 
 
@@ -178,6 +180,7 @@ This one is an odd bird compared to the others: it's not even doing any RL! Howe
 
 However, that's where the similarities end. As I mentioned, it doesn't do RL at all. It uses MPC to traverse between subgoals, and this of course requires a dynamics model, which they train. They also need a subgoal sequence score function for the CEM, but don't have a VF to use the way LEAP did. So to score a proposed subgoal sequence, they apply the MPC to it, and use the MPC's cost.
 
+![Drawing 2025-08-28 15.06.02.excalidraw](assets/Excalidraw/Drawing%202025-08-28%2015.06.02.excalidraw.png)
 
 ## VAL (2021)
 
@@ -199,8 +202,7 @@ However, VAL does it a bit differently: they train the (unconditional) VQ-VAE *f
 
 Why might this be better? In CC-RIG, even though it's good that goal sampling is conditioned on the (latent) context $z_0$, the goals for *that context* are still encouraged by the VAE objective to match a Gaussian prior, which can be pretty restrictive. Using a much more flexible generative model like a pixelCNN lets them generate goals for a context without having to satisfy that constraint. Here's a helpful figure:
 
-![VAL.excalidraw](assets/Excalidraw/VAL.excalidraw.md)
-
+![VAL.excalidraw](assets/Excalidraw/VAL.excalidraw.png)
 
 ## PTP (2022)
 
@@ -223,6 +225,7 @@ The main contribution of PTP is basically combining a bunch of threads from the 
 
 In the recursive planning idea, they call the planning subprocess $\text{Plan}(s_0, s_g, K)$ that produces a sequence of $K$ subgoals between $s_0$ and $s_g$. Then, in the initial call to $\text{Plan}(s_0, s_g, K)$ where it proposes $K$ subgoals $s_{1:K}$, they call $\text{Plan}(s_i, s_{i+1}, K)$ on each pair of subgoals, so it'll produce $K$ subgoals between *them*, and so on. This ends at some depth level where the "finest" goals are a reasonably small distance apart that the GCP can handle them.
 
+![Drawing 2025-08-28 15.04.28.excalidraw](assets/Excalidraw/Drawing%202025-08-28%2015.04.28.excalidraw.png)
 
 ## FLAP (2022)
 
@@ -253,11 +256,11 @@ The transformation $z = \phi(s)$ produces the latent space, and it's shared by a
 
 This might strike you as pretty similar to a VAE, which is no coincidence, because it's done for a similar reason: so that we can sample the latent prior and hopefully be more likely to get latent values that actually correspond to real states.
 
-The other part that's kind of new is their "affordance model" (AM). If you recall above, [VAL (2021)](#VAL%20(2021)) also used an AM, where it used a pixelCNN to produce goal states from the latent value of the current state. In FLAP, the latent representation has already been produced by $\phi$ with the offline RL training, but they still want a way to do goal generation conditioned on the current state. To do this, they use a CVAE, like this figure I made:
+The other part that's kind of new is their "affordance model" (AM). If you recall above, [VAL (2021)](#val-2021) also used an AM, where it used a pixelCNN to produce goal states from the latent value of the current state. In FLAP, the latent representation has already been produced by $\phi$ with the offline RL training, but they still want a way to do goal generation conditioned on the current state. To do this, they use a CVAE, like this figure I made:
 
-![FLAP.excalidraw](assets/Excalidraw/FLAP.excalidraw.md)
+![FLAP.excalidraw](assets/Excalidraw/FLAP.excalidraw.png)
 
-At first glance, this sure looks a lot like [CC-RIG (2019)](#CC-RIG%20(2019)). However, it's actually different. In CC-RIG, the CVAE encoder is (effectively) $q(z_t \mid s_0, s_t)$ and the decoder is (effectively) $q(s_t \mid z_0, z_t)$. I.e., it's used to *produce* the latent representation, and in a form that can produce plausible goal states for the context. The key point is that it's basically going $(s_0, s_t) \rightarrow (z_0, z_t) \rightarrow (s_0, s_t)$ in a way that later allows you to sample from $p(z_t \mid z_0)$.
+At first glance, this sure looks a lot like [CC-RIG (2019)](#cc-rig-2019). However, it's actually different. In CC-RIG, the CVAE encoder is (effectively) $q(z_t \mid s_0, s_t)$ and the decoder is (effectively) $q(s_t \mid z_0, z_t)$. I.e., it's used to *produce* the latent representation, and in a form that can produce plausible goal states for the context. The key point is that it's basically going $(s_0, s_t) \rightarrow (z_0, z_t) \rightarrow (s_0, s_t)$ in a way that later allows you to sample from $p(z_t \mid z_0)$.
 
 In FLAP, the AM CVAE doesn't create the latent space of the states at all, since that's already been created by $\phi$. Instead, the *CVAE's latent space* is the variable $u$, which corresponds to a transition from $z$ to $z'$. So it's basically doing $(z, z') \rightarrow (z, u) \rightarrow z'$ in a way that later lets us sample from $p(z' \mid z)$.
 
@@ -301,6 +304,6 @@ The extent of my "robotics" experience is basically the dinky [puckworld robot](
 
 ## Other big "families"
 
-This is a big family of GCRL methods I've read about, but there are some others that offer different interesting directions. [Unsupervised Skill Discovery]({{site.baseurl}}/GCRL_extras#USD) isn't *exactly* doing what I'd call GCRL, but it rhymes enough that I think it's worth going into.
+This is a big family of GCRL methods I've read about, but there are some others that offer different interesting directions. [Unsupervised Skill Discovery]({{site.baseurl}}/GCRL_extras#usd) isn't *exactly* doing what I'd call GCRL, but it rhymes enough that I think it's worth going into.
 
 Another that I think is really cool and seems to be getting popular in the past ~3 years is metric modeling methods. I briefly touched upon it [last time]({{site.baseurl}}/GCRL_extras#gcrlilocks-and-the-three-reward-functions) when I discussed a few of the most common reward functions people use in GCRL, but the idea is that if you do GCRL with a reward function that's just $-1$ every step until you reach the goal, the resulting GCVF ends up being (the negative of) a metric on states. Viewing it through this lens lets you do all sorts of neat things.
