@@ -21,6 +21,20 @@ nav_order: 2
 
 <div style="display: flex; align-items: center; gap: 1em; margin-bottom: 2em;">
   <a href="/misc/effect_pedals" style="flex-shrink: 0;">
+    <img src="/assets/thumbnails/full_withturb.png" style="width: 500px; height: auto; border-radius: 8px;">
+  </a>
+
+  <div>
+    <a href="/misc/simulations_and_interactive" style="text-decoration: none; color: inherit;">
+      <h3 style="margin: 0;">Simulations and interactive</h3>
+    </a>
+  </div>
+</div>
+
+
+
+<div style="display: flex; align-items: center; gap: 1em; margin-bottom: 2em;">
+  <a href="/misc/effect_pedals" style="flex-shrink: 0;">
     <img src="/assets/thumbnails/squallmoan.jpg" style="width: 500px; height: auto; border-radius: 8px;">
   </a>
 
@@ -30,6 +44,7 @@ nav_order: 2
     </a>
   </div>
 </div>
+
 
 
 
