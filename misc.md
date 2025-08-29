@@ -51,7 +51,7 @@ nav_order: 2
 
 - [Photos](/misc/photos)
 - [Effect pedals](/misc/effect_pedals)
-- [Simulations](/misc/simulations)
+- [Simulations](/misc/simulations_and_interactive)
+- [Testing page](/misc/testing_page)
 
 
-[Testing page](/misc/testing_page)
