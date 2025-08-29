@@ -20,7 +20,7 @@ nav_order: 2
 
 
 <div style="display: flex; align-items: center; gap: 1em; margin-bottom: 2em;">
-  <a href="/misc/effect_pedals" style="flex-shrink: 0;">
+  <a href="/misc/simulations_and_interactive" style="flex-shrink: 0;">
     <img src="/assets/thumbnails/full_withturb.png" style="width: 500px; height: auto; border-radius: 8px;">
   </a>
 
@@ -51,7 +51,7 @@ nav_order: 2
 
 - [Photos](/misc/photos)
 - [Effect pedals](/misc/effect_pedals)
-- [Simulations](/misc/simulations_and_interactive)
+- [Simulations and interactive](/misc/simulations_and_interactive)
 - [Testing page](/misc/testing_page)
 
 
