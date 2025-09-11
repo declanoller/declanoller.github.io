@@ -31,6 +31,7 @@ g = A f = \sum_i c_i A v_i = \sum_i c_i \lambda_i v_i \\
 
 }
 $$
+
 If we then took the resulting $g$ and normalized it to unit magnitude, we could repeat this. One of the eigenvalues, $\lambda_k$ is the largest, and since that component in the sum is accumulating a factor of $\lambda_k$ for each application of $A$, eventually it dominates the vector and we find that applying $A$ many times results in that eigenvector!
 
 A slightly more intuitive way to see this is explicitly writing out the terms of $f$:
@@ -38,7 +39,9 @@ A slightly more intuitive way to see this is explicitly writing out the terms of
 $$
 f = c_1 {v_1} + c_2 {v_2} + \dots + c_n {v_n}
 $$
+
 applying $A$:
+
 $$
 \begin{aligned}
 A f & = c_1 \pmb{v_1} + c_2 {v_2} + \dots + c_n {v_n} \\
@@ -46,11 +49,14 @@ A f & = c_1 \pmb{v_1} + c_2 {v_2} + \dots + c_n {v_n} \\
 & = c_1 \lambda_1 {v_1} + c_2 \lambda_2 {v_2} + \dots + c_n \lambda_n {v_n} \\
 \end{aligned}
 $$
+
 and applying $A$ many times:
+
 
 $$
 A^m f = c_1 \lambda_1^m {v_1} + c_2 \lambda_2^m {v_2} + \dots + c_n \lambda_n^m {v_n}
 $$
+
 Hopefully it's clear that if some $\lambda_k$ was bigger than the others, then for enough applications of $A$, that term would dominate, and we'd have $A^m f \approx c_k \lambda_k^m v_k$. Then, knowing we applied it $m$ times, we could divide $A^m f / (c_k v_k) \approx \lambda_k^m$, and take the $m$th root.
 
 That's PI, and it should work with any diagonalizable matrix. For *symmetric* matrices, you can then repeat this process to find the other eigenvectors, but you first have to subtract the projection of the function onto the *previous* eigenvectors you've found: $f - \sum_i \langle f, v_i \rangle v_i$. This effectively takes those eigenvector terms out of the sum above, so that now $A$ only acts on the remaining ones, revealing the eigenvector with the next biggest eigenvalue, etc.
@@ -136,11 +142,13 @@ A = \mu \pmb 1 \pmb 1^\intercal + W, \\
 W_{ij} \sim \mathcal U [-0.5, 0.5]
 }
 $$
+
 We're kind of writing $A$ in terms of its SVD, where $\mu \pmb 1 \pmb 1^\intercal$ is the first term, and $W$ is all the others. Importantly here, $\mu \pmb 1 \pmb 1^\intercal$ is a rank-$1$ matrix, and $W$ is the sum of all the other rank-$1$ components. You can easily see that the only nonzero eigenvector of $\pmb 1 \pmb 1^\intercal$ is $v = [1, \dots, 1]$:
 
 $$
 (\pmb 1 \pmb 1^\intercal) v = \pmb 1 (\pmb 1^\intercal v) = \pmb 1 \cdot n = n \cdot v
 $$
+
 and it has eigenvalue $n$. Therefore, the matrix $\mu \pmb 1 \pmb 1^\intercal$ gives the eigenvalue $\mu n = 0.5 \cdot 100 = 50$ ... which is almost exactly what we see! In reality, for finite $n$, $\mu$ isn't exactly this value, and the largest SVD component actually isn't *exactly* $1 1^\intercal$, it has some randomness too, like the $W$ components. But we can see that even for $n = 100$, it's pretty spot on. 
 
 There are two important parts here: 1) this first eigenvalue scales with $n$, and 2) it also scales with $\mu$. But $\mu$ is the mean of the sampling distribution, and it's only nonzero because of that dang `rand()` ! So, if we use a zero-centered distribution (like I intended), then this $\mu n$ term goes away, leaving the randomness that gave rise to the other eigenvalues.
@@ -164,13 +172,13 @@ As they mention in the mathworld and [this](https://en.wikipedia.org/wiki/Gaussi
 
 ## Convergence speed of 1st eigenvector
 
-One more little thing from the above plots: you can see in the title that I added the ratio $|\lambda_1 / \lambda_2 |$, the (abs) ratio of the first to the second eigenvalues. As they mention in the PI wiki article, this ratio determines the convergence speed (of finding the first eigenvector).
+One more little thing from the above plots: you can see in the title that I added the ratio $\vert \lambda_1 / \lambda_2 \vert$, the (abs) ratio of the first to the second eigenvalues. As they mention in the PI wiki article, this ratio determines the convergence speed (of finding the first eigenvector).
 
 And it intuitively makes sense, right? If we view PI as magnifying the biggest eigenvalue component each iteration, then if the biggest eigenvalue is a lot bigger than the next biggest, it'd amplify the dominant eigenvector more quickly.
 
-According to wikipedia, the convergence speed goes as $|\lambda_1 / \lambda_2 |^k$, where $k$ is the number of iterations.
+According to wikipedia, the convergence speed goes as $\vert \lambda_1 / \lambda_2 \vert^k$, where $k$ is the number of iterations.
 
-If you look at the Gaussian one, you can see that it has $|\lambda_1 / \lambda_2 | \approx 1.06$. I ran it for 5 seeds and $n = 100$, and the steps to converge the first eigenvector were `[59, 526, 72, 389, 237]`. In contrast, the uniform one above had $|\lambda_1 / \lambda_2 | \approx 12$, which makes sense because of that huge first eigenvalue. I also ran it for the same 5 seeds, and its step to converge were: `[6, 8, 6, 6, 5]`. Way faster! I did a bit of back of the envelope math with those values, and they seem to line up.
+If you look at the Gaussian one, you can see that it has $\vert \lambda_1 / \lambda_2 \vert \approx 1.06$. I ran it for 5 seeds and $n = 100$, and the steps to converge the first eigenvector were `[59, 526, 72, 389, 237]`. In contrast, the uniform one above had $\vert \lambda_1 / \lambda_2 \vert \approx 12$, which makes sense because of that huge first eigenvalue. I also ran it for the same 5 seeds, and its step to converge were: `[6, 8, 6, 6, 5]`. Way faster! I did a bit of back of the envelope math with those values, and they seem to line up.
 
 
 ## Scaling with $n$
@@ -210,6 +218,7 @@ $$
 \|\phi(x) - \phi(y) \| \leq \|x - y\|
 }
 $$
+
 I.e.: for a given magnitude of difference between inputs, they want the difference between the outputs to be less than or equal to that (hence the "Lipschitz" in the name).
 
 But of course it's 2025 so $\phi$ is generally implemented with a big ol' neural network. To enforce the constraint above as the inputs go through the network, we effectively have to control the slope of all the functions (linear transformations from weight matrices and nonlinearities) that get applied to it. If we can keep the slope (of the function $\phi$ as a whole) always below $1$, then we know that there will never be two points that could break that constraint.
