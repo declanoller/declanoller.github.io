@@ -44,7 +44,7 @@ applying $A$:
 
 $$
 \begin{aligned}
-A f & = c_1 \pmb{v_1} + c_2 {v_2} + \dots + c_n {v_n} \\
+A f & = c_1 {v_1} + c_2 {v_2} + \dots + c_n {v_n} \\
 & = c_1 A {v_1} + c_2 A {v_2} + \dots + c_n A {v_n} \\
 & = c_1 \lambda_1 {v_1} + c_2 \lambda_2 {v_2} + \dots + c_n \lambda_n {v_n} \\
 \end{aligned}
