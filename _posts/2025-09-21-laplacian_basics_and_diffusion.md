@@ -7,7 +7,7 @@ image: /assets/thumbnails/laplacian_diffusion_thumbnail.png
 title: The Laplacian, graph Laplacian, and diffusion
 ---
 
-Alrighty, this post is gonna be mostly for myself, reviewing some basics around the Laplacian operator. I'll try and keep it real loose, Phil style. View it as a slightly more put together view into my notes to temper your expectations. At the end I'll have some pretty plots and gifs, as usual. I'm reviewing this stuff because the graph Laplacian came up in a few interesting papers.
+Alrighty, this post is gonna be mostly for myself, reviewing some basics around the Laplacian operator. I'll try and keep it real loose, Phil style. To temper your expectations, read it as a slightly more put together view of some notes. At the end I'll have some pretty plots and gifs, as usual. I'm reviewing this stuff because the graph Laplacian came up in a few interesting papers.
 
 A few questions I want to answer are:
 
@@ -70,7 +70,7 @@ Above (and usually) we consider a scalar function $f$. But, since you can take t
 
 At first glance, this is a bit underwhelming, IMO. Given some operator, I'm used to applying it to a function, and then it transforms/updates the function into another function that's the same type as the original.
 
-But here, it seems like the short answer is that the Laplacian doesn't really "do" anything besides for measure curvature, or measure "disagreement" between a point and its neighbors (which is the same thing as curvature, pretty much). I.e.,
+But here, it seems like the short answer is that the Laplacian doesn't really "do" anything besides for measuring curvature, or measuring "disagreement" between a point and its neighbors (which is the same thing as curvature, pretty much). I.e.,
 
 $$
 \Delta f(x_0) = \lim_{r \rightarrow 0} \bigg[ \frac{1}{| B_r |}\int_{\partial B_r} f(x)\ dS \bigg] - f(x_0)
@@ -115,7 +115,7 @@ The "graph Laplacian" (or Laplacian matrix, or any of a million other names) is 
 
 The reason I think it makes sense to go over the GL before going into the other topics is that if we want to actually simulate/program anything (which I do, to gain intuition), I'm not sure you really *can* use the non-graph Laplacian. I know nothing so take this with a huge grain of salt, but the Laplacian is an operator on continuous functions. I guess we could do symbolic manipulation, but I think ultimately we'll probably have to sample any continuous function at some points, and once we do that, it's basically equivalent to the GL.
 
-### Notation, assumptions
+## Notation, assumptions
 
 There are a bunch of versions of the GL, depending on whether the graph is simple, whether it can have negative weights, loops, is symmetric, etc. Since it seems to be the most common, I'll look at graphs which:
 
@@ -152,7 +152,7 @@ $$
 
 Since the diagonal entries of $D$ are basically the row-sums of $A$, we get $L = D - A$.
 
-#### Understanding the intuition behind $L = D - A$
+## Understanding the intuition behind $L = D - A$
 
 At first glance, the definition of the GL, $L = D - A$, seems kind of random. How is it connected to the stuff from before?
 
@@ -184,7 +184,7 @@ $$
 
 and I'd think the expectation/average would then have terms like $A_{ij} / \text{deg}(i)$, i.e., with $\text{deg}(i)$ in the denominator instead. Apparently this does exist and it's called the "random walk normalized Laplacian", $L_\text{rw} = I - D^{-1} A = D^{-1} L$, but it has some different properties. I'll hit this in the future.
 
-### Connecting the GL to the Laplacian
+## Connecting the GL to the Laplacian
 
 Allllright, with that out of the way, now we can look at some fun stuff. If we want to simulate the regular Laplacian on some region, we can basically define a graph on a finite number of points representing that region, decide how they should be connected, and then we'll have the GL for the discretized version.
 
@@ -275,7 +275,7 @@ So there are a few key takeaways here:
 - One more thing is that we know the eigenvalues are all non-negative, with the equilibrium one being zero (with constant eigenfunction), and all the others being positive. So if we consider an arbitrary combination of them, $f(t) = \sum_k c_k \exp[-\lambda_k t] v_k$, determined by the $c_k$ coefficients, then we can see that the equilibrium component will stay at the same magnitude (since it's just $\exp[0]$), and all other components will decay. And, the higher the eigenvalue, the faster the decay. Those higher eigenvalues have eigenvectors that are more "oscillatory" in space. Since they're more oscillatory, you can imagine that they have bigger temperature deltas in a given width, which would drive the component towards zero more quickly.
 
 
-### The Laplacian vs the diffusion operator
+## The Laplacian vs the diffusion operator
 
 I'm kind of repeating myself now, but I'll be really explicit. We were talking about the eigenfunctions/eigenvalues of the Laplacian above, but there's a bit of a disconnect. Usually with linear operators, we're used to their higher magnitude eigenvalues being more important and their eigenfunctions being more "dominant" with repeated application of the operator. But above, we saw that the eigenfunction components with higher value eigenvalues actually diffuse *faster*, and the lowest eigenvalue, $\lambda_0 = 0$, is the one that remains. What's going on?
 
