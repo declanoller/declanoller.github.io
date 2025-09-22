@@ -138,6 +138,7 @@ The degree matrix $D$ is the diagonal matrix with the sum of *weights* of the in
 $$
 D_{ii} = \sum_{j \in N(i)} w_{ij}
 $$
+
 (where $N(i)$ are the neighbors of $i$)
 
 Then, the GL is just the matrix with entries:
@@ -233,9 +234,11 @@ aaaaanyway, solving for the eigenfunctions of this gives us:
 $$
 v_n(x) \propto \cos \frac{n \pi x}{a}
 $$
+
 $$
 \lambda_n = (\frac{n \pi}{a})^2
 $$
+
 which are true $L^2$ eigenfunctions. And importantly, the spectrum here *is* discrete, even though it's infinite -- you only get eigenvalues $(\frac{n \pi }{a})^2$, so it can't take any old value.
 
 Okay, but what's the significance of the eigenvectors (in the bounded region / discrete eigenvalues case) ?
@@ -286,6 +289,7 @@ One more thing: above I said that we can intuitively see why the "average value 
 $$
 f(x_0^{t+1}) = f(x_0^t) - \epsilon L f(x_0^t)
 $$
+
 which is the finite-difference version of $f(t) = e^{-L t} f(0)$. Alternatively, you might recognize the finite difference version as the 1st order Taylor expansion of $\exp[-L t]$.
 
 When we want to do this with the GL, we're not gonna be using a matrix exponential, so we'll actually use the finite difference version above. This ends up having a matrix analog for the Laplacian vs diffusion operator deal above. If we write the finite difference update equation for a function $f_k$ as:
@@ -324,7 +328,7 @@ and look at that, it works! In the left column, the true eigenfunctions are the 
 
 ## Diffusing the eigenfunctions
 
-Above I mentioned that under diffusion, the eigenfunctions will keep their shape, and just decrease in magnitude. Here we can see that happen:
+Above I mentioned that under diffusion, the eigenfunctions will keep their shape, and just decrease in magnitude. Here we can watch that happen:
 
 ![](/assets/images/diffusion_1d_eigenvector_1_n_nodes=50__n_steps=300__delta_t=0.3.gif)
 
@@ -357,4 +361,4 @@ For fun, here are two other initial functions:
 
 ---
 
-Anyway, that's all! This one had a focus on diffusion, which was useful to understand. Next time I'll be looking at graph drawing, which was the original reason I started looking into this. But to be honest, they're all connected in some fascinating ways.
+Anyway, that's all! This one had a focus on diffusion, which was useful to understand. Next time I'll be looking at a different interpretation of the Laplacian and its eigenfunctions, which was the original reason I started looking into this. But to be honest, they're all connected in some fascinating ways.
