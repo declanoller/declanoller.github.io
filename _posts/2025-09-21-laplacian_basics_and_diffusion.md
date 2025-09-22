@@ -7,7 +7,7 @@ image: /assets/thumbnails/laplacian_diffusion_thumbnail.png
 title: The Laplacian, graph Laplacian, and diffusion
 ---
 
-Alrighty, this post is gonna be mostly for myself, reviewing some basics around the Laplacian operator. I'll try and keep it real loose, Phil style. To temper your expectations, read it as a slightly more put together view of some notes. At the end I'll have some pretty plots and gifs, as usual. I'm reviewing this stuff because the graph Laplacian came up in a few interesting papers.
+Alrighty, this post is gonna be mostly for myself, reviewing some basics around the Laplacian operator. I'll try and keep it real loose, Phil style. To temper your expectations, read it as a slightly more put together view of some notes. At the end I'll have some pretty plots and gifs, as usual. I'm reviewing this stuff because the graph Laplacian came up in a few interesting papers that I'll touch on in the future.
 
 A few questions I want to answer are:
 
@@ -16,7 +16,7 @@ A few questions I want to answer are:
 - How are they connected?
 - What's the intuitive significance of a function being harmonic?
 - What does the Laplacian *do* to a function?
-- What do the eigenfunctions of it intuitively represent?
+- What do the eigenfunctions of it represent, intuitively?
 
 
 # What's the Laplace operator?
