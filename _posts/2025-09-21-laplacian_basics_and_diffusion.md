@@ -7,7 +7,11 @@ image: /assets/thumbnails/laplacian_diffusion_thumbnail.png
 title: The Laplacian, graph Laplacian, and diffusion
 ---
 
-Alrighty, this post is gonna be mostly for myself, reviewing some basics around the Laplacian operator. I'll try and keep it real loose, Phil style. To temper your expectations, read it as a slightly more put together view of some notes. At the end I'll have some pretty plots and gifs, as usual. I'm reviewing this stuff because the graph Laplacian came up in a few interesting papers that I'll touch on in the future.
+Alrighty, this post is gonna be mostly for myself, reviewing some basics around the Laplacian operator. I'll try and keep it real loose, Phil style. To temper your expectations, read it as a slightly more put together view of some notes. I'm reviewing this stuff because the graph Laplacian came up in a few interesting papers that I'll touch on in the future. At the end I'll have some pretty plots and gifs, as usual.
+
+![](/assets/images/diffusion_with_eigenvector_projections_diffusion_with_eigenvector_projections_n_nodes=40__n_steps=200__delta_t=0.3.gif)
+
+*Oooh! Pretty!*
 
 A few questions I want to answer are:
 
