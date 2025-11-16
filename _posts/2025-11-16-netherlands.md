@@ -293,7 +293,7 @@ They had a special exhibit on the Roulins, the family that Van Gogh painted many
 
 hah! I knew it. But I didn't know that the one of Mrs. Roulin was actually the 5th and final copy! Seeing the others, the MFA one is definitely the best.
 
-My feelings on the Van Gogh museum were mixed, though. The art is of course great, and they did a good job explaining his biography as you progress through the museum. However... the actual experience of it was pretty offputting. Because Van Gogh is plausibly the most famous painter (top 5 anyway) most people know of and has some mega iconic pieces, it attracts a ton of influencer-types who are basically there to pose next to the painting and get their picture taken. I can't explain how many times I saw this:
+My feelings on the Van Gogh museum were mixed, though. The art is of course great, and they did a good job explaining his biography as you progress through the museum. However... the actual experience of it was pretty offputting. Because Van Gogh is plausibly the most famous painter (top 5 anyway) most people know of and has some mega iconic pieces, it attracts a ton of influencer-types who are basically there to pose next to the painting and get their picture taken. I can't explain how many times I saw this scene:
 
 ![](/assets/images/Pasted%20image%2020251116130725.png)
 
