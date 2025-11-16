@@ -4,12 +4,13 @@ layout: post
 permalink: 2025-11-16-netherlands
 thumbnail: /assets/thumbnails/netherlands_thumbnail.png
 image: /assets/thumbnails/netherlands_thumbnail.png
-title: TITLE_NAME_HERE
+title: A voyage to the Nether regions -- Netherlands 2025
 ---
 
 
-
 I just got back from a trip to the Netherlands. I was there for a work trip, but I decided to stay a few extra days after the work part was over. Before booking my flights, I was a little on the fence about staying longer. I'd miss my wife and dog and friends and I like my day to day life. But now that I went, it's such a no brainer. Four days back home passes in the blink of an eye and I can't tell you a week later what I did in those four days, while the four days abroad are so full of novelty that they feel like a mini lifetime.
+
+With some places, you know you're going to love them so it's no surprise when you do, and other times you think you'll like a place and it ends up disappointing. I honestly wasn't expecting to like the Netherlands that much, but it ended up surprising me and I had a really good time.
 
 Anyway, enough talk. Let's look at some pics!
 
@@ -29,11 +30,11 @@ and the bikes are chained up EVERYWHERE:
 
 ![](/assets/images/Pasted%20image%2020251116123907.png)
 
-The bike culture is awesome. I'll save my thoughts on it for a future post though, where I can ramble to my heart's content.
-
 Very common to see people biking with neither hands on the handlebars:
 
 ![](/assets/images/Pasted%20image%2020251116123927.png)
+
+The bike culture is awesome. I'll save my thoughts on it for a future post though, where I can ramble to my heart's content.
 
 Super cute canals everywhere:
 
@@ -51,13 +52,13 @@ We stopped by a street art museum housed in an old factory. Some of it was cool,
 
 ![](/assets/images/Pasted%20image%2020251116124119.png)
 
-I strongly associate it with when a city says they have a "really cool district with lots of cool street art".
+I strongly associate this style with a city saying they have a "really cool district with lots of cool street art".
 
 Anyway, we got a couple ferries that day, which are frequent and free, and filled with bikes:
 
 ![](/assets/images/Pasted%20image%2020251116124131.png)
 
-One night my work hired a canal cruise boat, with a dinner buffet, which was lots of fun. At night the canals get lit up and it's very cute:
+One night my work hired a canal cruise boat with a dinner buffet, which was lots of fun. At night the canals get lit up and it's very cute:
 
 ![](/assets/images/Pasted%20image%2020251116124159.png)
 
@@ -71,9 +72,11 @@ It turns out they make a *single type* of cookie! I'm impressed by the confidenc
 
 After my work trip, I spent a couple days in *Den Haag*, or as you might know it, the Hague :P I took one of the many cheap, fast, convenient trains there.
 
+![](/assets/images/Pasted%20image%2020251116124345.png)
+
+
 Some of the stations on the way were really pretty, and you can tell that they used to take lots of pride in their design:
 
-![](/assets/images/Pasted%20image%2020251116124345.png)
 
 ![](/assets/images/Pasted%20image%2020251116124412.png)
 
@@ -278,9 +281,9 @@ Next, the Van Gogh museum:
 
 ![](/assets/images/Pasted%20image%2020251116130153.png)
 
-The crab lays on its back, its belly baking in the hot sun, beating its legs trying to turn itself over, but it can't. Not without your help. But you're not helping. Why is that?
+"The crab lays on its back, its belly baking in the hot sun, beating its legs trying to turn itself over, but it can't. Not without your help. But you're not helping. Why is that?"
 
-They also had a special exhibit on the Roulins, the family that Van Gogh painted many portraits of. I saw two paintings that looked familiar...
+They had a special exhibit on the Roulins, the family that Van Gogh painted many portraits of. I saw two paintings that looked familiar...
 
 ![](/assets/images/Pasted%20image%2020251116130524.png)
 
