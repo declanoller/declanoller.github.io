@@ -96,7 +96,7 @@ I knew the Netherlands was flat, but it's... really flat:
 
 ![](/assets/images/Pasted%20image%2020251116124455.png)
 
-The first thing I did in the Hague was go to Madurodam, which is... I dunno, a theme park kind of? You'll see. I rented a bike off the "Donkey Republic" app, and the bike ride there was very easy and pretty:
+The first thing I did in the Hague was go to Madurodam, which is... I dunno, a theme park kind of? You'll see. I rented a bike off the "Donkey Republic" app, and the bike ride there was easy and pretty:
 
 ![](/assets/images/Pasted%20image%2020251116124516.png)
 
@@ -104,7 +104,7 @@ Madurodam. I can't state how cool it was. It has miniatures of a million things 
 
 ![](/assets/images/Pasted%20image%2020251116124529.png)
 
-But most of the things are moving around, like those boats. Here are some of those movable barriers:
+But most of the things are moving around on their own, like those boats. Here are some of those movable barriers:
 
 ![](/assets/images/Pasted%20image%2020251116124539.png)
 
@@ -123,6 +123,20 @@ with real canals of course:
 The Rijks (more on that later!):
 
 ![](/assets/images/Pasted%20image%2020251116124658.png)
+
+The *Scheepvaartmuseum*, or as you might know it, the "maritime museum":
+
+![](/assets/images/Pasted%20image%2020251116210506.png)
+
+This was one of my very favorite things. There was a coin or card operated thing next to a miniature of a factory, saying you could get a pair of clogs for two euros. I didn't see how but I was curious, so I tapped my card, and...
+
+![](/assets/images/clogs.webp)
+
+*AHHHHHHHHHHHHHHHHHHHHHH! TINY CLOGS! WITH MADURODAM ON THEM! AND THE TRUCK DRIVES UP TO YOU TO PICK THEM UP!*
+
+You might notice that the truck isn't on any visible track. I'm guessing they have a wire under the surface and it's doing some path following, but it must be pretty damn well designed to do it so consistently and rarely get stuck. They used this trick several times in different places, and sometimes had it going along some fairly narrow path between obstacles!
+
+![](/assets/images/Pasted%20image%2020251116210221.png)
 
 You could control that plunger thing, move in in the XYZ directions, and activate the suction, to move the cargo containers onto and off of the ship:
 
@@ -160,6 +174,8 @@ Surinamese:
 Indonesian (my favorite meal there):
 
 ![](/assets/images/Pasted%20image%2020251116125109.png)
+
+that sampler plate included beef Rendang (🤤), jackfruit curry, a coconut spinach cream thing, some really good tempeh, the spicy hard boiled egg, and... [dogfruit](https://en.wikipedia.org/wiki/Archidendron_pauciflorum)! I hadn't ever had it before, but I really liked the texture of it.
 
 [Nasi Goreng](https://en.wikipedia.org/wiki/Nasi_goreng), Indonesian fried rice, delicious:
 
@@ -230,6 +246,8 @@ The Maritime museum:
 
 ![](/assets/images/Pasted%20image%2020251116125718.png)
 
+hey look! it's the thing from Madurodam, with the ship.
+
 the lines across the glass roof are inspired by the lines on old maritime navigation maps:
 
 ![](/assets/images/Pasted%20image%2020251116125710.png)
@@ -237,6 +255,10 @@ the lines across the glass roof are inspired by the lines on old maritime naviga
 The museum has old paintings of course, but also many physical artifacts and stuff. There was this awesome old clock:
 
 ![](/assets/images/Pasted%20image%2020251116125745.png)
+
+which you can see the movement of here:
+
+![](/assets/images/clock.webp)
 
 and you can go aboard the replica ship you can see docked next to the museum in the pics above, which was built in the 90s to match one of the old style ships:
 
@@ -293,7 +315,7 @@ They had a special exhibit on the Roulins, the family that Van Gogh painted many
 
 hah! I knew it. But I didn't know that the one of Mrs. Roulin was actually the 5th and final copy! Seeing the others, the MFA one is definitely the best.
 
-My feelings on the Van Gogh museum were mixed, though. The art is of course great, and they did a good job explaining his biography as you progress through the museum. However... the actual experience of it was pretty offputting. Because Van Gogh is plausibly the most famous painter (top 5 anyway) most people know of and has some mega iconic pieces, it attracts a ton of influencer-types who are basically there to pose next to the painting and get their picture taken. I can't explain how many times I saw this scene:
+My feelings on the Van Gogh museum were mixed, though. The art is of course great, and they did a good job explaining his biography as you progress through the museum. However... the actual experience of it was pretty offputting. Because Van Gogh is plausibly the most famous painter (top 5 anyway) most people know of and has some mega iconic pieces, it attracts a ton of influencer-types who are basically there to pose next to the painting and get their picture taken. I can't tell you how many times I saw this scene:
 
 ![](/assets/images/Pasted%20image%2020251116130725.png)
 
