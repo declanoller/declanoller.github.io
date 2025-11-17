@@ -96,15 +96,15 @@ I knew the Netherlands was flat, but it's... really flat:
 
 ![](/assets/images/Pasted%20image%2020251116124455.png)
 
-The first thing I did in the Hague was go to Madurodam, which is... I dunno, a theme park kind of? You'll see. I rented a bike off the "Donkey Republic" app, and the bike ride there was easy and pretty:
+The first thing I did in the Hague was go to Madurodam, which is... I dunno, a theme park, kind of? A temple to infrastructure? You'll see. I rented a bike off the "Donkey Republic" app, and the bike ride there was easy and pretty:
 
 ![](/assets/images/Pasted%20image%2020251116124516.png)
 
-Madurodam. I can't state how cool it was. It has miniatures of a million things in the Netherlands, especially around infrastructure:
+Madurodam. I can't state how cool it was. It has miniatures of a million things in the Netherlands, especially around infrastructure and civil engineering:
 
 ![](/assets/images/Pasted%20image%2020251116124529.png)
 
-But most of the things are moving around on their own, like those boats. Here are some of those movable barriers:
+But most of the things are moving around on their own, like those boats, or are something you can control! Here are some of those movable barriers:
 
 ![](/assets/images/Pasted%20image%2020251116124539.png)
 
@@ -146,7 +146,7 @@ There was a button you could press to start a *real fire* on that oil tanker you
 
 ![](/assets/images/Pasted%20image%2020251116124808.png)
 
-I'm leaving out a million other cool things here, but definitely go if you get the chance!
+I'm leaving out a million other cool things here, but definitely go if you get the chance! Possibly my favorite thing the whole trip.
 
 ![](/assets/images/Pasted%20image%2020251116124751.png)
 
@@ -165,7 +165,7 @@ I went to the beach by the Hague one day. Despite being November, there were act
 
 ![](/assets/images/Pasted%20image%2020251116125008.png)
 
-The Netherlands actually has great food! It's just... not actual Dutch food. The good food is from places they colonized in the past. So I was eating food from those places as often as I could, since they're also cuisines that aren't as common back home.
+The Netherlands actually has great food! It's just... not the Dutch food. The good food is from places they colonized in the past. So I was eating food from those places as often as I could, since they're also cuisines that aren't as common back home.
 
 Surinamese:
 
@@ -322,6 +322,18 @@ My feelings on the Van Gogh museum were mixed, though. The art is of course grea
 I'm not bothered by other people not enjoying it the way I think they're supposed to or something, but whenever I tried looking at any painting for more than 10 seconds, it'd get interrupted by people sticking their phones between me and the painting to take a picture of it. So, it just made it kind of hard for me to enjoy it myself.
 
 I saw many people just basically taking a pic of every single painting. Why?? It's... honestly a little baffling to me. I think there are a few reasons it can make sense to take a pic of a painting: 1) you think you might not be able to find it online later, 2) you want to remember the name or some aspect of it, 3) you want to send it to someone in that moment. But it's certainly going to be worse quality than any picture of it you can find online, and those reasons can't be why they're doing it for *all* the paintings. It's really a puzzler to me.
+
+# Rambling
+
+Here are just some random handwavy thoughts and observations:
+
+The Netherlands feels like a country punching way above their weight. They don't really have any inherent natural resources as far as I know, and geographically it's a bunch of lowland delta marsh. Yet historically, they've had a really outsized cultural and scientific impact, and a pretty damn successful empire, for such a tiny place with a lot stacked against it.
+
+However, there are many countries who had lots of success in the past, but are kind of resting on their laurels now and seem to be dying a slow death. So you might think the Netherlands fits this profile, but they're also doing really well today! They have some major tech/other companies (most obviously ASML) that are known internationally, and I really get an impression that the place is on a positive trajectory.
+
+It seems like there are countries where it's probably lots of fun to be young, but the economic/career prospects aren't great, and also countries with the opposite (opportunity but crushing work expectations). But the Netherlands seems like it somehow kind of has both? Which is an impressive needle to thread.
+
+I always think historical cultural pride is kind of a strange concept. I.e., why should I be proud of accomplishments that distant ancestors who I've never met did? But I kind of get it with the Netherlands, because it feels like it's something that they *continue* to do. That really shone through to me through Madurodam, because it felt like an implicit statement of "we took this lousy place and through effort and ingenuity made it pretty nice, but we'll always have to work to keep it nice."
 
 Anyway, that's all. I had a great time in the Netherlands and would love to go back someday!
 
