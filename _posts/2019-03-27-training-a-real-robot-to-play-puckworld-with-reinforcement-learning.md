@@ -25,12 +25,12 @@ So, I wrote up a `PuckworldAgent_robot` class and gave it a spin! Here's the ave
 
 (the animations don't autoplay in all browsers, so you may have to click on it.)
 
-<video controls width="640" height="480" loop="true" autoplay="autoplay" controls muted>
-    <source src="/assets/videos/radial_trained-1.mp4">
-    Your browser does not support the video tag.
-</video>
-
-
+<div style="text-align: center; margin: 1em 0;">
+    <video controls muted playsinline width="640" height="480" loop="true" autoplay="autoplay" style="max-width: 100%;">
+        <source src="/assets/videos/radial_trained-1.mp4">
+        Your browser does not support the video tag.
+    </video>
+</div>
 
 It also has no velocity state term (whereas the original `PuckworldAgent`did), to reflect the fact that the real robot will never "drift" if the motors aren't driving. I also tested a few other little variants, like making the turns rotate it $90^\circ$ plus some zero centered Gaussian randomness, which it was all pretty robust to.
 Anyway, that confirmed that I could probably do it without having to explore different architectures or learning methods!
@@ -157,16 +157,19 @@ Similarly, instead of taking the maximum Q value at each point, we could look at
 They make some sense, but to be honest, they're also a little confusing: for the 3rd and 4th ones in the top row (i.e., the targets on the right wall), it really seems like the optimal action would be to drive forward, if the target is directly to the right (because $\theta = 0$). However, apparently it wants to turn first. All I can assume is that it hasn't collected enough evidence to know that that's a superior move, so currently it is doing another set of actions, like turning, and then going to the target via some other path, that it's found to work well enough.
 It's also interesting to see how the Q function and greedy action plots evolve as the robot learns. Since I saved the NN parameters after every 1000 iterations, I can do the same as above at many different points:
 
-<video controls width="640" height="480" loop="true" autoplay="autoplay" controls muted>
-    <source src="/assets/videos/Q_fn-1.mp4">
-    Your browser does not support the video tag.
-</video>
+<div style="text-align: center; margin: 1em 0;">
+    <video controls muted playsinline width="640" height="480" loop="true" autoplay="autoplay" style="max-width: 100%;">
+        <source src="/assets/videos/Q_fn-1.mp4">
+        Your browser does not support the video tag.
+    </video>
+</div>
 
-
-<video controls width="640" height="480" loop="true" autoplay="autoplay" controls muted>
-    <source src="/assets/videos/opt_act-1.mp4">
-    Your browser does not support the video tag.
-</video>
+<div style="text-align: center; margin: 1em 0;">
+    <video controls muted playsinline width="640" height="480" loop="true" autoplay="autoplay" style="max-width: 100%;">
+        <source src="/assets/videos/opt_act-1.mp4">
+        Your browser does not support the video tag.
+    </video>
+</div>
 
 
 If you carefully compare the Q plot and the action plot, you can often actually make out regions with weird contours in the max Q value that correspond to the boundary between different actions. I suspect what's going on here is that the Q value for that action (in that position) is incorrectly too high, because it hasn't finished learning yet. Indeed, looking at the action plots, you can see that they make sense *in general*, but there are definitely parts that aren't the best move you could make there. This makes sense: in a given position, it can take a slightly more roundabout way to get to the target, which costs a bit of reward. After the $\epsilon$ has decayed to its minimum (0.05), if it has a suboptimal "path" that still reliably gets it to the target, it will almost always take that. Theoretically, it should *eventually* learn the optimal action (because $\epsilon_{min} = 0.05$), but even if it does do the slightly better move, it's only saving a little bit of time/reward, and it has to do that perhaps many times to overcome the already-established suboptimal action's Q value.
@@ -188,11 +191,12 @@ So, I tried adding another layer. At first I thought that maybe the bottleneck w
 
 Much better!
 
-
-<video controls width="640" height="480" loop="true" autoplay="autoplay" controls muted>
-    <source src="/assets/videos/18-03-2019_23-35-19_distances_2layer.mp4">
-    Your browser does not support the video tag.
-</video>
+<div style="text-align: center; margin: 1em 0;">
+    <video controls muted playsinline width="640" height="480" loop="true" autoplay="autoplay" style="max-width: 100%;">
+        <source src="/assets/videos/18-03-2019_23-35-19_distances_2layer.mp4">
+        Your browser does not support the video tag.
+    </video>
+</div>
 
 
 

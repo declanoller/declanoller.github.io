@@ -33,11 +33,12 @@ Together:
 
 Here's it wriggling around:
 
-<video controls width="640" height="480" loop="true" autoplay="autoplay" controls muted>
-    <source src="/assets/videos/wriggle_out2.mp4">
-    Your browser does not support the video tag.
-</video>
-
+<div style="text-align: center; margin: 1em 0;">
+    <video controls muted playsinline width="640" height="480" loop="true" autoplay="autoplay" style="max-width: 100%;">
+        <source src="/assets/videos/wriggle_out2.mp4">
+        Your browser does not support the video tag.
+    </video>
+</div>
 
 If you've messed around with hobby servos at all, you've likely seen these, the classic SG90 servos. They're surprisingly strong for the dinky little things they are, but maybe I shouldn't be surprised: they can supposedly draw >700 mA of current when under high load!
 
@@ -65,11 +66,12 @@ This thing is *BEEFY.* To test its lifting abilities, I designed this hinge sys
 
 How does it work? BEEFILY.
 
-<video controls width="640" height="480" loop="true" autoplay="autoplay" controls muted>
-    <source src="/assets/videos/bend_out.mp4">
-    Your browser does not support the video tag.
-</video>
-
+<div style="text-align: center; margin: 1em 0;">
+    <video controls muted playsinline width="640" height="480" loop="true" autoplay="autoplay" style="max-width: 100%;">
+        <source src="/assets/videos/bend_out.mp4">
+        Your browser does not support the video tag.
+    </video>
+</div>
 
 Now you can hopefully see why I had to make those several layered hinges. These actually appear to be working pretty excellently, but I might have to consider reinforcing them with metal at some point.
 
@@ -115,11 +117,13 @@ while True:
 ```
 
 What does this do?
-<video controls width="640" height="480" loop="true" autoplay="autoplay" controls muted>
-    <source src="/assets/videos/bounce_out.mp4">
-    Your browser does not support the video tag.
-</video>
 
+<div style="text-align: center; margin: 1em 0;">
+    <video controls muted playsinline width="640" height="480" loop="true" autoplay="autoplay" style="max-width: 100%;">
+        <source src="/assets/videos/bounce_out.mp4">
+        Your browser does not support the video tag.
+    </video>
+</div>
 
 *Neato!*
 
@@ -131,33 +135,34 @@ pwm = int(self.pwm_mid + pwm_amplitude*sin(self.phase + self.phase_offset))
 
 And controlling `phase` however you'd like. Here's where the fun stuff comes in. To get a single leg to move in a "walking" pattern like you'd expect, the hip and ankle servos can't be doing exactly the same movement. To see what I mean, imagine parametrizing an $x$ and $y$ with a time $t$ and the sine function, to make a circle. If you do $x(t) = y(t) = sin(\omega t)$, you'll get something like:
 
-
-<video controls width="640" height="480" loop="true" autoplay="autoplay" controls muted>
-    <source src="/assets/videos/line_cycle.mp4">
-    Your browser does not support the video tag.
-</video>
-
+<div style="text-align: center; margin: 1em 0;">
+    <video controls muted playsinline width="640" height="480" loop="true" autoplay="autoplay" style="max-width: 100%;">
+        <source src="/assets/videos/line_cycle.mp4">
+        Your browser does not support the video tag.
+    </video>
+</div>
 
 Which obviously wouldn't make it walk. Rather, you have to give one of them a phase offset (like in the code above). To get a circle, $\pi/2$:
 
 
-<video controls width="640" height="480" loop="true" autoplay="autoplay" controls muted>
-    <source src="/assets/videos/circle_cycle.mp4">
-    Your browser does not support the video tag.
-</video>
-
+<div style="text-align: center; margin: 1em 0;">
+    <video controls muted playsinline width="640" height="480" loop="true" autoplay="autoplay" style="max-width: 100%;">
+        <source src="/assets/videos/circle_cycle.mp4">
+        Your browser does not support the video tag.
+    </video>
+</div>
 
 
 So, each servo has a `phase_offset` variable. However, the really cool thing about the hierarchical setup is that it lets this be set coherently too! Each `Leg` object knows its `Servo` objects need a certain phase offset with respect to each other. However, each `Leg` also has a phase offset with respect to the other legs! So a high level phase offset is given to each `LegPair` object, and then every class assigns the appropriate offsets to its lower level objects.
 
 The above bouncing up and down example was pretty simple, but to do something more complicated, like...
 
-
-<video controls width="640" height="480" loop="true" autoplay="autoplay" controls muted>
-    <source src="/assets/videos/multi_out.mp4">
-    Your browser does not support the video tag.
-</video>
-
+<div style="text-align: center; margin: 1em 0;">
+    <video controls muted playsinline width="640" height="480" loop="true" autoplay="autoplay" style="max-width: 100%;">
+        <source src="/assets/videos/multi_out.mp4">
+        Your browser does not support the video tag.
+    </video>
+</div>
 
 
 It's also pretty simple!
