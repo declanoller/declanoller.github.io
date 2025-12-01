@@ -26,7 +26,7 @@ So, I wrote up a `PuckworldAgent_robot` class and gave it a spin! Here's the ave
 (the animations don't autoplay in all browsers, so you may have to click on it.)
 
 <video controls width="640" height="480" loop="true" autoplay="autoplay" controls muted>
-    <source src="radial_trained-1.mp4">
+    <source src="/assets/videos/radial_trained-1.mp4">
     Your browser does not support the video tag.
 </video>
 
@@ -158,13 +158,13 @@ They make some sense, but to be honest, they're also a little confusing: for the
 It's also interesting to see how the Q function and greedy action plots evolve as the robot learns. Since I saved the NN parameters after every 1000 iterations, I can do the same as above at many different points:
 
 <video controls width="640" height="480" loop="true" autoplay="autoplay" controls muted>
-    <source src="Q_fn-1.mp4">
+    <source src="/assets/videos/Q_fn-1.mp4">
     Your browser does not support the video tag.
 </video>
 
 
 <video controls width="640" height="480" loop="true" autoplay="autoplay" controls muted>
-    <source src="opt_act-1.mp4">
+    <source src="/assets/videos/opt_act-1.mp4">
     Your browser does not support the video tag.
 </video>
 
@@ -190,7 +190,7 @@ Much better!
 
 
 <video controls width="640" height="480" loop="true" autoplay="autoplay" controls muted>
-    <source src="18-03-2019_23-35-19_distances_2layer.mp4">
+    <source src="/assets/videos/18-03-2019_23-35-19_distances_2layer.mp4">
     Your browser does not support the video tag.
 </video>
 
