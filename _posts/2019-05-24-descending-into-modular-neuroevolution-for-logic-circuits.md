@@ -48,14 +48,14 @@ How does it work?
 Not bad! Here's the progression of a NAND gate getting constructed:
 
 <video controls width="640" height="480" loop="true" autoplay="autoplay" controls muted>
-    <source src="NN_NAND_evo_mov.mp4">
+    <source src="/assets/videos/NN_NAND_evo_mov.mp4">
     Your browser does not support the video tag.
 </video>
 
 an OR gate:
 
 <video controls width="640" height="480" loop="true" autoplay="autoplay" controls muted>
-    <source src="NN_OR_evo_mov.mp4">
+    <source src="/assets/videos/NN_OR_evo_mov.mp4">
     Your browser does not support the video tag.
 </video>
 
@@ -63,7 +63,7 @@ an OR gate:
 an AND gate:
 
 <video controls width="640" height="480" loop="true" autoplay="autoplay" controls muted>
-    <source src="NN_AND_evo_mov.mp4">
+    <source src="/assets/videos/NN_AND_evo_mov.mp4">
     Your browser does not support the video tag.
 </video>
 

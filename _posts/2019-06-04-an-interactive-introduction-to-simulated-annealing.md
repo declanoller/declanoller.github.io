@@ -14,7 +14,7 @@ Let's look at a practical example to explain what hill climbing is, and what SA 
 And hey, it works pretty well!
 
 <video controls width="640" height="480" loop="true" autoplay="autoplay" controls muted>
-    <source src="smooth_hill.mp4">
+    <source src="/assets/videos/smooth_hill.mp4">
     Your browser does not support the video tag.
 </video>
 
@@ -25,7 +25,7 @@ But maybe you see the limits of this search method. This time, you're plopped do
 
 
 <video controls width="640" height="480" loop="true" autoplay="autoplay" controls muted>
-    <source src="bumpy_hill.mp4">
+    <source src="/assets/videos/bumpy_hill.mp4">
     Your browser does not support the video tag.
 </video>
 
@@ -36,7 +36,7 @@ you're stuck in a Sisyphean optimization hell.
 So, what can you do? Even though there was a higher spot than where you finished, you couldn't get to it because you've chosen to *only* take steps that are immediately up from where you started. In your desperation, you decide to be a little more adventurous, and still always take a step if it would lead you up, but with some probability, take a step that goes down:
 
 <video controls width="640" height="480" loop="true" autoplay="autoplay" controls muted>
-    <source src="bumpy_hill_overcome.mp4">
+    <source src="/assets/videos/bumpy_hill_overcome.mp4">
     Your browser does not support the video tag.
 </video>
 
@@ -65,7 +65,7 @@ So this method works pretty well for these two scenarios, but it still isn't the
 And again, the sneaky expert has thrown you a curveball: they've made the hill textured as hell, with lots of local maxima. Now, let's see what happens when you try it with the acceptance probability from above, $p$, and a low $T$ of 0.1 (causing you to mostly only take improving steps):
 
 <video controls width="640" height="480" loop="true" autoplay="autoplay" controls muted>
-    <source src="textured_peak_0.1_good.mp4">
+    <source src="/assets/videos/textured_peak_0.1_good.mp4">
     Your browser does not support the video tag.
 </video>
 
@@ -75,7 +75,7 @@ You never get very far, because you'd have to leave the local maximum found very
 You could try using a large T instead, so you won't get stuck up there. Here it is with $T = 80$:
 
 <video controls width="640" height="480" loop="true" autoplay="autoplay" controls muted>
-    <source src="textured_peak_80.0.mp4">
+    <source src="/assets/videos/textured_peak_80.0.mp4">
     Your browser does not support the video tag.
 </video>
 
@@ -86,7 +86,7 @@ So you can probably see the problem and a potential solution. You need a large $
 Let's try the nasty problem again with this! Here it is with $T_{init} = 80$, and $\lambda = (0.01)^{1/1600}$, because I'm doing 1600 iterations:
 
 <video controls width="640" height="480" loop="true" autoplay="autoplay" controls muted>
-    <source src="textured_peak_Tinit80.0_decay0.99426_good.mp4">
+    <source src="/assets/videos/textured_peak_Tinit80.0_decay0.99426_good.mp4">
     Your browser does not support the video tag.
 </video>
 

@@ -34,7 +34,7 @@ Together:
 Here's it wriggling around:
 
 <video controls width="640" height="480" loop="true" autoplay="autoplay" controls muted>
-    <source src="wriggle_out2.mp4">
+    <source src="/assets/videos/wriggle_out2.mp4">
     Your browser does not support the video tag.
 </video>
 
@@ -66,7 +66,7 @@ This thing is *BEEFY.* To test its lifting abilities, I designed this hinge sys
 How does it work? BEEFILY.
 
 <video controls width="640" height="480" loop="true" autoplay="autoplay" controls muted>
-    <source src="bend_out.mp4">
+    <source src="/assets/videos/bend_out.mp4">
     Your browser does not support the video tag.
 </video>
 
@@ -116,7 +116,7 @@ while True:
 
 What does this do?
 <video controls width="640" height="480" loop="true" autoplay="autoplay" controls muted>
-    <source src="bounce_out.mp4">
+    <source src="/assets/videos/bounce_out.mp4">
     Your browser does not support the video tag.
 </video>
 
@@ -133,7 +133,7 @@ And controlling `phase` however you'd like. Here's where the fun stuff comes in.
 
 
 <video controls width="640" height="480" loop="true" autoplay="autoplay" controls muted>
-    <source src="line_cycle.mp4">
+    <source src="/assets/videos/line_cycle.mp4">
     Your browser does not support the video tag.
 </video>
 
@@ -142,7 +142,7 @@ Which obviously wouldn't make it walk. Rather, you have to give one of them a ph
 
 
 <video controls width="640" height="480" loop="true" autoplay="autoplay" controls muted>
-    <source src="circle_cycle.mp4">
+    <source src="/assets/videos/circle_cycle.mp4">
     Your browser does not support the video tag.
 </video>
 
@@ -154,7 +154,7 @@ The above bouncing up and down example was pretty simple, but to do something mo
 
 
 <video controls width="640" height="480" loop="true" autoplay="autoplay" controls muted>
-    <source src="multi_out.mp4">
+    <source src="/assets/videos/multi_out.mp4">
     Your browser does not support the video tag.
 </video>
 
