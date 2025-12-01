@@ -60,7 +60,10 @@ We'll come back to this, but here's an example you can try out yourself to get a
 
 [Here's]({{site.baseurl}}/assets/html/SA_brach.html) an interactive example of it. Try dragging the points around to make a bad initial solution, and then hit Run to try and solve it!
 
-{{CODE_SA_brach}}
+<iframe 
+    src="{{site.baseurl}}/assets/html/SA_brach.html"
+    style="width: 100%; height: 600px; border: none;"
+></iframe>
 
 You can also vary the temperature, mean amount of change, and height difference, and hit Run again to do more iterations with the same curve. You can see that if you use a high $T$, it accepts all sorts of solutions, and if you use a low $T$, it only improves, but often pretty slowly.
 So this method works pretty well for these two scenarios, but it still isn't the whole story. To see why, let's go back to the hill climbing story and make it slightly more complex. While before you took a step of constant size to the left or right, pretend now that not only is your direction random, the size of the step is too; your step size probability is a Gaussian distribution with a mean of 5.0.
@@ -118,13 +121,19 @@ It's the same idea in 2D, but now you add up the energies for each pair in both 
 
 The IM evolves by spins being offered (randomly, one at a time) the chance to flip their direction, with the same probability of acceptance as above! For example, if the bottom center spin was offered to flip from blue/down to red/up, it would now align with two of its three neighbors in that new state, which would be more energetically favorable, so it would accept, and flip. [Give it a try on a small example!]({{site.baseurl}}/assets/html/SA_ising_arrows.html)
 
-{{CODE_SA_ising_arrows}}
+<iframe 
+    src="{{site.baseurl}}/assets/html/SA_ising_arrows.html"
+    style="width: 100%; height: 600px; border: none;"
+></iframe>
 
 Here, instead of controlling T itself, you can control the decay rate lambda. Hit run to run for longer, or reset to go to a new random configuration and the initial temperature.
 
 This illustrates the mechanism, but this example is too small to see the really cool stuff, because it's almost entirely boundary. [Let's try with a bigger one!]({{site.baseurl}}/assets/html/SA_ising_squares.html)
 
-{{CODE_SA_ising_squares}}
+<iframe 
+    src="{{site.baseurl}}/assets/html/SA_ising_squares.html"
+    style="width: 100%; height: 600px; border: none;"
+></iframe>
 
 Like before, a very high $T$ never settles to a low energy, and a low $T$ settles, but to a sub-optimal point. You can see a characteristic of a lower energy state: because spins aligned have lower energy, and larger clusters of spins in the same direction have smaller boundaries compared to their size, the average cluster size increases for lower energy. So, try different temperature decay rates, and see how they affect the final cluster sizes!
 Welp, that's all for now! There's a lot more to simulated annealing I didn't even touch on, like restarts, tabu search, and other stuff... so maybe in a future post! Please let me know if you have any questions or feedback.
