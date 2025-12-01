@@ -24,6 +24,17 @@ def find_jpg_urls(text: str) -> list[str]:
     return pattern.findall(text)
 
 
+def find_png_urls(text: str) -> list[str]:
+    """
+    Find all http/https URLs ending in .png (optionally with query params).
+    """
+    pattern = re.compile(
+        r'(https?://[^\s)"]+?\.png(?:\?[^\s)"]*)?)',
+        re.IGNORECASE,
+    )
+    return pattern.findall(text)
+
+
 def download_image(url: str, dest_dir: Path) -> Path | None:
     """
     Download image from URL into dest_dir, keeping the original filename.
@@ -56,9 +67,9 @@ def process_markdown(md_path: Path) -> None:
     text = md_path.read_text(encoding="utf-8")
 
     print("Searching for .jpg URLs...")
-    urls = find_jpg_urls(text)
+    urls = find_jpg_urls(text) + find_png_urls(text)
     if not urls:
-        print("No .jpg URLs found. Nothing to do.")
+        print(f"No .jpg or .png URLs found. Nothing to do. {urls = }")
         return
 
     print(f"Found {len(urls)} .jpg URL(s).")
