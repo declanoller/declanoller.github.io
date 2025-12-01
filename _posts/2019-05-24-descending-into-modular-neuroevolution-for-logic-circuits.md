@@ -173,11 +173,11 @@ The reason it's part of a larger mystery to me is that another very successful a
 
 Well, that's all for now. I have some other ideas to improve these parts, which I'm sure I'll write about soon. Below are some details, so check those out if you want to see the nitty gritty. Thanks for reading!
 
-##### Details:
+## Details:
 
 Here are some interesting details I've left for the bottom, because talk about learning rates and hyperparameters is a lot less exciting that flashy gifs! Read on if you're interested.
 
-##### Looking forward, and literature
+### Looking forward, and literature
 
 This has, of course, been tried before in various formulations! I'm not going to pretend to be original when I'm not. Modularity is a big, promising field, so there are lots of attempts at answering questions like "How do you get modularity to arise effectively and automatically?" and "Is modularity (in our brains, for example) a side effect of other things, or a necessary component for that structure?" For example, there's good evidence that local connectivity arises out optimal wiring of neurons in the brain. There's also evidence that modularity lends to better selection fitness in changing environments.
 
@@ -207,13 +207,13 @@ In that vein:
 
 Another tact is explicitly making sub-modules, and then having another "controller" (or other lingo) NN decide when to use them. They've used these in things like first person shooter games, where they'll have a "shoot" module, a "explore" module, etc. It's cool, and probably actually has good practical performance, but I don't like how it just kind of needs to be human assigned on a different level.
 
-##### Comparing the GD method to GD-free method
+### Comparing the GD method to GD-free method
 
 It's a bit difficult to compare them. First, it seems like the GD and GD-free methods have very different optimal hyperparameters, but the process is both lengthy and so stochastic that it's hard to find them. Additionally, because the runtime varies a lot, it's only meaningful to run the same evolution repeatedly to form a distribution of the runtimes, and then look at their mean. And, if a typical run takes an average of ~2 min, and I want a distribution of 30, we're looking at an hour to test one set of hyperparameters (I tried some Bayesian Optimization, but it was just too noisy to pick up anything with the number of runs I was doing).
 
 Second, the GD method needs a bunch of training/test samples (I typically used 300/30). On the other hand, the GD-free method doesn't need to train at all, it just needs to evaluate how good the network is. So for the evaluation step (for both methods), I could do a "deterministic" way where instead of randomly selecting the state, I just go through them, which would give a perfectly balanced evaluation of the NN with only 4 steps (with a NAND gate for example). However, these gates are kind of a special case where I could easily enumerate all the truth table values, but I'd like it to work for a more general case (for example, if I wanted to make them play an OpenAI game like I did in the last post).
 
-##### A parallel to simulated annealing?
+### A parallel to simulated annealing?
 
 I briefly mentioned above that the NN's produced are often far from the simplest they could be for the problem (for example, compare the final NAND gate found in that first movie, vs the one I constructed by hand as an example in the modularity section). Two of the main hyperparameters in this problem are the probability that you add a node/atom, and the probability that you add a weight between existing nodes/atoms, every generation. From running a bunch of these, it seems like in general, larger NNs are more flexible, which I think makes intuitive sense. Conversely, the configuration of the nodes/weights for the theoretically simplest NN that can solve a problem has to be a lot more exact. So if you want to solve a problem like finding a NAND gate quickly, one strategy would be to just quickly add as many nodes and weights as you can. And conversely, to get a simpler NN, you should decrease these probabilities, but be prepared to wait a long time for it to try more options.
 
@@ -245,7 +245,7 @@ If you want to be a little loose with analogies, I think this is similar to simu
 This effect is especially important for the GD-free method, because there it has to figure out the magnitude of the weights too; it's possible that a NN already has the perfect topology but the weights just need a few more generations to mutate. This is reflected in the values of the probabilities I've seen used in the literature (for GD-free methods): $p_{add node} = 0.0005$, $p_{add weight} = 0.09$, $p_{change weight} = 0.98$, $p_{remove weight} = 0.05$. So you can see that it's almost always changing weights, but adding nodes/weights is a really rare thing.
 On the other hand, for the GD method, I'm still a little confused. I definitely have evidence suggesting that the slower you make it change the topology, the simpler NN's you end up with. However, why exactly? If we assume (and I have good evidence for this) that it doesn't have the same problem the GD-free method does, with having a NN with correct topology but incorrect weights (because it seems to successfully train the weights quickly when it has the topology available), then why wouldn't you want to be adding as much as possible? A NN can *only* add nodes/weights, so if it does neither in a turn, it's kind of a wasted generation for it. One possible reason I can think of is that you probably do want to avoid adding *both* a weight and node in the same generation, because one of them alone may have solved it, but the other made it harder to.
 
-##### What learning rate to use? How many training examples?
+### What learning rate to use? How many training examples?
 
 I used Pytorch's Adam optimizer to do GD on the weights. Adam is adaptive, but the initial learning rate (LR) you give it can still have a large effect (especially if you're doing such a small number of training samples). I tried a few initial LR's, testing it on a NN that I knew had the simplest working structure for a NAND gate:
 
@@ -259,13 +259,13 @@ But here's a more meaningful mean/spread over 20 runs each:
 
 You can see that 0.1 and 0.01 both work pretty well. I went with 0.01 in the end because it seemed slightly better behaved, if sometimes a little slower.
 
-##### How many training samples to use?
+### How many training samples to use?
 
 Obviously, using 300 samples to train a NN is atypically small. However, the runtime was a concern for me, and a large part of the cycles went to doing backprop during training, so I had to find a good balance between making sure the NN would get trained enough to actually improve once the topology was good enough but also not wasting a ton of unnecessary time on training (keep in mind that most NNs won't improve much at all with training because they just don't have the necessary topology).
 
 You can get an idea of the scales in the figure above with the LR. There, it seems like you probably need 500-1000. I was using 300 to start with (for no real particular reason), so I tested it with 800 instead. However, I found it made it take a lot longer. To test the other direction, I tried 150 instead, which I also found to be longer. It seems lucky that what I started with was a decent choice, but it's plausible given the toy results above.
 
-##### Should we reset the weights each generation?
+### Should we reset the weights each generation?
 
 One thing I was worried about was whether I should reinitialize (using roughly Xavier initialization) the weights before each training. Local minima are definitely a thing with NN training, so I was worried about the possibility of "training" the weights of a not-solved topology NN, and then when it finally gets a solved topology, being stuck in a local minima. However, this was apparently not the case, as reinitializing the weights before each episode made the GD method waaaaay worse. I was actually surprised by how much worse they were.
 

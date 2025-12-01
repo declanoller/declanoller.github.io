@@ -13,7 +13,7 @@ After I [trained an agent to play "puckworld" using Q-learning]({{ site.baseurl 
 
 ![](/assets/images/trained_1.gif)
 
-##### First, simulation
+# First, simulation
 
 The first thing I wanted to verify was whether a slightly different version of the game could be solved with the same neural network (NN) architecture. When I simulated it before, I used a NN with 4 state inputs $(x, y, x_t, y_t)$ (where $(x, y)$ is the agent position and $(x_t, y_t)$ is the position of the current target), 4 action outputs (up, down, left, right), and a single hidden layer (with varying numbers of neurons; I found relatively similar behavior over the range of 10-200 neurons).
 However, I planned on using a robot [of this style]({{site.baseurl}}/assets/images/robot_type.jpeg), which meant that its actions would instead be (forward, backward, CCW turn CW turn). The state vector is a little more complicated, but for now let's assume it's $(x, y, \theta, x_t, y_t)$ ($\theta$ is the angle, where $\theta = 0$ is pointing to the right, ranging from $-\pi$ to $\pi$, CCW).
@@ -35,7 +35,7 @@ So, I wrote up a `PuckworldAgent_robot` class and gave it a spin! Here's the ave
 It also has no velocity state term (whereas the original `PuckworldAgent`did), to reflect the fact that the real robot will never "drift" if the motors aren't driving. I also tested a few other little variants, like making the turns rotate it $90^\circ$ plus some zero centered Gaussian randomness, which it was all pretty robust to.
 Anyway, that confirmed that I could probably do it without having to explore different architectures or learning methods!
 
-##### The robot agent
+## The robot agent
 
 For the robot itself, I went for the dinkiest robot kit I could find on Amazon:
 
@@ -67,7 +67,7 @@ It might seem like a bit of a rats nest, but it makes it pretty easy to hub all 
 
 It would've been nice to just use a battery pack to power it, but with the current draw of the motors and a chuggin' RPi, any battery pack wouldn't have lasted too long. So it was actually wired the whole time, so that it would be able to run for days on end. To do this and and allow the robot to turn infinitely and move around, I used a slip ring and had the power cords mounted on a 1/4" rod about 8" above the robot (you can see in the first pic, where I used a bit of heat shrink to make it so it would both hold it up when there was slack so it wouldn't get tangled, but allow it to pull a bit when it's farther away from the center).
 
-##### The environment
+## The environment
 
 I wanted a little arena to enclose the robot just like the simulation. I used a few sheets of scrap plywood I found around my neighborhood and put them together with nubs of 2x4's in my basement:
 
@@ -95,7 +95,7 @@ They're real cheap (~a buck a piece) and not bad when they work... but they don'
 
 The IR sensors went to an [ESP8266](https://en.wikipedia.org/wiki/ESP8266) (kind of an Arduino that has built in WiFi support). The ESP connects to an [MQTT server](https://en.wikipedia.org/wiki/MQTT) over my WiFi and broadcasts a json dict of the current state of which sensors are triggered, which the robot reads every iteration to see if it has triggered any.
 
-##### The program
+## The program
 
 There were a million moving parts and details, but I'll just mention the main pieces here. I have an `Agent` class that does the actual Q-learning, saves the experiences, has the Q-network, etc. I wrote about how [Agent does Q-learning here]({{ site.baseurl }}/2018-11-04-training-an-rl-agent-to-play-puckworld-with-a-ddqn), so check it out if you're curious. It's basically standard Q-learning, using a NN with one hidden layer and experience replay, using pytorch with [Adam](https://arxiv.org/abs/1412.6980) to update the weights.
 
@@ -131,7 +131,7 @@ Lastly, there are actually a small subset of cases where even three vectors don'
 Now, I think if you were willing to put the TOFs at non-right angles to each other, for example, maybe the center one at $\theta$ and the other two at $\pm 10^\circ$, that would remove this case. But, from my experience with this, I'd rather get much different TOF readings that have this weakness than 3 ones that are nearly the same.
 Anyway, whenever I talk about the position, it's the *estimated* position from the TOFs and compass.
 
-##### The results!
+# The results!
 
 It was tricky for me to predict how long it would take to train. In the simulations above, you can see that it takes **~400k iterations** to learn and level off. While this takes ~10 min or so to learn by simulating on my laptop, the robot has to, well, do it physically, which obviously takes longer. I was pleasantly surprised to find it taking a little less than 1 second an iteration, because I expected more. Even so, at 400k iterations, that would take a *loooooong* time. On the other hand, it's not a direct comparison with the number of iterations, because to do that, you'd really have to match the distances that the simulation/real robot go in an iteration. Anyway, let's see what happened!
 
