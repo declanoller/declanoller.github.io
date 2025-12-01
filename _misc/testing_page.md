@@ -208,7 +208,7 @@ with nice div center:
 using `site.baseurl`:
 
 <iframe 
-    src="{{site.baseurl}}/assets/html/SA_brach.html"
+    src="{{site.baseurl}}/assets/html/SA_ising_squares.html"
     style="width: 100%; height: 600px; border: none;"
 ></iframe>
 

@@ -58,7 +58,7 @@ Here's a plot of $p$ for a few values of $T$, as a function of $E_{new} - E$:
 
 We'll come back to this, but here's an example you can try out yourself to get a feel for it. [In a previous article]({{ site.baseurl }}/2018-12-24-solving-the-brachistochrone-and-a-cool-parallel-between-diversity-in-genetic-algorithms-and-simulated-annealing), I solved the Brachistochrone problem with a genetic algorithm. Briefly, the Brachistochrone is the curve between two points such that if you released a bead from the higher point and it was constrained to that curve, with force of gravity on it, it would take the shortest time to reach the lower point (see the article for details).
 
-Here's an interactive example of it. Try dragging the points around to make a bad initial solution, and then hit Run to try and solve it!
+[Here's]({{site.baseurl}}/assets/html/SA_brach.html) an interactive example of it. Try dragging the points around to make a bad initial solution, and then hit Run to try and solve it!
 
 {{CODE_SA_brach}}
 
@@ -116,13 +116,13 @@ It's the same idea in 2D, but now you add up the energies for each pair in both 
 
 ![](/assets/images/small_grid.png)
 
-The IM evolves by spins being offered (randomly, one at a time) the chance to flip their direction, with the same probability of acceptance as above! For example, if the bottom center spin was offered to flip from blue/down to red/up, it would now align with two of its three neighbors in that new state, which would be more energetically favorable, so it would accept, and flip. Give it a try on a small example!
+The IM evolves by spins being offered (randomly, one at a time) the chance to flip their direction, with the same probability of acceptance as above! For example, if the bottom center spin was offered to flip from blue/down to red/up, it would now align with two of its three neighbors in that new state, which would be more energetically favorable, so it would accept, and flip. [Give it a try on a small example!]({{site.baseurl}}/assets/html/SA_ising_arrows.html)
 
 {{CODE_SA_ising_arrows}}
 
 Here, instead of controlling T itself, you can control the decay rate lambda. Hit run to run for longer, or reset to go to a new random configuration and the initial temperature.
 
-This illustrates the mechanism, but this example is too small to see the really cool stuff, because it's almost entirely boundary. Let's try with a bigger one!
+This illustrates the mechanism, but this example is too small to see the really cool stuff, because it's almost entirely boundary. [Let's try with a bigger one!]({{site.baseurl}}/assets/html/SA_ising_squares.html)
 
 {{CODE_SA_ising_squares}}
 
