@@ -203,7 +203,14 @@ with nice div center:
 
 
 
+# Testing iframe for embedding html
 
+using `site.baseurl`:
+
+<iframe 
+    src="{{site.baseurl}}/assets/html/SA_brach.html"
+    style="width: 100%; height: 600px; border: none;"
+></iframe>
 
 
 
