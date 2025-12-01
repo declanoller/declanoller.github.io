@@ -144,17 +144,51 @@ Here's a little javascript sim using "raw" and "endraw" jekyll tags (works):
 
 ## A webm file
 
+Directly (doesn't appear):
+
 ![](/assets/images/pen.webm)
+
+---
+
+
+Using html video tag:
+
+<video controls width="640" height="480">
+    <source src="/assets/images/pen.webm" type="video/webm">
+    Your browser does not support the video tag.
+</video>
+
 
 
 ## An mp4 file
 
 Does it loop automatically?
 
+Just including it like I would a normal image:
+
 ![](/assets/images/eval_episode_8_score=1_2025-11-29_15-38-40.mp4)
 
 
 ---
+
+
+Using html video tag:
+
+<video controls width="640" height="480">
+    <source src="/assets/images/eval_episode_8_score=1_2025-11-29_15-38-40.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+</video>
+
+
+---
+
+
+Using html video tag with autoplay, muted, controls, loop:
+
+<video controls width="640" height="480" loop="true" autoplay="autoplay" controls muted>
+    <source src="/assets/images/eval_episode_8_score=1_2025-11-29_15-38-40.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+</video>
 
 
 
