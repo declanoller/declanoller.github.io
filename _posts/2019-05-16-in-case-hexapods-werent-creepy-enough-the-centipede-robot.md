@@ -4,7 +4,7 @@ layout: post
 permalink: 2019-05-16-in-case-hexapods-werent-creepy-enough-the-centipede-robot
 thumbnail: /assets/thumbnails/centipede_cover_small.png
 image: /assets/thumbnails/centipede_cover_small.png
-title: 'In case hexapods weren''t creepy enough: the centipede robot!'
+title: "In case hexapods weren't creepy enough: the centipede robot!"
 ---
 
 Similar to...most of? my ideas, I don't remember why I thought of this. I think after I made the reinforcement learning robot, I was on a robot kick, and came up with this. [Hexapods](https://en.wikipedia.org/wiki/Hexapod_(robotics)) are of course a robot classic, but I don't think I had ever seen a centipede robot.
@@ -33,7 +33,11 @@ Together:
 
 Here's it wriggling around:
 
-{{CODE_leg_movie}}
+<video controls width="640" height="480" loop="true" autoplay="autoplay" controls muted>
+    <source src="wriggle_out2.mp4">
+    Your browser does not support the video tag.
+</video>
+
 
 If you've messed around with hobby servos at all, you've likely seen these, the classic SG90 servos. They're surprisingly strong for the dinky little things they are, but maybe I shouldn't be surprised: they can supposedly draw >700 mA of current when under high load!
 
@@ -61,7 +65,11 @@ This thing is *BEEFY.* To test its lifting abilities, I designed this hinge sys
 
 How does it work? BEEFILY.
 
-{{CODE_bend_movie}}
+<video controls width="640" height="480" loop="true" autoplay="autoplay" controls muted>
+    <source src="bend_out.mp4">
+    Your browser does not support the video tag.
+</video>
+
 
 Now you can hopefully see why I had to make those several layered hinges. These actually appear to be working pretty excellently, but I might have to consider reinforcing them with metal at some point.
 
@@ -107,8 +115,11 @@ while True:
 ```
 
 What does this do?
+<video controls width="640" height="480" loop="true" autoplay="autoplay" controls muted>
+    <source src="bounce_out.mp4">
+    Your browser does not support the video tag.
+</video>
 
-{{CODE_bounce_movie}}
 
 *Neato!*
 
@@ -119,16 +130,35 @@ pwm = int(self.pwm_mid + pwm_amplitude*sin(self.phase + self.phase_offset))
 ```
 
 And controlling `phase` however you'd like. Here's where the fun stuff comes in. To get a single leg to move in a "walking" pattern like you'd expect, the hip and ankle servos can't be doing exactly the same movement. To see what I mean, imagine parametrizing an $x$ and $y$ with a time $t$ and the sine function, to make a circle. If you do $x(t) = y(t) = sin(\omega t)$, you'll get something like:
-{{CODE_line_cycle}}
+
+
+<video controls width="640" height="480" loop="true" autoplay="autoplay" controls muted>
+    <source src="line_cycle.mp4">
+    Your browser does not support the video tag.
+</video>
+
 
 Which obviously wouldn't make it walk. Rather, you have to give one of them a phase offset (like in the code above). To get a circle, $\pi/2$:
-{{CODE_circle_cycle}}
+
+
+<video controls width="640" height="480" loop="true" autoplay="autoplay" controls muted>
+    <source src="circle_cycle.mp4">
+    Your browser does not support the video tag.
+</video>
+
+
 
 So, each servo has a `phase_offset` variable. However, the really cool thing about the hierarchical setup is that it lets this be set coherently too! Each `Leg` object knows its `Servo` objects need a certain phase offset with respect to each other. However, each `Leg` also has a phase offset with respect to the other legs! So a high level phase offset is given to each `LegPair` object, and then every class assigns the appropriate offsets to its lower level objects.
 
 The above bouncing up and down example was pretty simple, but to do something more complicated, like...
 
-{{CODE_walk_movie}}
+
+<video controls width="640" height="480" loop="true" autoplay="autoplay" controls muted>
+    <source src="multi_out.mp4">
+    Your browser does not support the video tag.
+</video>
+
+
 
 It's also pretty simple!
 

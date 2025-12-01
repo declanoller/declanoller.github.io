@@ -47,15 +47,26 @@ How does it work?
 
 Not bad! Here's the progression of a NAND gate getting constructed:
 
-{{CODE_NAND_vid_1}}
+<video controls width="640" height="480" loop="true" autoplay="autoplay" controls muted>
+    <source src="NN_NAND_evo_mov.mp4">
+    Your browser does not support the video tag.
+</video>
 
 an OR gate:
 
-{{CODE_OR_vid}}
+<video controls width="640" height="480" loop="true" autoplay="autoplay" controls muted>
+    <source src="NN_OR_evo_mov.mp4">
+    Your browser does not support the video tag.
+</video>
+
 
 an AND gate:
 
-{{CODE_AND_vid}}
+<video controls width="640" height="480" loop="true" autoplay="autoplay" controls muted>
+    <source src="NN_AND_evo_mov.mp4">
+    Your browser does not support the video tag.
+</video>
+
 
 There are a few things you might notice. One is that the NN's are wayyy more complicated than they theoretically need to be. This has to do with the hyperparameters used to construct them; in general, you can make it proceed more slowly, and it will end up with simpler NN's (more on this below). Another thing is that some of them look a little unbelievable. For example, an OR gate is symmetrical with respect to its two inputs x and y, but the final NN above is distinctly *asymmetric*. When I first saw it, I thought, hey, that can't be right. But do the math out (using tanh at the outputs of the purple nodes), and you'll see that it does!
 

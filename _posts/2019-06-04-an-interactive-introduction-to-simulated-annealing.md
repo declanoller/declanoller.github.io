@@ -13,19 +13,34 @@ Let's look at a practical example to explain what hill climbing is, and what SA 
 
 And hey, it works pretty well!
 
-{{CODE_smooth_hill}}
+<video controls width="640" height="480" loop="true" autoplay="autoplay" controls muted>
+    <source src="smooth_hill.mp4">
+    Your browser does not support the video tag.
+</video>
+
 
 You reach the highest point, and the waiting optimization expert reluctantly takes off your blindfold, muttering something about "stupid convex functions".
 
 But maybe you see the limits of this search method. This time, you're plopped down in another landscape, and the sociopathic expert has done some hefty landscaping. You try your method again, and...
 
-{{CODE_bumpy_hill_1}}
+
+<video controls width="640" height="480" loop="true" autoplay="autoplay" controls muted>
+    <source src="bumpy_hill.mp4">
+    Your browser does not support the video tag.
+</video>
+
+
 
 you're stuck in a Sisyphean optimization hell.
 
 So, what can you do? Even though there was a higher spot than where you finished, you couldn't get to it because you've chosen to *only* take steps that are immediately up from where you started. In your desperation, you decide to be a little more adventurous, and still always take a step if it would lead you up, but with some probability, take a step that goes down:
 
-{{CODE_bumpy_hill_2}}
+<video controls width="640" height="480" loop="true" autoplay="autoplay" controls muted>
+    <source src="bumpy_hill_overcome.mp4">
+    Your browser does not support the video tag.
+</video>
+
+
 
 Free again! You can see the dot wobble a little at the second little valley, where it has to get lucky several times in a row to overcome it.
 
@@ -48,18 +63,33 @@ You can also vary the temperature, mean amount of change, and height difference,
 So this method works pretty well for these two scenarios, but it still isn't the whole story. To see why, let's go back to the hill climbing story and make it slightly more complex. While before you took a step of constant size to the left or right, pretend now that not only is your direction random, the size of the step is too; your step size probability is a Gaussian distribution with a mean of 5.0.
 
 And again, the sneaky expert has thrown you a curveball: they've made the hill textured as hell, with lots of local maxima. Now, let's see what happens when you try it with the acceptance probability from above, $p$, and a low $T$ of 0.1 (causing you to mostly only take improving steps):
-{{CODE_texture_1}}
+
+<video controls width="640" height="480" loop="true" autoplay="autoplay" controls muted>
+    <source src="textured_peak_0.1_good.mp4">
+    Your browser does not support the video tag.
+</video>
+
 
 You never get very far, because you'd have to leave the local maximum found very early.
 
 You could try using a large T instead, so you won't get stuck up there. Here it is with $T = 80$:
-{{CODE_texture_2}}
+
+<video controls width="640" height="480" loop="true" autoplay="autoplay" controls muted>
+    <source src="textured_peak_80.0.mp4">
+    Your browser does not support the video tag.
+</video>
+
 
 Well... you explore more and get a better overall score, so that's good! ...but you also never more thoroughly explore the area around the true maximum, because you're so willing to accept anything. So the max height you reach is closer to, but not the true maximum.
 
 So you can probably see the problem and a potential solution. You need a large $T$ at the beginning to accept worse steps to get out of local maxima, but you need a small temperature at the end to only accept better probabilities. This is what simulated annealing does: start with a high $T$ and slowly lower it, so the willingness to accept worse steps, $p$, goes down over time. You can decrease it in all sorts of ways, but a simple one is doing: $T_{i+1} = \lambda T_i$, where you can choose some $\lambda < 1$ to make $T$ start at some value and decrease to ~0 by the time you want to be done.
 Let's try the nasty problem again with this! Here it is with $T_{init} = 80$, and $\lambda = (0.01)^{1/1600}$, because I'm doing 1600 iterations:
-{{CODE_texture_3}}
+
+<video controls width="640" height="480" loop="true" autoplay="autoplay" controls muted>
+    <source src="textured_peak_Tinit80.0_decay0.99426_good.mp4">
+    Your browser does not support the video tag.
+</video>
+
 
 Ta da! You're the insane optimization expert now. And the cycle continues...
 

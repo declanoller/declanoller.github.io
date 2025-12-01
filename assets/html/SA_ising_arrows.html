@@ -1,0 +1,688 @@
+<script src="https://d3js.org/d3.v5.min.js"></script>
+<script src="https://unpkg.com/d3-simple-slider"></script>
+
+<div class="uneven_columns_arrows">
+
+<div class="sim_container_arrows" id="ising_sim_arrows">
+</div>
+
+<div class="vert_stack_arrows">
+  <div class="plot_container_arrows" id="plot_T_arrows"></div>
+  <div class="plot_container_arrows" id="plot_E_arrows"></div>
+
+  <div class="slider_label_container_ising_arrows">
+    <div class="slider_label_ising_arrows"><p id="value_temp_ising_arrows"></p></div>
+    <div class="slider_ising_arrows" id="slider_temp_ising_arrows"></div>
+  </div>
+
+  <div class="button_container_arrows" id="buttons_row_arrows">
+    <input name="RunButton"
+           type="button"
+           value="Run"
+           onclick="run_sim_ising_arrows()" />
+    <input name="ResetButton"
+          type="button"
+          value="Reset"
+          onclick="reset_sim_ising_arrows()" />
+  </div>
+
+</div>
+
+</div>
+
+
+<script>
+
+
+var N_flips_arrows = 100;
+var T_init_arrows = 10.0;
+var T_arrows = T_init_arrows;
+var arrow_edge_width_arrows = 2;
+var N_spins_arrows = 4;
+var trans_dur = 20;
+var up_col = 'tomato';
+var down_col = 'lightblue';
+
+var spins_dat_arrows = [];
+var spins_dict_arrows = {};
+
+[spins_dat_arrows, spins_dict_arrows] = reset_spins_arrows();
+
+var grid_dat = [];
+for (i=0; i<N_spins_arrows; i++){
+
+  grid_dat.push([{
+    x : i,
+    y : 0
+  },{
+    x : i,
+    y : N_spins_arrows-1
+  }]);
+
+  grid_dat.push([{
+    x : 0,
+    y : i
+  },{
+    x : N_spins_arrows-1,
+    y : i
+  }]);
+
+}
+
+
+var E_tot_arrows = hamiltonian();
+
+
+///////////////////////////////// CSS/styles
+
+
+d3.selectAll(".plot_container_arrows")
+          .style('padding-top', '20px')
+          .style('vertical-align', 'top');
+
+//.style('float', 'left')
+d3.selectAll(".sim_container_arrows")
+            .style('width', '55%')
+            .style('padding-top', '0px')
+            .style('padding-right', '0px%')
+            .style('padding-bottom', '0px')
+            .style('padding-left', '0px')
+            .style('display', 'inline-block');
+
+//.style('width', '100%')
+d3.selectAll(".uneven_columns_arrows")
+            .style('width', '100%')
+            .style('padding-top', '0px')
+            .style('padding-right', '0px')
+            .style('padding-bottom', '0px')
+            .style('padding-left', '0px')
+            .style('text-align', 'center');
+
+//.style('float', 'right')
+
+d3.selectAll(".vert_stack_arrows")
+          .style('vertical-align', 'top')
+          .style('width', '30%')
+          .style('padding-top', '0px')
+          .style('padding-right', '0px')
+          .style('padding-bottom', '0px')
+          .style('padding-left', '0px')
+          .style('margin-left', '2%')
+          .style('display', 'inline-block');
+
+d3.selectAll(".horiz_container");
+          //.style('text-align', 'center');
+
+d3.selectAll(".slider_label_ising_arrows")
+            .style('margin-top', '20px');
+          //.style('text-align', 'center');
+
+d3.selectAll(".slider_label_ising_arrows_container_ising")
+          .style('padding-top', '60px');
+          //.style('text-align', 'center');
+
+d3.selectAll(".slider_ising_arrows");
+          //.style('text-align', 'center');
+
+
+
+d3.selectAll(".button_container_arrows")
+          .style('display', 'inline-block')
+          .style('padding-top', '0px')
+          .style('padding-bottom', '0px')
+          .style('padding-left', '1%')
+          .style('padding-right', '1%');
+
+d3.select('p#value_temp_ising_arrows').style('margin', '0px');
+
+/////////////////////////// SVG stuff
+
+
+var sim_w_arrows = Math.round(d3.select('.sim_container_arrows').node().getBoundingClientRect().width);
+var svg_sim_dim_arrows = {width : sim_w_arrows, height : sim_w_arrows};
+var sim_margin_arrows = Math.round((svg_sim_dim_arrows.width/(N_spins_arrows-1))/2);
+
+var plot_w_arrows = Math.round(d3.select('.vert_stack_arrows').node().getBoundingClientRect().width);
+var plot_h_arrows = Math.round(0.6*plot_w_arrows);
+
+var slider_w = Math.round(0.6*plot_w_arrows);
+var slider_h = Math.round(.4*slider_w);
+
+var svg_plot_dim_arrows = {width : plot_w_arrows, height : plot_h_arrows};
+var plot_margin_arrows = {top: Math.round(0.1*plot_h_arrows), bottom: 40, right: 0, left: 60};
+var plot_dim = {
+  width : (svg_plot_dim_arrows.width - plot_margin_arrows.left - plot_margin_arrows.right),
+  height : (svg_plot_dim_arrows.height - plot_margin_arrows.top - plot_margin_arrows.bottom)
+};
+
+var svg_ising_arrows = d3.select("div#ising_sim_arrows")
+  .append('svg')
+  .attr('width', svg_sim_dim_arrows.width)
+  .attr('height', svg_sim_dim_arrows.height);
+
+var svg_E_arrows = d3.select("div#plot_E_arrows")
+  .append('svg')
+  .attr('width', svg_plot_dim_arrows.width)
+  .attr('height', svg_plot_dim_arrows.height);
+
+var svg_T_arrows = d3.select("div#plot_T_arrows")
+  .append('svg')
+  .attr('width', svg_plot_dim_arrows.width)
+  .attr('height', svg_plot_dim_arrows.height);
+
+
+//////////////////////////////// Slider stuff
+
+var temp_data = [0.6, 1.0];
+
+// Fill
+var slider_temp_ising_arrows = d3
+  .sliderBottom()
+  .min(d3.min(temp_data))
+  .max(d3.max(temp_data))
+  .width(Math.round(0.8*slider_w))
+  .tickFormat(d3.format('.2'))
+  .ticks(5)
+  .default(0.95)
+  .fill(up_col)
+  .on('onchange', val => {
+    d3.select('p#value_temp_ising_arrows').text("Temperature decay: " + d3.format('.4')(val)).attr("font-size", "14px");
+  });
+
+var gFill = d3
+  .select('div#slider_temp_ising_arrows')
+  .append('svg')
+  .attr('width', slider_w)
+  .attr('height', slider_h)
+  .append('g')
+  .attr('transform', 'translate(' + Math.round(0.1*slider_w) + ',' + Math.round(0.2*slider_h) + ')');
+
+gFill.call(slider_temp_ising_arrows);
+
+d3.select('p#value_temp_ising_arrows').text("Temperature decay: " + d3.format('.4')(slider_temp_ising_arrows.value())).attr("font-size", "14px");
+
+
+
+//fitness_function(circles_dat.map(el => el.y))
+var E_history_arrows = [{
+    index: 0,
+    x: 0,
+    y: E_tot_arrows
+  }];
+
+
+var T_history_arrows = [{
+    index: 0,
+    x: 0,
+    y: T_init_arrows
+  }];
+
+
+var x_ising_arrows = d3.scaleLinear()
+    .domain([0, N_spins_arrows - 1])
+    .range([sim_margin_arrows, svg_sim_dim_arrows.width - sim_margin_arrows]);
+
+var y_ising_arrows = d3.scaleLinear()
+    .domain([0, N_spins_arrows - 1])
+    .range([sim_margin_arrows, svg_sim_dim_arrows.height - sim_margin_arrows]);
+
+
+var x_E_arrows = d3.scaleLinear()
+    .domain([0, Math.max(...E_history_arrows.map(el => el.x))])
+    .range([0, plot_dim.width]);
+
+var y_E_arrows = d3.scaleLinear()
+    .domain(d3.extent(E_history_arrows, function(d) { return d.y; }).map(el => 1.1*el))
+    .range([plot_dim.height, 0]);
+
+var x_T_arrows = d3.scaleLinear()
+    .domain([0, Math.max(...T_history_arrows.map(el => el.x))])
+    .range([0, plot_dim.width]);
+
+var y_T_arrows = d3.scaleLinear()
+    .domain(d3.extent(T_history_arrows, function(d) { return d.y; }).map(el => 1.1*el))
+    .range([plot_dim.height, 0]);
+
+
+var xAxis_E_arrows = d3.axisBottom(x_E_arrows),
+    yAxis_E_arrows = d3.axisLeft(y_E_arrows);
+
+var xAxis_T_arrows = d3.axisBottom(x_T_arrows),
+    yAxis_T_arrows = d3.axisLeft(y_T_arrows);
+
+
+var line_E_arrows = d3.line()
+    .x(function(d) { return x_E_arrows(d.x); })
+    .y(function(d) { return y_E_arrows(d.y); });
+
+var line_T_arrows = d3.line()
+    .x(function(d) { return x_T_arrows(d.x); })
+    .y(function(d) { return y_T_arrows(d.y); });
+
+
+
+var plot_E_arrows = svg_E_arrows.append("g")
+            .attr("transform", "translate(" + plot_margin_arrows.left + "," + plot_margin_arrows.top + ")");
+
+var plot_T_arrows = svg_T_arrows.append("g")
+            .attr("transform", "translate(" + plot_margin_arrows.left + "," + plot_margin_arrows.top + ")");
+
+
+plot_E_arrows.append("path")
+    .datum(E_history_arrows)
+    .attr("fill", "none")
+    .attr("stroke", "mediumseagreen")
+    .attr("stroke-linejoin", "round")
+    .attr("stroke-linecap", "round")
+    .attr("stroke-width", 2.5)
+    .attr("d", line_E_arrows);
+
+plot_T_arrows.append("path")
+    .datum(T_history_arrows)
+    .attr("fill", "none")
+    .attr("stroke", "tomato")
+    .attr("stroke-linejoin", "round")
+    .attr("stroke-linecap", "round")
+    .attr("stroke-width", 2.5)
+    .attr("d", line_T_arrows);
+
+
+
+
+var text_data_E_arrows = [
+  {x: plot_dim.width/2, y: 0, label: 'status', txt: 'Total energy = ' + E_tot_arrows, size: 18},
+  {x: plot_dim.width/2, y: plot_dim.height + plot_margin_arrows.bottom, label: 'iter', txt: 'Iteration', size: 14},
+  {x: -0.6*plot_margin_arrows.left, y: plot_dim.height/2, label: 'ylabel', txt: 'Energy', size: 14}
+];
+
+var text_data_T_arrows = [
+  {x: plot_dim.width/2, y: 0, label: 'status', txt: 'T = ' + T_arrows, size: 18},
+  {x: plot_dim.width/2, y: plot_dim.height + plot_margin_arrows.bottom, label: 'iter', txt: 'Iteration', size: 14},
+  {x: -0.75*plot_margin_arrows.left, y: plot_dim.height/2, label: 'ylabel', txt: 'Temperature', size: 14}
+];
+
+
+var text_E_arrows = plot_E_arrows.selectAll("text")
+                        .data(text_data_E_arrows)
+                        .enter()
+                        .append("text");
+
+var text_T_arrows = plot_T_arrows.selectAll("text")
+                        .data(text_data_T_arrows)
+                        .enter()
+                        .append("text");
+
+//Add SVG Text Element Attributes
+var text_labels_E_arrows = text_E_arrows
+                .attr("transform", function (d) {
+                      if (d.label=='ylabel'){
+                        return "translate(" + d.x + "," + d.y + ") rotate(-90)";
+                      }
+                      else{
+                        return "translate(" + d.x + "," + d.y + ") rotate(0)";
+                      }})
+                .text( function (d) {return d.txt;})
+                .attr("font-family", "sans-serif")
+                .attr("font-size", d=> d.size + "px")
+                .attr("text-anchor", "middle")
+                .attr("fill", "black");
+
+//Add SVG Text Tlement Attributes
+var text_labels_T_arrows = text_T_arrows
+                .attr("transform", function (d) {
+                      if (d.label=='ylabel'){
+                        return "translate(" + d.x + "," + d.y + ") rotate(-90)";
+                      }
+                      else{
+                        return "translate(" + d.x + "," + d.y + ") rotate(0)";
+                      }})
+                .text( function (d) {return d.txt;})
+                .attr("font-family", "sans-serif")
+                .attr("font-size", d=> d.size + "px")
+                .attr("text-anchor", "middle")
+                .attr("fill", "black");
+
+
+plot_E_arrows.append('g')
+    .attr('class', 'x axis')
+    .attr('transform', 'translate(0,' + plot_dim.height + ')')
+    .call(xAxis_E_arrows);
+
+plot_E_arrows.append('g')
+    .attr('class', 'y axis')
+    .call(yAxis_E_arrows);
+
+
+plot_T_arrows.append('g')
+    .attr('class', 'x axis')
+    .attr('transform', 'translate(0,' + plot_dim.height + ')')
+    .call(xAxis_T_arrows);
+
+plot_T_arrows.append('g')
+    .attr('class', 'y axis')
+    .call(yAxis_T_arrows);
+
+
+
+function xy_to_arrow(d){
+
+  if (d.state==1){
+    var a = [[ 0.25 ,  0.075],
+       [ 0.   ,  0.375],
+       [-0.25 ,  0.075],
+       [-0.1  ,  0.075],
+       [-0.1  , -0.375],
+       [ 0.1  , -0.375],
+       [ 0.1  ,  0.075],
+       [ 0.25 ,  0.075]];
+  }
+  else{
+    var a = [[-0.25 , -0.075],
+       [ 0.   , -0.375],
+       [ 0.25 , -0.075],
+       [ 0.1  , -0.075],
+       [ 0.1  ,  0.375],
+       [-0.1  ,  0.375],
+       [-0.1  , -0.075],
+       [-0.25 , -0.075]];
+  }
+  //return a.map(el => [x_ising_arrows(el[0]), y_ising_arrows(el[1])]);
+  return a.map(el => [x_ising_arrows(el[0] + d.x), y_ising_arrows(el[1] + d.y)]);
+}
+
+
+function arrow(d, i) {
+
+    var a = xy_to_arrow(d);
+    d3.select(this)
+        .transition()
+        .duration(trans_dur)
+        .attr('d', `M ${[...a]} Z`)
+}
+
+
+/*
+var line_grid = d3.line()
+    .x(function(d) { return x_ising_arrows(d.x); })
+    .y(function(d) { return y_ising_arrows(d.y); });
+
+//For drawing a grid, for graphics aligning purposes
+var svg_grid = svg_ising_arrows
+            .selectAll('grid')
+            .data(grid_dat)
+            .enter()
+            .append('path')
+            .attr("stroke", "black")
+            .attr('d', line_grid)
+*/
+
+svg_ising_arrows.selectAll('g')
+        .data(spins_dat_arrows)
+        .enter()
+        .append('g')
+        .attr("stroke-width", arrow_edge_width_arrows)
+        .attr("stroke", "black")
+        .attr("fill", function (d){ if(d.state==1){return down_col;}else{return up_col;}})
+        .append('path')
+        .each(arrow);
+
+var spins_sel = svg_ising_arrows.selectAll('g').selectAll('path');
+
+reset_sim_ising_arrows();
+
+
+function hamiltonian(){
+
+  var E = 0;
+
+  for (var ind=0; ind<spins_dat_arrows.length; ind++){
+
+    var x = spins_dat_arrows[ind].x;
+    var y = spins_dat_arrows[ind].y;
+    var s = spins_dat_arrows[ind].state;
+
+    if (x > 0){
+      E += -spins_dict_arrows[x-1][y]*s;
+    }
+    if (x < N_spins_arrows-1){
+      E += -spins_dict_arrows[x+1][y]*s;
+    }
+    if (y > 0){
+      E += -spins_dict_arrows[x][y-1]*s;
+    }
+    if (y < N_spins_arrows-1){
+      E += -spins_dict_arrows[x][y+1]*s;
+    }
+
+  }
+
+  return E;
+}
+
+
+function flip_state_arrows(){
+  var ind = Math.round(Math.random()*(N_spins_arrows*N_spins_arrows - 1));
+
+  var x = spins_dat_arrows[ind].x;
+  var y = spins_dat_arrows[ind].y;
+  var s = spins_dat_arrows[ind].state;
+
+  var E_switch = 0;
+  if (x > 0){
+    E_switch += spins_dict_arrows[x-1][y]*s;
+  }
+  if (x < N_spins_arrows-1){
+    E_switch += spins_dict_arrows[x+1][y]*s;
+  }
+  if (y > 0){
+    E_switch += spins_dict_arrows[x][y-1]*s;
+  }
+  if (y < N_spins_arrows-1){
+    E_switch += spins_dict_arrows[x][y+1]*s;
+  }
+
+
+
+  T_arrows = slider_temp_ising_arrows.value()*T_arrows;
+  T_history_arrows.push({
+      index: T_history_arrows[T_history_arrows.length - 1].index + 1,
+      x: T_history_arrows[T_history_arrows.length - 1].x + 1,
+      y: T_arrows
+    });
+
+  var p_mut = Math.exp(-E_switch/T_arrows);
+
+  if (p_mut > Math.random()){
+
+    spins_dat_arrows[ind].state = s*-1;
+    spins_dict_arrows[x][y] = spins_dat_arrows[ind].state;
+    //svg_ising_arrows.selectAll('g').selectAll('path')
+    svg_ising_arrows.selectAll('g')
+      .filter(function (d, i) {return i === ind;})
+      .selectAll('path')
+      .style("fill", function (d){ if(d.state==1){return down_col;}else{return up_col;}})
+      .each(arrow);
+
+    E_tot_arrows += E_switch;
+  }
+
+
+  E_history_arrows.push({
+      index: E_history_arrows[E_history_arrows.length - 1].index + 1,
+      x: E_history_arrows[E_history_arrows.length - 1].x + 1,
+      y: E_tot_arrows
+    });
+
+
+  //console.log(E_history_arrows);
+  plot_E_arrows.select('path').attr('d', line_E_arrows);
+
+  x_E_arrows.domain(d3.extent(E_history_arrows.map(el => el.x)));
+  svg_E_arrows.select(".x")
+    .call(xAxis_E_arrows);
+
+  y_E_arrows.domain(d3.extent(E_history_arrows.map(el => el.y)));
+  svg_E_arrows.select(".y")
+    .call(yAxis_E_arrows);
+
+  plot_T_arrows.select('path').attr('d', line_T_arrows);
+  x_T_arrows.domain(d3.extent(T_history_arrows.map(el => el.x)));
+  svg_T_arrows.select(".x")
+    .call(xAxis_T_arrows);
+
+  y_T_arrows.domain(d3.extent(T_history_arrows.map(el => el.y)));
+  svg_T_arrows.select(".y")
+    .call(yAxis_T_arrows);
+
+  text_T_arrows.text( function(d){
+    if (d.label == 'status'){
+      return ('T = ' + T_arrows.toExponential(3));
+    }
+    else{
+      return d.txt;
+    }
+  })
+
+
+  text_E_arrows.text( function(d){
+    if (d.label == 'status'){
+      return ('Total energy = ' + E_tot_arrows.toFixed(1));
+    }
+    else{
+      return d.txt;
+    }
+  })
+
+
+}
+
+
+
+function run_sim_ising_arrows(){
+
+  var delay_amount = trans_dur;
+  //var delay_amount = 3;
+  for (i=0; i<N_flips_arrows; i++){
+    //spins_dat_arrows[i].state = spins_dat_arrows[i].state*-1;
+    setTimeout(flip_state_arrows, delay_amount * i);
+    //flip_state_arrows();
+  }
+}
+
+
+function reset_sim_ising_arrows(){
+
+  T_arrows = T_init_arrows;
+
+  var spins_dat_arrows_new;
+  [spins_dat_arrows_new, spins_dict_arrows] = reset_spins_arrows();
+
+  for (j=0; j<spins_dat_arrows_new.length; j++){
+    spins_dat_arrows[j].state = spins_dat_arrows_new[j].state;
+  }
+
+  E_tot_arrows = hamiltonian();
+
+  E_history_arrows = [{
+      index: 0,
+      x: 0,
+      y: E_tot_arrows
+    }];
+
+
+  T_history_arrows = [{
+      index: 0,
+      x: 0,
+      y: T_init_arrows
+    }];
+
+  svg_ising_arrows.selectAll('g').selectAll('path')
+    .style("fill", function (d){ if(d.state==1){return down_col;}else{return up_col;}})
+    .each(arrow);
+
+    x_E_arrows.domain(d3.extent(E_history_arrows.map(el => el.x)));
+    svg_E_arrows.select(".x")
+      .call(xAxis_E_arrows);
+
+    y_E_arrows.domain(d3.extent(E_history_arrows.map(el => el.y)));
+    svg_E_arrows.select(".y")
+      .call(yAxis_E_arrows);
+
+    plot_T_arrows.select('path').attr('d', line_T_arrows);
+    x_T_arrows.domain(d3.extent(T_history_arrows.map(el => el.x)));
+    svg_T_arrows.select(".x")
+      .call(xAxis_T_arrows);
+
+    y_T_arrows.domain(d3.extent(T_history_arrows.map(el => el.y)));
+    svg_T_arrows.select(".y")
+      .call(yAxis_T_arrows);
+
+
+    plot_E_arrows.select("path")
+        .datum(E_history_arrows)
+        .attr("fill", "none")
+        .attr("stroke", "mediumseagreen")
+        .attr("stroke-linejoin", "round")
+        .attr("stroke-linecap", "round")
+        .attr("stroke-width", 2.5)
+        .attr("d", line_E_arrows);
+
+    plot_T_arrows.select("path")
+        .datum(T_history_arrows)
+        .attr("fill", "none")
+        .attr("stroke", "tomato")
+        .attr("stroke-linejoin", "round")
+        .attr("stroke-linecap", "round")
+        .attr("stroke-width", 2.5)
+        .attr("d", line_T_arrows);
+
+
+  text_T_arrows.text( function(d){
+    if (d.label == 'status'){
+      return ('T = ' + T_arrows.toExponential(3));
+    }
+    else{
+      return d.txt;
+    }
+  })
+
+
+  text_E_arrows.text( function(d){
+    if (d.label == 'status'){
+      return ('Total energy = ' + E_tot_arrows.toFixed(1));
+    }
+    else{
+      return d.txt;
+    }
+  })
+
+}
+
+
+function reset_spins_arrows(){
+
+  var spins_dat_arrows = [];
+  var spins_dict_arrows = {};
+  for (i=0; i<N_spins_arrows; i++){
+    spins_dict_arrows[i] = {};
+    for (j=0; j<N_spins_arrows; j++){
+      var exp = Math.round(20*Math.random());
+      var s = Math.pow(-1, exp);
+      spins_dat_arrows.push({
+        x : i,
+        y : j,
+        state : s
+      })
+
+      spins_dict_arrows[i][j] = s;
+
+    }
+  }
+
+  return [spins_dat_arrows, spins_dict_arrows];
+
+}
+
+
+
+</script>

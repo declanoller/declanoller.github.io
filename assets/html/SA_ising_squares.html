@@ -1,0 +1,695 @@
+<script src="https://d3js.org/d3.v5.min.js"></script>
+<script src="https://unpkg.com/d3-simple-slider"></script>
+
+<div class="uneven_columns_squares">
+
+<div class="sim_container_squares" id="ising_sim_squares">
+</div>
+
+<div class="vert_stack_squares">
+  <div class="plot_container_squares" id="plot_T_squares"></div>
+  <div class="plot_container_squares" id="plot_E_squares"></div>
+
+  <div class="slider_label_container_ising_squares">
+    <div class="slider_label_ising_squares"><p id="value_temp_ising_squares"></p></div>
+    <div class="slider_ising_squares" id="slider_temp_ising_squares"></div>
+  </div>
+
+  <div class="button_container_squares" id="buttons_row_squares">
+    <input name="RunButton"
+           type="button"
+           value="Run"
+           onclick="run_sim_ising_squares()" />
+    <input name="ResetButton"
+          type="button"
+          value="Reset"
+          onclick="reset_sim_ising_squares()" />
+  </div>
+
+</div>
+
+</div>
+
+
+<script>
+
+
+var N_flips_squares = 1000;
+var T_init_squares = 10.0;
+var T_squares = T_init_squares;
+var arrow_edge_width_squares = 0;
+var N_spins_squares = 75;
+var trans_dur = 20;
+var up_col = 'tomato';
+var down_col = 'lightblue';
+
+var spins_dat_squares = [];
+var spins_dict_squares = {};
+
+[spins_dat_squares, spins_dict_squares] = reset_spins_squares();
+
+var grid_dat = [];
+for (i=0; i<N_spins_squares; i++){
+
+  grid_dat.push([{
+    x : i,
+    y : 0
+  },{
+    x : i,
+    y : N_spins_squares-1
+  }]);
+
+  grid_dat.push([{
+    x : 0,
+    y : i
+  },{
+    x : N_spins_squares-1,
+    y : i
+  }]);
+
+}
+
+
+var E_tot_squares = hamiltonian();
+
+
+///////////////////////////////// CSS/styles
+
+
+d3.selectAll(".plot_container_squares")
+          .style('padding-top', '20px')
+          .style('vertical-align', 'top');
+
+//.style('float', 'left')
+d3.selectAll(".sim_container_squares")
+            .style('width', '55%')
+            .style('padding-top', '0px')
+            .style('padding-right', '0px%')
+            .style('padding-bottom', '0px')
+            .style('padding-left', '0px')
+            .style('display', 'inline-block');
+
+//.style('width', '100%')
+d3.selectAll(".uneven_columns_squares")
+            .style('width', '100%')
+            .style('padding-top', '0px')
+            .style('padding-right', '0px')
+            .style('padding-bottom', '0px')
+            .style('padding-left', '0px')
+            .style('text-align', 'center');
+
+//.style('float', 'right')
+
+d3.selectAll(".vert_stack_squares")
+          .style('vertical-align', 'top')
+          .style('width', '30%')
+          .style('padding-top', '0px')
+          .style('padding-right', '0px')
+          .style('padding-bottom', '0px')
+          .style('padding-left', '0px')
+          .style('margin-left', '2%')
+          .style('display', 'inline-block');
+
+d3.selectAll(".horiz_container");
+          //.style('text-align', 'center');
+
+d3.selectAll(".slider_label_ising_squares")
+            .style('margin-top', '20px');
+          //.style('text-align', 'center');
+
+d3.selectAll(".slider_label_ising_squares_container_ising")
+          .style('padding-top', '60px');
+          //.style('text-align', 'center');
+
+d3.selectAll(".slider_ising_squares");
+          //.style('text-align', 'center');
+
+
+
+d3.selectAll(".button_container_squares")
+          .style('display', 'inline-block')
+          .style('padding-top', '0px')
+          .style('padding-bottom', '0px')
+          .style('padding-left', '1%')
+          .style('padding-right', '1%');
+
+d3.select('p#value_temp_ising_squares').style('margin', '0px');
+
+/////////////////////////// SVG stuff
+
+
+var sim_w_squares = Math.round(d3.select('.sim_container_squares').node().getBoundingClientRect().width);
+var svg_sim_dim_squares = {width : sim_w_squares, height : sim_w_squares};
+var sim_margin_squares = Math.round((svg_sim_dim_squares.width/(N_spins_squares-1))/2);
+
+var plot_w_squares = Math.round(d3.select('.vert_stack_squares').node().getBoundingClientRect().width);
+var plot_h_squares = Math.round(0.6*plot_w_squares);
+
+var slider_w = Math.round(0.6*plot_w_squares);
+var slider_h = Math.round(.4*slider_w);
+
+var svg_plot_dim_squares = {width : plot_w_squares, height : plot_h_squares};
+var plot_margin_squares = {top: Math.round(0.1*plot_h_squares), bottom: 40, right: 0, left: 60};
+var plot_dim = {
+  width : (svg_plot_dim_squares.width - plot_margin_squares.left - plot_margin_squares.right),
+  height : (svg_plot_dim_squares.height - plot_margin_squares.top - plot_margin_squares.bottom)
+};
+
+var svg_ising_squares = d3.select("div#ising_sim_squares")
+  .append('svg')
+  .attr('width', svg_sim_dim_squares.width)
+  .attr('height', svg_sim_dim_squares.height);
+
+var svg_E_squares = d3.select("div#plot_E_squares")
+  .append('svg')
+  .attr('width', svg_plot_dim_squares.width)
+  .attr('height', svg_plot_dim_squares.height);
+
+var svg_T_squares = d3.select("div#plot_T_squares")
+  .append('svg')
+  .attr('width', svg_plot_dim_squares.width)
+  .attr('height', svg_plot_dim_squares.height);
+
+
+//////////////////////////////// Slider stuff
+
+var temp_data = [0.6, 1.0];
+
+// Fill
+var slider_temp_ising_squares = d3
+  .sliderBottom()
+  .min(d3.min(temp_data))
+  .max(d3.max(temp_data))
+  .width(Math.round(0.8*slider_w))
+  .tickFormat(d3.format('.2'))
+  .ticks(5)
+  .default(0.95)
+  .fill(up_col)
+  .on('onchange', val => {
+    d3.select('p#value_temp_ising_squares').text("Temperature decay: " + d3.format('.4')(val)).attr("font-size", "14px");
+  });
+
+var gFill = d3
+  .select('div#slider_temp_ising_squares')
+  .append('svg')
+  .attr('width', slider_w)
+  .attr('height', slider_h)
+  .append('g')
+  .attr('transform', 'translate(' + Math.round(0.1*slider_w) + ',' + Math.round(0.2*slider_h) + ')');
+
+gFill.call(slider_temp_ising_squares);
+
+d3.select('p#value_temp_ising_squares').text("Temperature decay: " + d3.format('.4')(slider_temp_ising_squares.value())).attr("font-size", "14px");
+
+
+
+//fitness_function(circles_dat.map(el => el.y))
+var E_history_squares = [{
+    index: 0,
+    x: 0,
+    y: E_tot_squares
+  }];
+
+
+var T_history_squares = [{
+    index: 0,
+    x: 0,
+    y: T_init_squares
+  }];
+
+
+var x_ising_squares = d3.scaleLinear()
+    .domain([0, N_spins_squares - 1])
+    .range([sim_margin_squares, svg_sim_dim_squares.width - sim_margin_squares]);
+
+var y_ising_squares = d3.scaleLinear()
+    .domain([0, N_spins_squares - 1])
+    .range([sim_margin_squares, svg_sim_dim_squares.height - sim_margin_squares]);
+
+
+var x_E_squares = d3.scaleLinear()
+    .domain([0, Math.max(...E_history_squares.map(el => el.x))])
+    .range([0, plot_dim.width]);
+
+var y_E_squares = d3.scaleLinear()
+    .domain(d3.extent(E_history_squares, function(d) { return d.y; }).map(el => 1.1*el))
+    .range([plot_dim.height, 0]);
+
+var x_T_squares = d3.scaleLinear()
+    .domain([0, Math.max(...T_history_squares.map(el => el.x))])
+    .range([0, plot_dim.width]);
+
+var y_T_squares = d3.scaleLinear()
+    .domain(d3.extent(T_history_squares, function(d) { return d.y; }).map(el => 1.1*el))
+    .range([plot_dim.height, 0]);
+
+
+var xAxis_E_squares = d3.axisBottom(x_E_squares),
+    yAxis_E_squares = d3.axisLeft(y_E_squares);
+
+var xAxis_T_squares = d3.axisBottom(x_T_squares),
+    yAxis_T_squares = d3.axisLeft(y_T_squares);
+
+
+var line_E_squares = d3.line()
+    .x(function(d) { return x_E_squares(d.x); })
+    .y(function(d) { return y_E_squares(d.y); });
+
+var line_T_squares = d3.line()
+    .x(function(d) { return x_T_squares(d.x); })
+    .y(function(d) { return y_T_squares(d.y); });
+
+
+
+var plot_E_squares = svg_E_squares.append("g")
+            .attr("transform", "translate(" + plot_margin_squares.left + "," + plot_margin_squares.top + ")");
+
+var plot_T_squares = svg_T_squares.append("g")
+            .attr("transform", "translate(" + plot_margin_squares.left + "," + plot_margin_squares.top + ")");
+
+
+plot_E_squares.append("path")
+    .datum(E_history_squares)
+    .attr("fill", "none")
+    .attr("stroke", "mediumseagreen")
+    .attr("stroke-linejoin", "round")
+    .attr("stroke-linecap", "round")
+    .attr("stroke-width", 2.5)
+    .attr("d", line_E_squares);
+
+plot_T_squares.append("path")
+    .datum(T_history_squares)
+    .attr("fill", "none")
+    .attr("stroke", "tomato")
+    .attr("stroke-linejoin", "round")
+    .attr("stroke-linecap", "round")
+    .attr("stroke-width", 2.5)
+    .attr("d", line_T_squares);
+
+
+
+
+var text_data_E_squares = [
+  {x: plot_dim.width/2, y: 0, label: 'status', txt: 'Total energy = ' + E_tot_squares, size: 18},
+  {x: plot_dim.width/2, y: plot_dim.height + plot_margin_squares.bottom, label: 'iter', txt: 'Iteration', size: 14},
+  {x: -0.6*plot_margin_squares.left, y: plot_dim.height/2, label: 'ylabel', txt: 'Energy', size: 14}
+];
+
+var text_data_T_squares = [
+  {x: plot_dim.width/2, y: 0, label: 'status', txt: 'T = ' + T_squares, size: 18},
+  {x: plot_dim.width/2, y: plot_dim.height + plot_margin_squares.bottom, label: 'iter', txt: 'Iteration', size: 14},
+  {x: -0.75*plot_margin_squares.left, y: plot_dim.height/2, label: 'ylabel', txt: 'Temperature', size: 14}
+];
+
+
+var text_E_squares = plot_E_squares.selectAll("text")
+                        .data(text_data_E_squares)
+                        .enter()
+                        .append("text");
+
+var text_T_squares = plot_T_squares.selectAll("text")
+                        .data(text_data_T_squares)
+                        .enter()
+                        .append("text");
+
+//Add SVG Text Element Attributes
+var text_labels_E_squares = text_E_squares
+                .attr("transform", function (d) {
+                      if (d.label=='ylabel'){
+                        return "translate(" + d.x + "," + d.y + ") rotate(-90)";
+                      }
+                      else{
+                        return "translate(" + d.x + "," + d.y + ") rotate(0)";
+                      }})
+                .text( function (d) {return d.txt;})
+                .attr("font-family", "sans-serif")
+                .attr("font-size", d=> d.size + "px")
+                .attr("text-anchor", "middle")
+                .attr("fill", "black");
+
+//Add SVG Text Tlement Attributes
+var text_labels_T_squares = text_T_squares
+                .attr("transform", function (d) {
+                      if (d.label=='ylabel'){
+                        return "translate(" + d.x + "," + d.y + ") rotate(-90)";
+                      }
+                      else{
+                        return "translate(" + d.x + "," + d.y + ") rotate(0)";
+                      }})
+                .text( function (d) {return d.txt;})
+                .attr("font-family", "sans-serif")
+                .attr("font-size", d=> d.size + "px")
+                .attr("text-anchor", "middle")
+                .attr("fill", "black");
+
+
+plot_E_squares.append('g')
+    .attr('class', 'x axis')
+    .attr('transform', 'translate(0,' + plot_dim.height + ')')
+    .call(xAxis_E_squares);
+
+plot_E_squares.append('g')
+    .attr('class', 'y axis')
+    .call(yAxis_E_squares);
+
+
+plot_T_squares.append('g')
+    .attr('class', 'x axis')
+    .attr('transform', 'translate(0,' + plot_dim.height + ')')
+    .call(xAxis_T_squares);
+
+plot_T_squares.append('g')
+    .attr('class', 'y axis')
+    .call(yAxis_T_squares);
+
+
+
+function xy_to_square(d){
+  /*
+  if (d.state==1){
+    var a = [[ 0.25 ,  0.075],
+       [ 0.   ,  0.375],
+       [-0.25 ,  0.075],
+       [-0.1  ,  0.075],
+       [-0.1  , -0.375],
+       [ 0.1  , -0.375],
+       [ 0.1  ,  0.075],
+       [ 0.25 ,  0.075]];
+  }
+  else{
+    var a = [[-0.25 , -0.075],
+       [ 0.   , -0.375],
+       [ 0.25 , -0.075],
+       [ 0.1  , -0.075],
+       [ 0.1  ,  0.375],
+       [-0.1  ,  0.375],
+       [-0.1  , -0.075],
+       [-0.25 , -0.075]];
+  }*/
+  var box_quarter = 0.48;
+  var a = [[-box_quarter , -box_quarter],
+  [-box_quarter , box_quarter],
+  [box_quarter , box_quarter],
+  [box_quarter , -box_quarter],
+  [-box_quarter , -box_quarter]];
+
+  //return a.map(el => [x_ising_squares(el[0]), y_ising_squares(el[1])]);
+  return a.map(el => [x_ising_squares(el[0] + d.x), y_ising_squares(el[1] + d.y)]);
+}
+
+
+function square(d, i) {
+
+    var a = xy_to_square(d);
+    d3.select(this)
+        .transition()
+        .duration(trans_dur)
+        .attr('d', `M ${[...a]} Z`)
+}
+
+
+/*
+var line_grid = d3.line()
+    .x(function(d) { return x_ising_squares(d.x); })
+    .y(function(d) { return y_ising_squares(d.y); });
+
+//For drawing a grid, for graphics aligning purposes
+var svg_grid = svg_ising_squares
+            .selectAll('grid')
+            .data(grid_dat)
+            .enter()
+            .append('path')
+            .attr("stroke", "black")
+            .attr('d', line_grid)
+*/
+
+svg_ising_squares.selectAll('g')
+        .data(spins_dat_squares)
+        .enter()
+        .append('g')
+        .attr("stroke-width", arrow_edge_width_squares)
+        .attr("stroke", "black")
+        .attr("fill", function (d){ if(d.state==1){return down_col;}else{return up_col;}})
+        .append('path')
+        .each(square);
+
+var spins_sel = svg_ising_squares.selectAll('g').selectAll('path');
+
+reset_sim_ising_squares();
+
+
+function hamiltonian(){
+
+  var E = 0;
+
+  for (var ind=0; ind<spins_dat_squares.length; ind++){
+
+    var x = spins_dat_squares[ind].x;
+    var y = spins_dat_squares[ind].y;
+    var s = spins_dat_squares[ind].state;
+
+    if (x > 0){
+      E += -spins_dict_squares[x-1][y]*s;
+    }
+    if (x < N_spins_squares-1){
+      E += -spins_dict_squares[x+1][y]*s;
+    }
+    if (y > 0){
+      E += -spins_dict_squares[x][y-1]*s;
+    }
+    if (y < N_spins_squares-1){
+      E += -spins_dict_squares[x][y+1]*s;
+    }
+
+  }
+
+  return E;
+}
+
+
+function flip_state_squares(){
+  var ind = Math.round(Math.random()*(N_spins_squares*N_spins_squares - 1));
+
+  var x = spins_dat_squares[ind].x;
+  var y = spins_dat_squares[ind].y;
+  var s = spins_dat_squares[ind].state;
+
+  var E_switch = 0;
+  if (x > 0){
+    E_switch += spins_dict_squares[x-1][y]*s;
+  }
+  if (x < N_spins_squares-1){
+    E_switch += spins_dict_squares[x+1][y]*s;
+  }
+  if (y > 0){
+    E_switch += spins_dict_squares[x][y-1]*s;
+  }
+  if (y < N_spins_squares-1){
+    E_switch += spins_dict_squares[x][y+1]*s;
+  }
+
+
+
+  T_squares = slider_temp_ising_squares.value()*T_squares;
+  T_history_squares.push({
+      index: T_history_squares[T_history_squares.length - 1].index + 1,
+      x: T_history_squares[T_history_squares.length - 1].x + 1,
+      y: T_squares
+    });
+
+  var p_mut = Math.exp(-E_switch/T_squares);
+
+  if (p_mut > Math.random()){
+
+    spins_dat_squares[ind].state = s*-1;
+    spins_dict_squares[x][y] = spins_dat_squares[ind].state;
+    //svg_ising_squares.selectAll('g').selectAll('path')
+    svg_ising_squares.selectAll('g')
+      .filter(function (d, i) {return i === ind;})
+      .selectAll('path')
+      .style("fill", function (d){ if(d.state==1){return down_col;}else{return up_col;}})
+      .each(square);
+
+    E_tot_squares += E_switch;
+  }
+
+
+  E_history_squares.push({
+      index: E_history_squares[E_history_squares.length - 1].index + 1,
+      x: E_history_squares[E_history_squares.length - 1].x + 1,
+      y: E_tot_squares
+    });
+
+
+  //console.log(E_history_squares);
+  plot_E_squares.select('path').attr('d', line_E_squares);
+
+  x_E_squares.domain(d3.extent(E_history_squares.map(el => el.x)));
+  svg_E_squares.select(".x")
+    .call(xAxis_E_squares);
+
+  y_E_squares.domain(d3.extent(E_history_squares.map(el => el.y)));
+  svg_E_squares.select(".y")
+    .call(yAxis_E_squares);
+
+  plot_T_squares.select('path').attr('d', line_T_squares);
+  x_T_squares.domain(d3.extent(T_history_squares.map(el => el.x)));
+  svg_T_squares.select(".x")
+    .call(xAxis_T_squares);
+
+  y_T_squares.domain(d3.extent(T_history_squares.map(el => el.y)));
+  svg_T_squares.select(".y")
+    .call(yAxis_T_squares);
+
+  text_T_squares.text( function(d){
+    if (d.label == 'status'){
+      return ('T = ' + T_squares.toExponential(3));
+    }
+    else{
+      return d.txt;
+    }
+  })
+
+
+  text_E_squares.text( function(d){
+    if (d.label == 'status'){
+      return ('Total energy = ' + E_tot_squares.toFixed(1));
+    }
+    else{
+      return d.txt;
+    }
+  })
+
+
+}
+
+
+
+function run_sim_ising_squares(){
+
+  var delay_amount = trans_dur;
+  //var delay_amount = 3;
+  for (i=0; i<N_flips_squares; i++){
+    //spins_dat_squares[i].state = spins_dat_squares[i].state*-1;
+    setTimeout(flip_state_squares, delay_amount * i);
+    //flip_state_squares();
+  }
+}
+
+
+function reset_sim_ising_squares(){
+
+  T_squares = T_init_squares;
+
+  var spins_dat_squares_new;
+  [spins_dat_squares_new, spins_dict_squares] = reset_spins_squares();
+
+  for (j=0; j<spins_dat_squares_new.length; j++){
+    spins_dat_squares[j].state = spins_dat_squares_new[j].state;
+  }
+
+  E_tot_squares = hamiltonian();
+
+  E_history_squares = [{
+      index: 0,
+      x: 0,
+      y: E_tot_squares
+    }];
+
+
+  T_history_squares = [{
+      index: 0,
+      x: 0,
+      y: T_init_squares
+    }];
+
+  svg_ising_squares.selectAll('g').selectAll('path')
+    .style("fill", function (d){ if(d.state==1){return down_col;}else{return up_col;}})
+    .each(square);
+
+    x_E_squares.domain(d3.extent(E_history_squares.map(el => el.x)));
+    svg_E_squares.select(".x")
+      .call(xAxis_E_squares);
+
+    y_E_squares.domain(d3.extent(E_history_squares.map(el => el.y)));
+    svg_E_squares.select(".y")
+      .call(yAxis_E_squares);
+
+    plot_T_squares.select('path').attr('d', line_T_squares);
+    x_T_squares.domain(d3.extent(T_history_squares.map(el => el.x)));
+    svg_T_squares.select(".x")
+      .call(xAxis_T_squares);
+
+    y_T_squares.domain(d3.extent(T_history_squares.map(el => el.y)));
+    svg_T_squares.select(".y")
+      .call(yAxis_T_squares);
+
+
+    plot_E_squares.select("path")
+        .datum(E_history_squares)
+        .attr("fill", "none")
+        .attr("stroke", "mediumseagreen")
+        .attr("stroke-linejoin", "round")
+        .attr("stroke-linecap", "round")
+        .attr("stroke-width", 2.5)
+        .attr("d", line_E_squares);
+
+    plot_T_squares.select("path")
+        .datum(T_history_squares)
+        .attr("fill", "none")
+        .attr("stroke", "tomato")
+        .attr("stroke-linejoin", "round")
+        .attr("stroke-linecap", "round")
+        .attr("stroke-width", 2.5)
+        .attr("d", line_T_squares);
+
+
+  text_T_squares.text( function(d){
+    if (d.label == 'status'){
+      return ('T = ' + T_squares.toExponential(3));
+    }
+    else{
+      return d.txt;
+    }
+  })
+
+
+  text_E_squares.text( function(d){
+    if (d.label == 'status'){
+      return ('Total energy = ' + E_tot_squares.toFixed(1));
+    }
+    else{
+      return d.txt;
+    }
+  })
+
+}
+
+
+function reset_spins_squares(){
+
+  var spins_dat_squares = [];
+  var spins_dict_squares = {};
+  for (i=0; i<N_spins_squares; i++){
+    spins_dict_squares[i] = {};
+    for (j=0; j<N_spins_squares; j++){
+      var exp = Math.round(20*Math.random());
+      var s = Math.pow(-1, exp);
+      spins_dat_squares.push({
+        x : i,
+        y : j,
+        state : s
+      })
+
+      spins_dict_squares[i][j] = s;
+
+    }
+  }
+
+  return [spins_dat_squares, spins_dict_squares];
+
+}
+
+
+
+</script>
