@@ -45,6 +45,6 @@ Here's what a wall produced by my code looks like:
 
 ![](/assets/images/SL_wall_example.png)
 
-I wanted to create something people could mess around with, [so I made a full screen version with d3.js](https://www.declanoller.com/wp-content/uploads/2019/06/two_part_combos_fullscreen.html). In it, you can adjust the number of squares across, and save the image if you want to use it as a desktop background!
+I wanted to create something people could mess around with, [so I made a full screen version with d3.js]({{ site.baseurl }}/assets/html/two_part_combos_fullscreen.html). In it, you can adjust the number of squares across, and save the image if you want to use it as a desktop background!
 
 That's all for now. I'm sure I'll be doing more Sol LeWitt recreations or inspired things, because I'm a big fan. See ya next time!
