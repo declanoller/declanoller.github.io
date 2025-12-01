@@ -139,6 +139,23 @@ Here's a little javascript sim using "raw" and "endraw" jekyll tags (works):
 
 
 
+# Movies and gifs
+
+
+## A webm file
+
+![](/assets/images/pen.webm)
+
+
+## An mp4 file
+
+Does it loop automatically?
+
+![](/assets/images/eval_episode_8_score=1_2025-11-29_15-38-40.mp4)
+
+
+---
+
 
 
 
