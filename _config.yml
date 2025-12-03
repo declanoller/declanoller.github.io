@@ -6,7 +6,7 @@ collections:
     output: true
   q_and_a:
     output: true       # generate HTML pages for each item
-#    permalink: /q-and-a/:name/
+    permalink: /q-and-a/:name/
 
 plugins:
   - jekyll-seo-tag
@@ -16,6 +16,13 @@ defaults:
   - scope: {path: ""}                  # whole site
     values:
       image: /favicon.png
+  - scope:
+      path: ""            # any path
+      type: q_and_a       # only documents in the q_and_a collection
+    values:
+      image: /assets/thumbnails/thinking_monkey.png
+      thumbnail: /assets/thumbnails/thinking_monkey.png
+
 
 markdown: kramdown
 
