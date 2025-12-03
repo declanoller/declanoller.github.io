@@ -1,5 +1,5 @@
 ---
-layout: q_and_a
+layout: base
 title: "Q & A"
 ---
 
