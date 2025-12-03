@@ -1,8 +1,10 @@
 ---
+title: "Q & A"
 layout: base
+nav_exclude: false
 ---
 
-updated 7
+updated 8
 
 ---
 
