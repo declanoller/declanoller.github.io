@@ -23,7 +23,7 @@ A few questions I want to answer are:
 - What do the eigenfunctions of it represent, intuitively?
 
 
-# What's the Laplace operator?
+## What's the Laplace operator?
 
 Bluntly: the divergence of the gradient of a scalar function $f$: 
 
@@ -43,7 +43,7 @@ $$
 
 So to first order, we can think of it as the curvature.
 
-## Diffusion, harmonic functions, and equilibrium
+### Diffusion, harmonic functions, and equilibrium
 
 If $u$ represents a position-dependent density and it's at equilibrium, and there's no source or sink anywhere, then if we have a region $V$ with boundary $\partial V = S$, then the net flux through the boundary is zero:
 
@@ -65,12 +65,12 @@ $$
 
 Solutions to $\Delta f = 0$ are called "Harmonic" functions. So that's kind of one meaning of a harmonic function: it's a function that's at equilibrium everywhere. Note: *everywhere*. You could have the Laplacian of a function be zero at some location, but be nonzero elsewhere.
 
-## The vector Laplacian
+### The vector Laplacian
 
 Above (and usually) we consider a scalar function $f$. But, since you can take the gradient $\nabla A$ of a vector field $A$, you can also take the div of that, or the Laplacian $\Delta A$. In Cartesian coords, this ends up just applying $\Delta$ to each of the components of $A$ separately. I'll mostly ignore the vector Laplacian.
 
 
-# What does the Laplacian *do* to a function?
+## What does the Laplacian *do* to a function?
 
 At first glance, this is a bit underwhelming, IMO. Given some operator, I'm used to applying it to a function, and then it transforms/updates the function into another function that's the same type as the original.
 
@@ -107,7 +107,7 @@ $$
 which is instead tying it to oscillatory/wave behavior. Since the heat diffusion version is so helpful for gaining intuition, I'll mostly use it for examples here, but do some other versions in the future.
 
 
-# What's the graph Laplacian?
+## What's the graph Laplacian?
 
 I think it makes sense to first go over the graph Laplacian (GL) before going into any more depth.
 
@@ -119,7 +119,7 @@ The "graph Laplacian" (or Laplacian matrix, or any of a million other names) is 
 
 The reason I think it makes sense to go over the GL before going into the other topics is that if we want to actually simulate/program anything (which I do, to gain intuition), I'm not sure you really *can* use the non-graph Laplacian. I know nothing so take this with a huge grain of salt, but the Laplacian is an operator on continuous functions. I guess we could do symbolic manipulation, but I think ultimately we'll probably have to sample any continuous function at some points, and once we do that, it's basically equivalent to the GL.
 
-## Notation, assumptions
+### Notation, assumptions
 
 There are a bunch of versions of the GL, depending on whether the graph is simple, whether it can have negative weights, loops, is symmetric, etc. Since it seems to be the most common, I'll look at graphs which:
 
@@ -157,7 +157,7 @@ $$
 
 Since the diagonal entries of $D$ are basically the row-sums of $A$, we get $L = D - A$.
 
-## Understanding the intuition behind $L = D - A$
+### Understanding the intuition behind $L = D - A$
 
 At first glance, the definition of the GL, $L = D - A$, seems kind of random. How is it connected to the stuff from before?
 
@@ -189,14 +189,14 @@ $$
 
 and I'd think the expectation/average would then have terms like $A_{ij} / \text{deg}(i)$, i.e., with $\text{deg}(i)$ in the denominator instead. Apparently this does exist and it's called the "random walk normalized Laplacian", $L_\text{rw} = I - D^{-1} A = D^{-1} L$, but it has some different properties. I'll hit this in the future.
 
-## Connecting the GL to the Laplacian
+### Connecting the GL to the Laplacian
 
 Allllright, with that out of the way, now we can look at some fun stuff. If we want to simulate the regular Laplacian on some region, we can basically define a graph on a finite number of points representing that region, decide how they should be connected, and then we'll have the GL for the discretized version.
 
 For example, when we simulate the Laplacian on a 1D, bounded region $[0, a]$ below, we can define the graph as a 1D "chain", where the nodes are at evenly spaced points starting at $0$ and ending at $a$, and each node is only connected to its immediate neighbors with a weight of $1$ (except for the nodes at the end of the chain; more on that below). With these weights, we get the adjacency matrix, which gives us the degree matrix and the GL.
 
 
-# What are the eigenfunctions of the Laplacian?
+## What are the eigenfunctions of the Laplacian?
 
 There are a few wrinkles here that make this tricky:
 
@@ -209,7 +209,7 @@ I mean, they're all related.
 
 So we're looking for functions $u$ that have: $\Delta u = \lambda u$ everywhere on their domain.
 
-## Unbounded domain
+### Unbounded domain
 
 The first issue is that usually when they talk about "eigenfunctions", like in functional analysis, they specifically want ones that are $L^2$, meaning square integrable over their domain, meaning:
 
@@ -223,7 +223,7 @@ Something significant here is that you might notice that those generalized ones,
 
 So for unbounded $\Omega = \mathbb R^n$, in fact, the only generalized eigenfunctions are $\cos(kx)$, $\sin(kx)$, and linear combos (including complex numbers) of them, and the only true (i.e., $L^2$) eigenfunction of them is the trivial one, zero, and I think we usually don't count that.
 
-## Bounded domain
+### Bounded domain
 
 On the other hand, if the region $\Omega$ is bounded, it's very different. First we have to establish something that tripped me up for a bit, about boundary conditions. In quantum mechanics we have the classic example of an infinite square well (ISW) defined on $[0, a]$. I want to look at the analogous case for heat diffusion, where instead of the function representing complex probability amplitudes, it just represents the temperature. 
 
@@ -282,7 +282,7 @@ So there are a few key takeaways here:
 - One more thing is that we know the eigenvalues are all non-negative, with the equilibrium one being zero (with constant eigenfunction), and all the others being positive. So if we consider an arbitrary combination of them, $f(t) = \sum_k c_k \exp[-\lambda_k t] v_k$, determined by the $c_k$ coefficients, then we can see that the equilibrium component will stay at the same magnitude (since it's just $\exp[0]$), and all other components will decay. And, the higher the eigenvalue, the faster the decay. Those higher eigenvalues have eigenvectors that are more "oscillatory" in space. Since they're more oscillatory, you can imagine that they have bigger temperature deltas in a given width, which would drive the component towards zero more quickly.
 
 
-## The Laplacian vs the diffusion operator
+### The Laplacian vs the diffusion operator
 
 I'm kind of repeating myself now, but I'll be really explicit. We were talking about the eigenfunctions/eigenvalues of the Laplacian above, but there's a bit of a disconnect. Usually with linear operators, we're used to their higher magnitude eigenvalues being more important and their eigenfunctions being more "dominant" with repeated application of the operator. But above, we saw that the eigenfunction components with higher value eigenvalues actually diffuse *faster*, and the lowest eigenvalue, $\lambda_0 = 0$, is the one that remains. What's going on?
 
@@ -312,12 +312,12 @@ This is the diffusion operator for the GL. It has all the same similarities to t
 
 
 
-# Experiments
+## Experiments
 
 For all of these, I'll look at the effect of using the GL for diffusion, on a 1D bounded region, $[0, 1]$. So we'll have $N$ nodes in the graph. I think because we have an unweighted graph and all we care about are the neighbors, it can be a simple graph, the adj matrix just has zeros and ones, and the degree matrix is just a count of the neighbors.
 
 
-## Finding the eigenfunctions, power iteration
+### Finding the eigenfunctions, power iteration
 
 We have the analytic form of the eigenfunctions above. But what if we didn't?
 
@@ -330,7 +330,7 @@ Now I can apply it to the graph Laplacian to find the eigenfunctions for this 1D
 and look at that, it works! In the left column, the true eigenfunctions are the black dots, and the colors are the ones found by this PI process. In the right column is a plot of the error from the ideal dot product, for each eigenfunction.
 
 
-## Diffusing the eigenfunctions
+### Diffusing the eigenfunctions
 
 Above I mentioned that under diffusion, the eigenfunctions will keep their shape, and just decrease in magnitude. Here we can watch that happen:
 

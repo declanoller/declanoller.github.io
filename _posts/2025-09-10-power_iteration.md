@@ -9,7 +9,7 @@ title: 🎵 I've got the power (iteration) 🎵
 
 A fun little aside that I stumbled into while doing another post. This ended up being interesting, and one of those things I only learned from implementing it. I made two stupid mistakes, one a little dumb, and one a lot of dumb. Yeeehaw!
 
-# Motivation
+## Motivation
 
 Let's say we have a nice linear transformation represented by a square matrix $A$. Generally, a matrix is fully characterized by its eigenvalues, their multiplicities, and its eigenvectors. Many many things in science and math involving a matrix (i.e., nearly everything) become waaaay easier if you have this info about your matrix.
 
@@ -19,7 +19,7 @@ But what if our matrix is really really big, or we only need the first eigenvect
 
 [Power iteration](https://en.wikipedia.org/wiki/Power_iteration) (PI) is one method for doing this. PI always lets you find the eigenvector with the largest eigenvalue. But in the case where the matrix is symmetric, the eigenvectors are all orthogonal, and therefore we can find all of them.
 
-# Main idea
+## Main idea
 
  The idea is that if we take any old vector $f$, it can be expressed as a linear combo of the eigenvectors $v_i$, and applying $A$ to $f$ acts on each of the eigenvectors $v_i$ separately, effectively multiplying them by their eigenvalue $\lambda_i$:
 
@@ -106,13 +106,13 @@ If I instead make it subtract the projection each iteration, we get:
 Alrighty! Good to know. 
 
 
-# Some patterns and trends
+## Some patterns and trends
 
 Here are a few things I noticed while poking around! I mainly want to look at the behavior and properties of PI for single $n \times n$ matrices, and then look at the scaling and trends across different sizes.
 
 I'm making an $n \times n$ symmetric matrix $A$ by sampling the elements, and then making it symmetric by setting $A \leftarrow (A + A^\intercal) / 2$.
 
-## Uniformly distributed elements
+### Uniformly distributed elements
 
 First, here's an example plot, for an $n = 5$ matrix:
 
@@ -155,7 +155,7 @@ There are two important parts here: 1) this first eigenvalue scales with $n$, an
 
 Ok, but what about the other eigenvalues? Let's look at them next.
 
-## Normally distributed
+### Normally distributed
 
 Allllright, now let's just use `np.random.normal` to generate the matrix. We could just use `np.random.uniform(low=-1, high=1.0)` to get rid of the positive-mean aspect from above, but I originally intended to use a Gaussian and it's more typical anyway.
 
@@ -170,7 +170,7 @@ As they mention in the mathworld and [this](https://en.wikipedia.org/wiki/Gaussi
  I don't yet have a good grasp of *why* the semicircle law works, but this post is already too long so I'm not gonna dig into it today. I'd like to learn more about [Random Matrix Theory](https://en.wikipedia.org/wiki/Random_matrix) sometime. Terence Tao wrote [a book on RMT](https://terrytao.wordpress.com/books/topics-in-random-matrix-theory/), which is probably great if it's anything like his Analysis books we used in undergrad.
 
 
-## Convergence speed of 1st eigenvector
+### Convergence speed of 1st eigenvector
 
 One more little thing from the above plots: you can see in the title that I added the ratio $\vert \lambda_1 / \lambda_2 \vert$, the (abs) ratio of the first to the second eigenvalues. As they mention in the PI wiki article, this ratio determines the convergence speed (of finding the first eigenvector).
 
@@ -181,7 +181,7 @@ According to wikipedia, the convergence speed goes as $\vert \lambda_1 / \lambda
 If you look at the Gaussian one, you can see that it has $\vert \lambda_1 / \lambda_2 \vert \approx 1.06$. I ran it for 5 seeds and $n = 100$, and the steps to converge the first eigenvector were `[59, 526, 72, 389, 237]`. In contrast, the uniform one above had $\vert \lambda_1 / \lambda_2 \vert \approx 12$, which makes sense because of that huge first eigenvalue. I also ran it for the same 5 seeds, and its step to converge were: `[6, 8, 6, 6, 5]`. Way faster! I did a bit of back of the envelope math with those values, and they seem to line up.
 
 
-## Scaling with $n$
+### Scaling with $n$
 
 Here I'm looking at, for an $n \times n$  matrix as above, how long it takes to find *all* the eigenvectors. This is definitely not the way you'd want to do this, I'm just curious about it.
 
@@ -195,9 +195,9 @@ I tried a few different scales, and it looked a lot more linear on a log-log sca
 
 I think naively, it should be $O(n^3)$ in basic operations, since a single PI step needs $n^2$ for the $A x$ matrix-vector multiplication (the other parts are $O(n)$), and then there are $n$ vectors to find, so $O(n^3)$ total. And maybe it's coincidence, but the exponent in the right plots is $2.9$!
 
-# Errata
+## Errata
 
-## So I should go out and use PI to find all the eigenvectors now, right!?
+### So I should go out and use PI to find all the eigenvectors now, right!?
 
 Uhh... probably not. The [applications](https://en.wikipedia.org/wiki/Power_iteration#Applications) section on WP has some examples where it's supposedly used, like for PageRank and Twitter's algo. But my impression is that for most "real" applications, there are fancier methods, some of which they mention. I mean, PI is pretty crude, and it's really only intended to find the dominant eigenvector. I think if you want to find the others as well, you should probably be using methods for that (like the [QR algo](https://en.wikipedia.org/wiki/QR_algorithm) or [divide and conquer eigenvalue algos](https://en.wikipedia.org/wiki/Divide-and-conquer_eigenvalue_algorithm)).
 
@@ -205,7 +205,7 @@ That's aside from the actual implementation magic. I only know the teensiest bit
 
 For example, the [doc page](https://numpy.org/doc/2.3/reference/generated/numpy.linalg.eig.html) for `np.linalg.eig` mentions they use the "`_geev`" LAPACK routine, which you can see the source for [here](https://www.netlib.org/lapack/explore-html/d4/d68/group__geev_ga21075b2da67a892fe2548b5cd2705037.html#ga21075b2da67a892fe2548b5cd2705037). I'm sure it's a bit more readable if you know any Fortran, but it's still clearly doing more than you'd expect.
 
-## An actual use in the wild!
+### An actual use in the wild!
 
 That said: I've actually seen it used once in a paper!
 
