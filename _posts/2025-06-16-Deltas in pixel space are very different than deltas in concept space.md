@@ -7,13 +7,13 @@ image: /assets/thumbnails/pixel_concept_space_thumbnail.png
 title: Deltas in pixel space are very different than deltas in concept space
 ---
 
-# Our quandary 
+## Our quandary 
 
 Sometimes in RL, we want to (don't worry about why) measure the difference between a pair of states. I think it's fair to say that we have a general intuition for what makes two things different in meaningful ways for a given context, and ideally we'd like the math of our methods to match our expectations for that. 
 
 The problem is that some methods will often fail the intuition test badly, implying we need better methods. Let's see why!
 
-# Where it's all good
+## Where it's all good
 
 Call the pair of states $(s_1, s_2)$, each a vector of length $N$, and call our scalar difference (delta) between them $\Delta$.
 
@@ -34,7 +34,7 @@ $$
 $$
 and this matches our expectation: The difference between $s_1$ and $s_2$ is a lot bigger than the difference between $s_1$ and $s_3$.
 
-# Where it's not so good
+## Where it's not so good
 
 Now let's say instead of a simple gridworld, we have a house tidying robot. Its state space is raw images from its camera. For our mystery unspecified reason, we supply it with an image (the "target image") and we want it to measure how different its current camera image is from the target image in meaningful ways we care about.
 
@@ -72,7 +72,7 @@ OTOH, the bottom one is totally different -- it has a ridiculously cute dog in i
 
 And yet, with the naive delta calculation from above, we'd find that the bottom pair is supposedly less different than the top pair!
 
-## Diffs
+### Diffs
 
 To see this, let's do the following:
 
@@ -123,7 +123,7 @@ Here are the abs diff images for the extra-light and extra-dark images:
 
 You can see for both of these that although they don't have any sharp differences the way the one with Goose has (and they might even have smaller max differences), they're nearly *entirely* white or gray (meaning, larger differences), because the extra lightness or darkness has affected nearly the whole image.
 
-# Sure, but what if we try...
+## Sure, but what if we try...
 
 Hopefully the above example illustrates why the naive version sometimes fails. In this case, in terms of pixels, the meaningful difference is kind of "peakier", but the non-meaningful differences are more widespread across the image and really add up.
 
@@ -131,7 +131,7 @@ But you might say, okay, what if we just handle cases like this, by doing things
 
 These might all be good ideas for other reasons, but they're really just kicking the can down the road, and the real problem calls for something else.
 
-# "Meaningful" isn't very meaningful in a vacuum
+## "Meaningful" isn't very meaningful in a vacuum
 
 Yeah, you're *sooo* clever and probably already saw this coming two paragraphs in, but the crux here is the weasel word "meaningful" I've been using a lot. I.e., we said that this pair:
 
@@ -143,7 +143,7 @@ But what if, instead of a tidying robot, it was a smart home device that waits u
 
 Basically, "meaningful" is going to be extremely problem-specific; in some problems we're going to want it to completely ignore aspects that would be major differences in other problems. Our robot could care *only* about high level contents of the image, like whether a given book is in the image or not. So, this calls for better methods that can take these general differences into account.
 
-# Deep learning, says captain obvious
+## Deep learning, says captain obvious
 
 Basically, the *real* problem here is trying to rank differences between image pairs in terms of pixels in the first place. Whatever a "meaningful" difference means for our use-case, the point is that it's a *conceptual* difference and we'd be fools to try and do it on the pixel level.
 

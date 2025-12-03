@@ -6,7 +6,7 @@ thumbnail: /assets/thumbnails/radio_dogs_thumbnail.png
 image: /assets/thumbnails/radio_dogs_thumbnail.png
 title: "The dogtail party problem: ICA and blind source separation"
 ---
-# Background
+## Background
 
 Many of my neighbors have dogs. Sometimes, a conversation will start between them, where one dog starts barking about something, a dog in a different house responds while the first one is still barking, and then another starts, and another, and soon enough $N$ dogs are barking at the same time.
 
@@ -24,7 +24,7 @@ Poor Goose, she'd never know what the deal was with that smell. However, one day
 
 Let's see how!
 
-# Some setup and notation
+## Some setup and notation
 
 We write each source signal (one dog barking) as a random variable (RV) $s_i$, and then write all the source signals together as a random vector of original signals $s = [s_1, s_2, \dots, s_N]$. We make a few reasonable assumptions:
 
@@ -42,7 +42,7 @@ Since the source signals get mixed linearly at each receiver, if we call the squ
 
 But how will Goose and co do this? 
 
-# The high level strategy
+## The high level strategy
 
 Here's the high level idea and strategy:
 
@@ -57,7 +57,7 @@ Here's the high level idea and strategy:
 
 This problem is of course the "cocktail party problem" among a [bunch of other names](https://en.wikipedia.org/wiki/Signal_separation), and the strategy above is known as [Independent Component Analysis](https://en.wikipedia.org/wiki/Independent_component_analysis) (ICA). And I'm basically just rehashing what they explain in ["Independent Component Analysis: Algorithms and Applications"](https://www.cs.helsinki.fi/u/ahyvarin/papers/NN00new.pdf) by Hyvärinen and Oja. Despite there being a few typos, unnecessary details, and ambiguities, it's actually pretty well explained and readable. The algorithm itself is called the [FastICA](https://en.wikipedia.org/wiki/FastICA) algorithm, though there are many variants and ways to do the same thing.
 
-# Motivating non-Gaussianity
+## Motivating non-Gaussianity
 
 Here's a diagram I made of the main idea, that I found helpful:
 
@@ -78,7 +78,7 @@ y_i = z_i \cdot s = w_i \cdot x
 $$
 and we *do* have $w_i$ and $x$. So, we can choose a $w_i$ vector, combine it with the mixed signals $x$, and then look at the distribution of $y_i$ for that $w_i$. We want to find $w_i$ such that $y_i$ distribution is as NG as possible. But how?
 
-# Estimating non-Gaussianity
+## Estimating non-Gaussianity
 
 There are a bunch of ways you can do this. [Kurtosis](https://en.wikipedia.org/wiki/Kurtosis) is a measure of how "fat" or "skinny" the tails of a distribution are compared to a Gaussian, so you could do that. However, supposedly this is very sensitive to outliers so it's not preferred.
 
@@ -106,7 +106,7 @@ In the lower left plot, you can see an empirical entropy of each distribution (c
 
 Finally, in the lower right, I've calculated the negentropy using the approximation above -- you can see it *grows*, the less Gaussian they get.
 
-# Full process
+## Full process
 
 That's almost all of it, and the important part anyway. There are really two remaining parts I'm going to gloss over. 
 
@@ -116,7 +116,7 @@ As above, a given $w_i$ value gives rise to the negentropy approximation $J(w_i)
 
 The other part is that for each $w_i$, we initialize it with a random (unit norm) vector. However, if we naively just did the same thing for each $w_i$, the optimization would always converge to the same fixed point! Therefore, to make sure we get different $w_i$, in each iteration of the optimization for the current $w_j$, after doing an update, we project it onto the previous $w_i$ we've found, and subtract those projections. This ensures that only the perpendicular component remains, and it'll find the remaining different $w_j$. The result is that $W$ will be an orthogonal matrix.
 
-# Experiments
+## Experiments
 
 First, here's a simple example with two sources. We can look at some plots of the original sources, as well as the mixed signals:
 
@@ -160,7 +160,7 @@ And some decoded at different scales:
 
 Hot damn! They basically overlap so much you can tell them apart, without zooming waaay in.
 
-### Real audio sources
+#### Real audio sources
 
 Okay, enough fooling around. I promised you a dogtail party and a dogtail party you shall get. Doing it with "synthetic" signals I made myself is one thing, but does it work with real audio signals?
 
@@ -230,9 +230,9 @@ And further, I'm not sure *why* this is failing, really. The signals are as non-
 
 If I wave my hands and take a guess, my guess is that due to the voice being the same, certain important frequencies are "aligning" and making it a lot less independent for many of the samples. That said, I don't have a good answer for why that isn't shown more in the scatter plot/MI.
 
-# Discussion
+## Discussion
 
-### Why do we need this fancy method for estimating the (neg)entropy?
+#### Why do we need this fancy method for estimating the (neg)entropy?
 
 Above I showed their approximation to the negentropy $J(y)$, that they optimize to maximize NG. They say
 
@@ -245,7 +245,7 @@ However, here, the support is the scalar $y$, right? And typically the data $x$ 
 I'm probably missing something here. I guess one thing could be the update step. We'd like to take the gradient with respect to $w_i$ (as they do for the approximation), and maybe the binning of the $y_i$ samples would mess that up. You could definitely do a gradient-free CMA-ES hill climbing strategy, but gradients are really nice as the dimension (in this case, of $w_i$, i.e., the number of sources) gets higher.
 
 
-## Producing independent time series data that's also non Gaussian is actually kind of hard?
+### Producing independent time series data that's also non Gaussian is actually kind of hard?
 
 If you recall, two assumptions you have to make about the source signals are that A) they're independent, and B) they're non-Gaussian. I wanted to make some fake but plausible audio looking signals to use as the source signals, but I found that it was actually pretty hard to make some time series data that satisfy both of these! I was basically adding up a bunch of square and sine waves with frequency and amplitude modulation, plus some random noise.
 
@@ -270,7 +270,7 @@ On the flip side, here's another pair of source signals. You can see (next plot)
 ![](assets/images/source_signals_pairwise_scatter.png)
 
 
-## Brainstorming and ideas
+### Brainstorming and ideas
 
 I'm trying to get in the habit of ending these explorations with some brief brainstorming. 
 
@@ -278,7 +278,7 @@ I'm trying to get in the habit of ending these explorations with some brief brai
 
 So I want to consider two aspects: A) concrete, direct applications of the method (e.g., could you apply ICA to problem X?), and B) more thematic takeaways. So...
 
-### Direct applications
+#### Direct applications
 
 I'm really reaching here, but that's the point. So I'm searching for things where some (unknown) signals (with some constraints) get mixed in a linear (unknown) way, and I just get the results of them. I have a hammer, so let's desperately look for some nails.
 
@@ -290,7 +290,7 @@ Another one I was thinking of is the case where the scalar reward the agent rece
 
 The reason this idea doesn't seem very interesting is that usually when this is done, the algo designers give the $w_i$ as inputs to the models and also have specified the $r_j$ themselves. So I'm not sure if there's actually any need for this.
 
-### Thematic takeaways
+#### Thematic takeaways
 
 ICA feels a little like magic to me: I think if someone described the problem to me and I didn't know of the method, I might say that it's impossible. *"What do you mean, you just have the mixed signals but you don't know anything about the source signals or how they were mixed? They could be anything!"*
 

@@ -8,7 +8,7 @@ title: Dimensionality reduction by graph drawing with the Laplacian
 ---
 
 Another post on the Laplacian... but this time it's *spoooOOOOoooky!* 
-# Yesterday and today
+## Yesterday and today
 
 [Last time]({{site.baseurl}}/laplacian_quadratic_form), I talked about the quadratic form of the Laplacian. I ended up going deeper into the optimization of the eigenfunctions than I expected to because it was pretty interesting, but I didn't actually get around to applying it.
 
@@ -22,7 +22,7 @@ Today we *will* be applying it, even if it kills us. It's a sacrifice I'm willin
 
 [(recommended listening while reading this post)](https://www.youtube.com/watch?v=IOsCBMOVZuM)
 
-# Graph drawing
+## Graph drawing
 
 As we saw last time, the quadratic form for the Laplacian $L$ and function $f$ is
 
@@ -85,15 +85,15 @@ I'm mostly following ["On spectral graph drawing"](https://www.mathe2.uni-bayreu
 Let's get our hands dirty and see what it looks like!
 
 
-# Drawing some graphs
+## Drawing some graphs
 
-## Drawing the eigenfunctions of simple graphs
+### Drawing the eigenfunctions of simple graphs
 
 To start, we'll just look at what happens when we take some simple graphs and consider doing GD with them. To do this, we basically have an adjacency matrix $A$ that defines the connections between nodes in the graph, and that gives us the Laplacian matrix $L$.
 
 Last time, I was looking at methods to solve for the eigenfunctions $v_k$ given $L$. Ain't nobody got time for that! This time, I'm just going to slam $L$ with `np.linalg.eigh()` to get them, unless I can't for some reason (that's called "foreshadowing"!).
 
-### A 1D chain
+#### A 1D chain
 
 This is the same graph we've been looking at in the previous posts: $n$ nodes, each only connected to its two immediate neighbors (the two nodes at the end of the chain only have one neighbor each). The eigenfunctions (after the constant one) are the simple sinusoidal functions we've seen so many times before:
 
@@ -112,7 +112,7 @@ Anyway, it's more fun to plot the non-constant eigenfunctions against each other
 You can see that their 2D representations are pretty much a subset of some of the [Lissajous curves](https://en.wikipedia.org/wiki/Lissajous_curve), since they're both just sines plotted against each other.
 
 
-### A flat 2D manifold
+#### A flat 2D manifold
 
 Now let's look at the eigenfunctions and graph drawing of the graph for a flat, 2D manifold. What I've done here is create a graph that just has a rectangular grid of nodes, spaced equidistant, and connected each to its neighbors, like so:
 
@@ -157,7 +157,7 @@ I skipped some of them because they have redundant shapes. For example, compare 
 At first glance, they're exactly the same shape, but looking more closely, you can see that they're colored differently -- in $(1, 3)$, the blue edge is along the right side in 2D, while in $(3, 4)$, it's along the top arc. And they *are* different embeddings! You can see the total energy in the axis title for each, and it's higher for $(3, 4)$.
 
 
-# Dimensionality reduction with graph drawing
+## Dimensionality reduction with graph drawing
 
 In the above, I was taking the eigenfunctions for a couple of very simple graphs (a 1D line and 2D plane), and drawing those graphs in 2D using pairs of their eigenfunctions. That gives helpful intuition, but isn't really useful for anything. The real utility of graph drawing is in figuring out the eigenfunctions of high dimensional data, and then doing graph drawing to embed the graph into a lower dimension.
 
@@ -224,7 +224,7 @@ But because of these extra connections, it's an entirely different topology and 
 You can see that the edge of the rectangle farthest from us has the value for most of the eigenfunctions, which makes sense because it's effectively the same point, but we see similar patterns along the "bottom" of the half sphere (i.e., the edge closest to us).
 
 
-# The big boys: plots from Koren
+## The big boys: plots from Koren
 
 Alright, so the ones above give the basic idea. But they weren't very impressive: I was using $\approx 1000$ points, and they only had about 4x as many edges. They were pretty sparse and obviously two dimensional.
 
@@ -260,10 +260,10 @@ It... has some of the features there, but clearly something is missing. It was c
 
 
 
-# Yadda yadda
+## Yadda yadda
 
 
-## Graph drawing only needs "local" info?
+### Graph drawing only needs "local" info?
 
 One thing I noticed here is that it in contrast to MDS and Isomap, this method of dimensionality reduction only needs "local" info about connections. I.e., both of those methods need a $D^2$ matrix of the squared distances *between every single pair of nodes*. Isomap uses MDS, but it basically constructs that matrix in a less naive way. However, that construction is pretty expensive and somewhat error prone.
 
@@ -273,7 +273,7 @@ Not needing to figure out that global info seems like a huge advantage, but mayb
 
 
 
-## Damn, link rot is real
+### Damn, link rot is real
 
 Just as an aside, I was trying to find the actual data for the graphs in the Koren paper and it led me on somewhat of a wild goose chase. His other paper, "ACE: A Fast Multiscale Eigenvectors Computation for Drawing Huge Graphs", also uses these graphs, with a few references:
 

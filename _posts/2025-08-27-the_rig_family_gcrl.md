@@ -9,29 +9,29 @@ title: Meet the RIGs! An overview of the RIG family of GCRL algorithms
 
 In a few recent posts, I discussed the [background]({{ site.baseurl }}/2025-05-28-Goal_conditioned_RL_background_and_overview), [motivations]({{ site.baseurl }}/GCRL_motivations), and [some details]({{ site.baseurl }}/GCRL_extras) about Goal Conditioned Reinforcement Learning (GCRL). Today, I'm looking at a specific family of GCRL algorithms that I think are pretty cool. There are a bunch of them, and I would've found it useful if I could've read an overview like this when I was digging into them, so hopefully it can help someone else.
 
-# The RIG picture
+## The RIG picture
 
 The reason I call these the "RIG family" is that the first paper's acronym is "RIG", and the following papers all basically do variations and improvements on the same core idea, namely, to embed high dimensional (usually image-space) observations into a lower dimensional latent space, and then generate goal states in that latent space. In my opinion, there are two main motivations for this: to help with either/both 1) learning a GC policy (GCP) and 2) planning.
 
 
-## Learning motivation
+### Learning motivation
 
 The learning motivation can be further broken down into two main parts, below.
 
-### Generating "practice" goals
+#### Generating "practice" goals
 
 Since these are all GCRL methods, a big part of that is training the models to, you know, achieve goals, and part of that is having goals to attempt. However, in real environments it's not trivial to *produce* meaningful goals. [Goal relabeling]({{ site.baseurl }}/GCRL_motivations#data-efficiency-with-relabeling) is helpful, but ultimately it'd be better if we could produce entirely new goals for the agent to try and achieve. These methods operate in the latent space, [where that task is easier]({{ site.baseurl }}/GCRL_extras#similar-states).
 
-### Making a good GCRL reward
+#### Making a good GCRL reward
 
 As I [discussed previously]({{ site.baseurl }}/GCRL_extras#gcrlilocks-and-the-three-reward-functions), it's very common in GCRL to use rewards that correspond to a (negative) distance (literal or abstract) from the current state to the goal state. However, doing this naively also won't work in real environments; briefly, [distances in the raw observation space often have no relation to their actual distance from the goal]({{ site.baseurl }}/deltas_pixel_concept_space) (e.g., if a robot's observations are images, and its goal is an image of its viewpoint while being in the living room, dimming the lights will change the image massively despite it being *at* the goal).
 
-## Planning motivation
+### Planning motivation
 
 Planning is (generally) a separate axis from RL, although it can be used to assist the RL training, and can certainly leverage the RL models. For the papers in this post, it'll usually mean the scenario in which the desired goal is distant enough from the agent's current state that we can't simply plug the goal $g$ into our GCP (e.g., $\pi(s, a, g)$) and expect it to get there. To handle this, it's common to optimize a *sequence* of *subgoals* between the current state and goal state that should be easier to go between. Like generating the practice goals above, this is much easier if the subgoals are in a [compact, structured latent space]({{ site.baseurl }}/thin_manifolds).
 
 
-# Themes and differences
+## Themes and differences
 
 These papers all work off the same core ideas, but they are different enough to put in separate papers. Distilling their thematic differences down to a short bullet list, they'd be something like:
 
@@ -46,7 +46,7 @@ These papers all work off the same core ideas, but they are different enough to 
 
 
 
-# Comments up front
+## Comments up front
 
 The publish dates for the papers aren't exact. I think I just took the ones from the arxiv pages. But they're roughly in chronological order, since they do build upon each other.
 
@@ -54,9 +54,9 @@ The authors are a bit of a rotating cast. Professor Sergey Levine is the common 
 
 I'm gonna try and keep this short. To do that, I'll discuss the initial RIG paper at some length, but for the others I'll just highlight the similarities and differences of them with respect to the ones that came before.
 
-# Let's meet them!
+## Let's meet them!
 
-## RIG (2018)
+### RIG (2018)
 
 RIG stands for "RL with imagined goals" and comes from ["Visual Reinforcement Learning with Imagined Goals"](https://arxiv.org/abs/1807.04742).
 
@@ -89,17 +89,17 @@ Here's my diagram that puts it all together for me:
 They use TD3 to learn the RL part. This choice isn't super important, which is a theme with a lot of these GCRL papers: it's more about some other scaffolding around the RL. There are some more details and thoughts, but you can read about those in the "extras" section at the bottom.
 
 
-## CC-RIG (2019)
+### CC-RIG (2019)
 
 CC-RIG stands for "Context-conditioned RIG" and comes from ["Contextual Imagined Goals for Self-Supervised Robotic Learning"](https://arxiv.org/abs/1910.11670).
 
 CC-RIG is nearly the same as RIG, but introduces conditional goal sampling, a big improvement that most of the following papers also do.
-### Similarities to previous 
+#### Similarities to previous 
 
 - Uses a (type of) VAE like RIG
 
 Everything else is pretty similar to RIG: The CC-VAE is trained before any RL part. The reward is the same latent distance one as RIG, and they use TD3 again.
-### Differences from previous
+#### Differences from previous
 
 - The VAE is a (type of) CVAE instead, so does conditional goal sampling
 
@@ -122,13 +122,13 @@ They have a diagram of the CC-VAE, but I actually found theirs a bit unclear, so
 ![CCRIG.excalidraw](assets/Excalidraw/CCRIG.excalidraw.png)
 
 
-## LEAP (2019)
+### LEAP (2019)
 
 LEAP stands for "Latent Embeddings for Abstracted Planning" and comes from ["Planning with Goal-Conditioned Policies"](https://arxiv.org/abs/1911.08453).
 
 LEAP builds off of RIG, but explores a different axis than CC-RIG, notably planning. 
 
-### Similarities to previous 
+#### Similarities to previous 
 
 Much is exactly the same as RIG:
 
@@ -136,7 +136,7 @@ Much is exactly the same as RIG:
 - It uses the same dense "latent distance from goal" reward as RIG
 - It trains a GCP and GCVF on this reward, like RIG
 
-### Differences from previous
+#### Differences from previous
 
 - Generates subgoal sequences rather than just single goals
 
@@ -162,18 +162,18 @@ $$
 So, if we can find a subgoals sequence $g_{1:K}$ that minimizes (the norm of) this vector, each segment should be doable by the GCP, but only "aiming for" the current next subgoal. To optimize the feasibility vector, they just use CEM in the latent space.
 
 
-## HVF (2019)
+### HVF (2019)
 
 HVF stands for "Hierarchical Visual Foresight" and comes from ["Hierarchical Foresight: Self-Supervised Learning of Long-Horizon Tasks via Visual Subgoal Generation"](https://arxiv.org/abs/1909.05829).
 
 This one is an odd bird compared to the others: it's not even doing any RL! However, it's using a bunch of the same elements, and it's a good comparison point to see what the RL actually adds.
 
-### Similarities to previous 
+#### Similarities to previous 
 
 - Conditional goal sampling, very similar to CC-RIG
 - It comes up with subgoal sequences, optimizing them with CEM, like LEAP
 
-### Differences from previous
+#### Differences from previous
 
 - No RL, just online optimization!
 - Trains a forward dynamics model
@@ -182,15 +182,15 @@ However, that's where the similarities end. As I mentioned, it doesn't do RL at 
 
 ![Drawing 2025-08-28 15.06.02.excalidraw](assets/Excalidraw/Drawing%202025-08-28%2015.06.02.excalidraw.png)
 
-## VAL (2021)
+### VAL (2021)
 
 VAL stands for "visuomotor affordance learning" and comes from ["What Can I Do Here? Learning New Skills by Imagining Visual Affordances"](https://arxiv.org/abs/2106.00671).
 
-### Similarities to previous 
+#### Similarities to previous 
 
 - Trains an unconditional VAE like RIG
 - Trains a conditional goal sampler like CC-RIG
-### Differences from previous
+#### Differences from previous
 
 - They do some offline pretraining
 - The VAE is a VQ-VAE
@@ -204,11 +204,11 @@ Why might this be better? In CC-RIG, even though it's good that goal sampling is
 
 ![VAL.excalidraw](assets/Excalidraw/VAL.excalidraw.png)
 
-## PTP (2022)
+### PTP (2022)
 
 PTP stands for "Planning to Practice" and comes from ["Planning to Practice: Efficient Online Fine-Tuning by Composing Goals in Latent Space"](https://arxiv.org/abs/2205.08129).
 
-### Similarities to previous 
+#### Similarities to previous 
 
 PTP and the following are where they really start doing a "kitchen sink" approach and combining a bunch of the elements from previous ones. It's kind of a hybrid between LEAP and HVF.
 
@@ -217,7 +217,7 @@ PTP and the following are where they really start doing a "kitchen sink" approac
 - Uses the GCVF to score the feasibility of subgoal sequences, like LEAP
 - Does offline pretraining, like VAL (though uses IQL rather than AWAC)
 
-### Differences from previous
+#### Differences from previous
 
 - Recursive planning procedure
 
@@ -227,11 +227,11 @@ In the recursive planning idea, they call the planning subprocess $\text{Plan}(s
 
 ![Drawing 2025-08-28 15.04.28.excalidraw](assets/Excalidraw/Drawing%202025-08-28%2015.04.28.excalidraw.png)
 
-## FLAP (2022)
+### FLAP (2022)
 
 FLAP stands for "Fine-Tuning with Lossy Affordance Planner" and comes from ["Generalization with Lossy Affordances: Leveraging Broad Offline Data for Learning Visuomotor Tasks"](https://arxiv.org/abs/2210.06601).
 
-### Similarities to previous
+#### Similarities to previous
 
 FLAP follows up on PTP's "kitchen sink" approach, even more so.
 
@@ -240,7 +240,7 @@ FLAP follows up on PTP's "kitchen sink" approach, even more so.
 - Uses the GCVF to score subgoal sequences (optimizing with MPPI), like LEAP, PTP (but, see below)
 
 
-### Differences from previous
+#### Differences from previous
 
 - The latent embedding simply comes from the offline RL training
 - The affordance model is set up like a CVAE, rather than like the pixelCNN that VAL did
@@ -264,9 +264,9 @@ At first glance, this sure looks a lot like [CC-RIG (2019)](#cc-rig-2019). Howev
 
 In FLAP, the AM CVAE doesn't create the latent space of the states at all, since that's already been created by $\phi$. Instead, the *CVAE's latent space* is the variable $u$, which corresponds to a transition from $z$ to $z'$. So it's basically doing $(z, z') \rightarrow (z, u) \rightarrow z'$ in a way that later lets us sample from $p(z' \mid z)$.
 
-# Wrapping it up
+## Wrapping it up
 
-## Back to themes
+### Back to themes
 
 At the beginning I wrote that these papers basically explore four different "axes" of themes:
 
@@ -280,7 +280,7 @@ Now having gone over them above, we can draw out a Venn diagram type display of 
 ![Drawing 2025-06-20 14.33.18.excalidraw](assets/Excalidraw/Drawing%202025-06-20%2014.33.18.excalidraw.png)
 
 
-## Real robots is really impressive
+### Real robots is really impressive
 
 If you're not in the field, or you're in the field but mostly do stuff on the computer, you might not know how big a deal it is to do stuff with *real robots*. The applications of RL are mostly "computational" at this point, with people applying it to areas like [board games](https://www.nature.com/articles/nature16961), [video games](https://www.nature.com/articles/s41586-021-04357-7) (😉), LLMs, but it's not yet widely applied to physical things. I'm sure that's partly because it's just generally less common to do any sort of physical experimentation, but RL is particularly weak in this area because it tends to be A) very "brittle", and B) very data hungry, both of which make application to robotics really hard. That is, RL often doesn't work well when it encounters the unexpected, and robotics is chock full of that (oh, the power cable is rubbing slightly more today, I guess I'll die). In contrast, even really complex board games tend to be constrained to "behave" well. And (unless you're going to do sim to real), collecting data with real robots is slow and expensive.
 
@@ -289,7 +289,7 @@ All this is to say that it's really impressive! I think I recall hearing Sergey 
 The extent of my "robotics" experience is basically the dinky [puckworld robot]({{site.baseurl}}/2019-03-27-training-a-real-robot-to-play-puckworld-with-reinforcement-learning) I made and trained in my basement, but it did leave a lasting impression on me. The difference between how long the "in simulation" part took to do (pretty quick) vs how long the real robot (weeks) took to get working still shook me. I was just learning about RL at the time and clearly (if you see the post) I was dealing with a bunch of dumb practical problems that actual roboticists wouldn't get stuck on, but I think the specific problems change but the theme remains the same.
 
 
-## Extra thoughts on a few of them
+### Extra thoughts on a few of them
 
 
 - RIG:
@@ -302,7 +302,7 @@ The extent of my "robotics" experience is basically the dinky [puckworld robot](
 	- "Kitchen sink" approaches can often feel like they're just throwing a lot of different stuff at the wall and seeing what sticks. But, it does feel like at this point they had actually refined the ideas over the course of the previous papers and getting a good sense of what worked and what didn't.
  
 
-## Other big "families"
+### Other big "families"
 
 This is a big family of GCRL methods I've read about, but there are some others that offer different interesting directions. [Unsupervised Skill Discovery]({{site.baseurl}}/GCRL_extras#usd) isn't *exactly* doing what I'd call GCRL, but it rhymes enough that I think it's worth going into.
 

@@ -11,7 +11,7 @@ title: GCRL - extras
 
 Today the focus will be almost entirely on GCRL specifically, where the extra input is a goal in some form. For reasons you'll see in a minute, I'm also going to use the symbol $g$ for the goal conditioning variable rather than the $z$ we've been using so far.
 
-# It's all about the embeddings, baby
+## It's all about the embeddings, baby
 
 I have to come clean with you: I've been hiding a big aspect of many GCRL algorithms. Notably, embeddings.
 
@@ -28,7 +28,7 @@ If the raw observation is $s$, and the embedding function is $\phi$, then it's v
 Below I'll go over two big reasons embeddings are used in GCRL, but it's really the tip of the iceberg.
 
 
-## Rewards
+### Rewards
 
 Last time when I [mentioned some of the problems GCRL has]({{site.baseurl}}/GCRL_motivations#goals-have-problems-too), I gave an example of the commonly used "dense" distance from the goal reward function, $r(s, g) = -\Vert s - g \Vert^2$. There, I pointed out that it doesn't make a lot of sense if your state contains features with different units and types of measurements; some quantities just aren't comparable.
 
@@ -41,7 +41,7 @@ The problem gets even worse though when you consider having raw images as inputs
 You may have noticed that I motivated this with discussion of the reward, but didn't actually say what form the reward takes after embedding. That's in the next big section below so read on!
 
 
-## Similar states
+### Similar states
 
 The other big reason to use embeddings stems from a similar cause as the rewards issue above, but with a different effect. 
 
@@ -55,7 +55,7 @@ And like I mention at the end of that post, the common approach is to learn a tr
 
 
 
-# GCRLilocks and the three reward functions
+## GCRLilocks and the three reward functions
 
 As mentioned above, part of the motivation for using embeddings is to be able to make sensible GCRL reward functions. But what should they actually be?
 
@@ -89,13 +89,13 @@ Another obvious difference is that the VF for the 2nd will be bounded to $[0, 1]
 
 Which brings me to my last point. Without going into the whole ball of worms that is discounted vs undiscounted RL, if we take the limit as $\gamma \rightarrow 1$, the VF for the 3rd RF will approach the actual, undiscounted (negative) metric, i.e., $V(s, g) \rightarrow -d(s, g)$. This will still clearly be useful for learning. But in the same limit, the VF for the 2nd RF will approach.... $1$, at *all* states that are capable of reaching the goal. And that won't be super useful for learning a policy. I dunno, I need to think about this more, maybe I'm missing something.
 
-# The different ways $z$ gets used
+## The different ways $z$ gets used
 
 Like I [mentioned in the first post]({{site.baseurl}}/2025-05-28-Goal_conditioned_RL_background_and_overview#wait-why-is-it-called-goal-conditioned-gcrl-vs-mtrl-vs-uvfa-vs-usd-vs) in this series, these methods are all birds of a feather and kind of the same if you're willing to be reductive enough. I.e., at the end of the day we input some extra variable to our policy and it should act differently. But of course, people *are* doing slightly different things with them and give them different names based on that.
 
 The main aspects that distinguish them are what rewards get used, and as an extension, the "meaning" behind the conditioning variable (I'll just stick with $z$ here). I'll briefly go over these.
 
-### MTRL
+#### MTRL
 
 This is the most general and in some sense encompasses the others, but I'll talk about it here to mean the case where we've *designed* some reward function $r(s, a, z)$. $z$ could be a single scalar or an $N$-dimensional real vector with a reward that changes continuously with $z$, or a one-hot or multi-hot vector with totally separate reward function terms that are "activated" by $z$ being "on" on "off". I mean, this is so general that the world's your GCRL oyster.
 
@@ -104,13 +104,13 @@ A good example would be the work in the [Meta-world paper](https://arxiv.org/abs
 The main point here is that what $z$ "represents" is just kind of a general control knob, and there's no inherent meaning besides what you've designed in.
 
 
-### GCRL
+#### GCRL
 
 This is the more specific case I've mostly been talking about, where $z$ corresponds to a *goal state*, whether it's a literal state or a latent state (I'm distinguishing between those here, because a latent state almost certainly corresponds to more than one literal state in most practical cases). So although we have choice in how we want to represent the state for the models, GCRL is somewhat constrained in what the conditioning variable *means*.
 
 Similarly, although you of course can do whatever the hell you want, in GCRL the reward functions almost always reflect some interpretation of a *distance*. A classic paper that is almost synonymous with GCRL for many is [the UVFA paper](https://proceedings.mlr.press/v37/schaul15.html) from 2015.
 
-### USD
+#### USD
 
 Unsupervised Skill Discovery (USD) is super cool, and fits into this paradigm but in a slightly different way. Most USD methods also use a conditioning variable $z$, but in contrast to the niches above, in most USD methods $z$ isn't something you get to define the meaning of (as in MTRL) or something that has an inherent meaning (as in GCRL, where it's connected to the state). It's more... *discovered*. Let me explain.
 
@@ -121,21 +121,21 @@ USD trains an agent to find those skills, without having to provide a reward sig
 Getting back to the reason I brought this up, this causes $z$ to be a bit different than the other niches. If the USD algo is successful, conditioning the policy on different $z$ values *will* give different behaviors, but you don't get to choose A) what behaviors they are, or B) which $z$ value will correspond to a given behavior. It'll just be this "soup" of behaviors corresponding to different $z$ values.
 
 
-# Why train one model instead of several?
+## Why train one model instead of several?
 
 I think it's always good to ask the "why don't you just do X" question. Not to be anti-progress or anti-trying-things, but to see what really makes some technique work well. So in this case, it's worth asking: why are we doing this all with one model? That is, why not use different NN models for different tasks (in MTRL) or skills (in USD), or maybe even goals? Let's focus on simple MTRL for now.
 
 The common MTRL case where $z$ is one-hot and corresponds to fairly different reward components seems like a scenario where this question could especially apply; if the tasks are that different, why are we trying to cram them together into one model? Why not just have $N$ models for $N$ tasks?
 
 
-### Straightforward reason: fewer models
+#### Straightforward reason: fewer models
 
 The most straightforward reason is just that if we can avoid it, we'd rather just have one model than $N$ of the same size, for any number of reasons (memory, for example). And, if $N$ is large, it'll actually be infeasible to have $N$ models.
 
 But this only partially answers it: first, in some cases, people *aren't* actually doing such a large number of tasks that it'd be infeasible to have a model for each. In that case, it might be simpler overall to just have $N$ models and a single-task setup. Second, it's unlikely that the multi-task models will actually be the same size as a single task one; NN capacity isn't free, and the more different the tasks are, the bigger the multi-task NN might have to be.
 
 
-### Generalization magick
+#### Generalization magick
 
 An answer you'll usually see in papers is ＧＥＮＥＲＡＬＩＺＡＴＩＯＮ. I.e., if we learned the tasks separately in different models, each model would only be trained by the experience for its corresponding task, whereas with MTRL in a single model, you'll get a magic ＧＥＮＥＲＡＬＩＺＡＴＩＯＮ multiplier where optimizing the model for one task will learn representations that are still useful for the other task.
 
@@ -147,7 +147,7 @@ To quote the [Meta-world paper](https://arxiv.org/abs/1910.10897):
 
 So basically, if the tasks are too different, it's known that it starts to hurt, but they aimed to use ones that would hopefully help.
 
-### Curse of dimensionality (also generalization)
+#### Curse of dimensionality (also generalization)
 
 Another reason also kind of relies on generalization as an argument, but in a different way. Let's assume that our MTRL $z$ variable is now composed of two concat'd one-hot vectors, $z_1$ and $z_2$, each of length $N$. For example, $z_1$ controls what room your cleaning robot will clean, and $z_2$ controls what cleaning tool it will use. So now there'd be $N^2$ unique combinations of the $(z_1, z_2)$ values. 
 

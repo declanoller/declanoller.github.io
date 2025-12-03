@@ -12,7 +12,7 @@ title: GCRL - Motivations
 In my opinion, the motivations fall into two big categories: generality, and efficiency. Both of these are big factors in the success of LLMs, and they haven't been fully leveraged in RL yet. Maybe GCRL could do that for RL!
 
 
-# Name games
+## Name games
 
 As I mentioned last time, I don't wanna focus on somewhat arbitrary names for different techniques that are all pretty similar. But unfortunately, we have to a bit today :(
 
@@ -20,7 +20,7 @@ I'll say MTRL (multi-task RL) to mean having a set of parameters $z$ that determ
 
 The motivations below do apply to both MTRL and GCRL, but for each, GCRL can benefit even moreso from them.
 
-# Generality
+## Generality
 
 The usual approach in RL is:
 
@@ -32,7 +32,7 @@ and if you're lucky, you get an agent that can solve that problem. But even if t
 
 I've already mentioned flexibility as a motivation, but there are some underappreciated aspects of it, discussed in the first section below. Then, in the next section, I talk about why dealing with specific rewards at all is a pain and could be avoided. 
 
-## MTRL: Don't solve just one problem, solve many!
+### MTRL: Don't solve just one problem, solve many!
 
 Let's say we have a stock trading robot. When investing, you (at least implicitly) choose some point on the risk-payoff tradeoff curve. In traditional single-problem RL, you'd choose that tradeoff point up front and train the agent with a reward function corresponding to it. But if you decided after training that it's too risky and you'd prefer to make a little less money on average but not have wild swings in your accounts, you're out of luck -- you have to retrain it. I'll call this the "I changed my mind about what I want" scenario.
 
@@ -49,15 +49,15 @@ The "I changed my mind about what I want" and "I don't know the exact problem" s
 	- A good analogy is me making chili:  I never look up a recipe for chili, I just know what all the ingredients are, what flavor each contributes, and (roughly) what I'd like the final product to taste like. I don't know what's the exact amount I should use of each ingredient, and if I tried making the recipe by flying blind, it'd probably taste terrible and I would've wasted all that time making it.
 
 
-### Shortcomings of pure MTRL
+#### Shortcomings of pure MTRL
 
 The previous section gives some arguments for why you might as well try to solve your problem with a range of reward functions (MTRL) rather than a single one. However, it's still a bit unsatisfying for a few reasons:
 
-#### "I didn't think of that"
+##### "I didn't think of that"
 
 You still have to think of all the problems you might want to support and design rewards for them, and if you didn't think of them, you're out of luck.
 
-#### Reward design just... sucks
+##### Reward design just... sucks
 
 Designing rewards can be a real pain. Aside from the previous point, reward hacking and unpredictable interactions between reward components are real problems in practice, and they get worse the more components you have. It'd be nice if we could somehow avoid having to design rewards.
 
@@ -71,7 +71,7 @@ This goes on for quite a while, one per task. And to be clear, those functions y
 
 This, too, continues for a while. No one wants to see how the MTRL sausage gets made.
 
-#### We don't actually care about rewards! Or, the "boss metric" 
+##### We don't actually care about rewards! Or, the "boss metric" 
 
 This is a pretty underappreciated point about RL as a practice; it definitely took a while to sink in for me!
 
@@ -81,7 +81,7 @@ I like to think of this as the "boss metric" because it's what your boss actuall
 
 The unifying theme is that if we still might forget to make some rewards, designing rewards is hard, and we don't even actually *want* rewards, then... why not sidestep them? Why not try to more directly get the behavior we want?
 
-## GCRL: if you can go anywhere, you've solved many problems
+### GCRL: if you can go anywhere, you've solved many problems
 
 That's what GCRL (in the proper definition) does: the $z$ vector is a state itself, of the same form as $s$ (that's why it's often written as $g$ or $s_g$ rather than $z$). The reward is almost always something that reflects a (negative) *distance* between $s$ and $g$, often the sparse "indicator" function $r(s, g) = \mathbb 1[s = g]$ or a dense version like $r(s, g) = -\Vert s - g \Vert^2$.
 
@@ -97,13 +97,13 @@ But as you might expect... there are never any free lunches, and this is a devil
 
 You might ask what differentiates GCRL from typical RL, then? I.e., why are we even using reward functions in RL rather than just using GCRL with a distance reward function? I'd say there are at least two big reasons.
 
-### It's just a different problem
+#### It's just a different problem
 
 The first reason is that RL is solving the problem of maximizing the average cumulative discounted reward, which is a different problem than just getting to another state as quickly as possible.
 
 As an example someone pointed out to me, sometimes we really care not just about the agent *getting* to some goal state, but also the *path* that the agent took there. If you want your yardwork robot to go to the state where there's nothing on the lawn except grass, there are many "paths" (sequences of states) it can take to get there, but it's a very important whether it annihilated your dog in the process or not. In typical RL, we'd handle this by making the pet-annihilating states have very negative rewards, and therefore any path going through these states would be undesirable for a good policy. In the version where it just cares about getting to the goal very quickly, going through fluffy might be the fastest way to get there :(
 
-### Goals have problems, too
+#### Goals have problems, too
 
 Another big reason is that in some problems, even specifying the goal state can be tricky, and the distance reward might be wonky. 
 
@@ -115,7 +115,7 @@ And, the distance reward might be wonky even if you can supply a true goal state
 
 But how should you compare two states $s_1$ and $s_2$ with different RGB and length features? There's no "natural" equivalence between a difference in an RGB value and a difference in a length, and this would force *some* equivalence between them (depending on what unit you chose for the length, for example). This is a *very* important practical detail for most GCRL methods, so I'll talk about this in the near future. 
 
-### Nevertheless
+#### Nevertheless
 
 However, neither of these broad problems should be a game ender for GCRL.
 
@@ -124,7 +124,7 @@ For the first issue, many real world problems actually *are* ones where we only 
 The second issue is less all-or-nothing, and I'll talk about some strategies to deal with it in a later post.
 
 
-# Data efficiency with relabeling
+## Data efficiency with relabeling
 
 The generality arguments above are the main motivations, but MTRL can also give some efficiency gains.
 
@@ -142,7 +142,7 @@ This is generally called "relabeling", because the transition tuple would be "la
 
 Despite that, the efficiency gains are potentially huge. The original and most famous version of this comes from the straightforwardly named paper ["Hindsight Experience Replay"](https://arxiv.org/abs/1707.01495). 
 
-## Relabeling with GCRL and sparse rewards
+### Relabeling with GCRL and sparse rewards
 
 Although you can relabel for any $z_i$ and any transition tuples you want, where it really shines is when the rewards are very sparse.
 
@@ -172,7 +172,7 @@ $$\begin{aligned}
 $$
 Which clearly produces a lot of useful training data!
 
-## Similar vibe as learning the transition function, but not quite
+### Similar vibe as learning the transition function, but not quite
 
 On the surface, some of GCRL has the same flavor as learning the transition function for model based RL; in contrast to most model-free RL algorithms, both GCRL and MBRL can (ideally) reuse data produced from some other process to learn models that can be used for general tasks.
 
@@ -181,7 +181,7 @@ However, even in their idealized forms (i.e., where we have full data coverage a
 Obviously, I'm just spitballing in very broad strokes here, and there are a million differences between MBRL and GCRL.
 
 
-# The "human view" of GCRL
+## The "human view" of GCRL
 
 Beep boop, saying "human view" makes me sound pretty robotic. This part is more of a "vibes" based argument for GCRL, but those can be useful too. Basically: it feels closer to how humans actually operate in the world. 
 

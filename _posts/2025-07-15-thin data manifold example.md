@@ -7,7 +7,7 @@ image: /assets/thumbnails/manifold_hypothesis_thumbnail.png
 title: A guessing game with thin manifolds
 ---
 
-# A simple guessing game
+## A simple guessing game
 
 Let's play a little game. I'll show you a few example pictures, and you have to give me another picture that I could've produced, i.e., drawn from the same distribution. Okay, here's your first batch:
 
@@ -27,7 +27,7 @@ How about this one?
 
 What's the point of this, anyway? Let's take a step back to motivate it.
 
-# The data manifold
+## The data manifold
 
 My true fans (hi mom) will recognize this from [my old Sol Lewitt post]({{ site.baseurl }}/2019-09-13-making-sol-lewitts-colored-bands-interactive-with-d3-js), slightly modified. I was going to come up with another example before realizing that this was actually a perfect fun example for what I want to say. 
 
@@ -68,7 +68,7 @@ This is basically just the famous "[manifold hypothesis](https://en.wikipedia.or
 But in my opinion we shouldn't even call it a "hypothesis", because it's just true, for most real datasets! For example, even for a dataset that's a *very* diverse set of images, there are tons and tons of things you just would never expect to see, both in terms of higher level content, but also pixel level features like I mentioned above (for example, having a random block of a single color in part of the image).
 
 
-# So what can we do?
+## So what can we do?
 
 There are kind of two problems if we want to be able to be able to produce samples that resemble the true distribution, that are related but not exactly the same:
 
@@ -79,7 +79,7 @@ And ultimately, these problems can both be solved with the same broad type of ap
 
 Getting a bit more general, sometimes the goal isn't to necessarily produce new samples, but to create a representation of samples where some relation holds between the representations, that doesn't hold between the raw data. However, the high level approach is the same: find a transformation $\phi(x)$ of the raw data $x$, to put it into a (usually lower dimensional) space where it has the structure that makes more sense.
 
-# Back to Mr. Lewitt
+## Back to Mr. Lewitt
 
 The Sol Lewitt game I opened with is an extreme case of the simple examples above. What I've done is made a deterministic mapping from a single parameter $t$ to *alllllll* those different images. Here are the images for some values of $t$:
 
@@ -109,7 +109,7 @@ Finally, note just how much diversity in the images got packed into the single d
 
 Still changing a ton in that tiny region.
 
-### But... the game?
+#### But... the game?
 
 This was obviously a silly example of what I wanted to illustrate (and an excuse to do it with pretty pictures), but could the approach I described above practically solve this? I.e., could we train a VAE/etc to take these $\approx 5 \times 10^5$ dimensional images and embed them into a 1-dimensional space? Even if we were given a massive dataset of them?
 

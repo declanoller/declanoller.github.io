@@ -7,7 +7,7 @@ image: /assets/thumbnails/quadratic_form_laplacian_thumbnail.png
 title: The quadratic form of the graph Laplacian and finding eigenfunctions with gradient descent
 ---
 
-# Last time
+## Last time
 
 Last time, [when I reviewed some basics of the Laplacian]({{site.baseurl}}/laplacian_basics_and_diffusion) and did a few little experiments with it, I mostly focused on it through the lens of diffusion, since that's a common use case for it, and it's pretty helpful for gaining intuition.
 
@@ -17,7 +17,7 @@ Today I'm gonna look at it from a different viewpoint, one that's closer to the 
 
 
 
-# The quadratic form and spring energy
+## The quadratic form and spring energy
 
 A quick refresher on the basics of the (graph) Laplacian:
 
@@ -165,7 +165,7 @@ This might seem like it'd be really undesirable in terms of energy, but keep in 
 Above I said that we can imagine finding each next eigenfunction by requiring: "while being orthogonal to all the previous node arrangements, find an arrangement of the nodes that gives the lowest energy". I actually got a lot of intuition by doing exactly this, which is what I do below!
 
 
-# Finding eigenfunctions with gradient descent
+## Finding eigenfunctions with gradient descent
 
 If the eigenfunctions minimize the energy while being orthogonal to them, we should be able to start from any function and find them via gradient descent. 
 
@@ -183,7 +183,7 @@ I actually did two versions of this, which I'm calling "sequential" vs "simultan
 
 The difference between them actually turned out to be very interesting and I definitely learned some practical things, so let's look at them... sequentially.
 
-## Sequential optimization
+### Sequential optimization
 
 For sequential, the previously found eigenfunctions are frozen, and only the current function is being updated. The previously found ones *are* passed in for the orthogonality constraint in the objective, but they're constant.
 
@@ -202,7 +202,7 @@ Not much more to say there.
 
 
 
-## Simultaneous
+### Simultaneous
 
 The sequential method worked easily, but it feels a bit like cheating; for most applications it'd be ideal to find them all at the same time. 
 
@@ -214,7 +214,7 @@ $$
 
 Note that because we're finding all the eigenfunctions at the same time, there are no previous eigenfunctions to be orthogonal to; they all have to learn to be orthogonal to each other at the same time, so the $V^\intercal f$ term becomes $F^\intercal F$. As before, after every gradient step, I normalized each of the columns of $F$ separately.
 
-### The problem
+#### The problem
 
 Here's where I had a good learn! I ran it, saw the loss dropping, but the plots like this:
 
@@ -274,7 +274,7 @@ Super interesting IMO, and lots to think about. A good lesson in there: I spent 
 
 Anyway, how do we fix it? There are two solutions, one kind of cosmetic and one actually solving the problem.
 
-### Fix number one: cosmetic
+#### Fix number one: cosmetic
 
 The "cosmetic" one is simplest, and is just a fix we can do at the end. If we find a solution $F$ that's a rotation of the $m$ first eigenfunctions $V$, $F = VR$, we can use the [Rayleigh-Ritz method](https://en.wikipedia.org/wiki/Rayleigh%E2%80%93Ritz_method#For_matrix_eigenvalue_problems). We want the eigenfunctions for $L v_i = \lambda_i v_i$. We have $F \in \mathbb R^{n \times m}$, which has orthonormal columns. We instead set up the eigenvalue problem for the matrix $F^\intercal L F$: $(F^\intercal L F) u_i = \eta_i u_i$. Then, $\tilde v_i = F u_i$ are the "Ritz vectors", approximations to the real eigenvectors.
 
@@ -299,7 +299,7 @@ And here they are after that final diagonalization:
 
 Yeeeeerp, it slams it pretty easily.
 
-### Fix number two: enforced diagonalization
+#### Fix number two: enforced diagonalization
 
 The other method is trying to enforce this during optimization. The math is pretty similar actually. We know that for $V$, the energy matrix $V^\intercal L V \in \mathbb R^{m \times m}$ (i.e., what we sum/reduce to get $E(V)$) is diagonal with the $\lambda_i$ on the diagonal. In contrast, our found solution $F$ has the same $E(V) = E(F)$ once you reduce it, but because it's a rotation of $V$, it's all mixed up and has off-diagonal terms in $F^\intercal L F$.
 

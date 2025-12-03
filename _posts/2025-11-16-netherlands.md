@@ -323,7 +323,7 @@ I'm not bothered by other people not enjoying it the way I think they're suppose
 
 I saw many people just basically taking a pic of every single painting. Why?? It's... honestly a little baffling to me. I think there are a few reasons it can make sense to take a pic of a painting: 1) you think you might not be able to find it online later, 2) you want to remember the name or some aspect of it, 3) you want to send it to someone in that moment. But it's certainly going to be worse quality than any picture of it you can find online, and those reasons can't be why they're doing it for *all* the paintings. It's really a puzzler to me.
 
-# Rambling
+## Rambling
 
 Here are just some random handwavy thoughts and observations:
 
