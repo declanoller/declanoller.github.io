@@ -4,6 +4,9 @@ remote_theme: "jekyll/minima@1e8a445"
 collections:
   misc:
     output: true
+  q_and_a:
+    output: true       # generate HTML pages for each item
+    permalink: /q-and-a/:name/
 
 plugins:
   - jekyll-seo-tag
