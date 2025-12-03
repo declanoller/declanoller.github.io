@@ -1,5 +1,4 @@
 ---
-title: "Q & A"
 layout: base
 ---
 
