@@ -4,8 +4,17 @@ layout: page
 permalink: /misc/testing_page/
 ---
 
+## Contents
 
-# Equations
+{:.no_toc}
+
+* TOC
+{:toc}
+
+
+
+
+## Equations
 
 Here's an inline equation with dollar signs (works):
 
@@ -32,7 +41,7 @@ c & d \\
 \end{bmatrix}
 \\]
 
-# Image alt text and captions
+## Image alt text and captions
 
 
 Here's an image that might have a caption (doesn't work):
@@ -44,7 +53,7 @@ Here's an image that might have alt text (works):
 ![](/assets/images/euler_smeared_horror3.jpg "Help meeee")
 
 
-# Inline images location
+## Inline images location
 
 
 This image has a `/` in front of the `assets/...` location (works):
@@ -58,7 +67,7 @@ This image does NOT have the leading slash (doesn't work):
 
 
 
-# Do obsidian-style callouts work?
+## Do obsidian-style callouts work?
 
 Here's a callout (doesn't work):
 
@@ -67,7 +76,7 @@ Here's a callout (doesn't work):
 > Hopefully a note is here!
 
 
-# Links to pages and headings
+## Links to pages and headings
 
 
 Here's a link using `{{site(dot)baseurl}}` (with spaces around it, dot replaced with period) and the permalink (works):
@@ -86,7 +95,7 @@ Here's an obsidian-style markdown link (doesn't work):
 
 [2021-01-01-making-diy-lenses](_posts/2021-01-01-making-diy-lenses.md)
 
-# Embedded code on page
+## Embedded code on page
 
 
 Here's a little javascript sim using "raw" and "endraw" jekyll tags (works):
@@ -139,10 +148,10 @@ Here's a little javascript sim using "raw" and "endraw" jekyll tags (works):
 
 
 
-# Movies and gifs
+## Movies and gifs
 
 
-## A webm file
+### A webm file
 
 Directly (doesn't appear):
 
@@ -160,7 +169,7 @@ Using html video tag:
 
 
 
-## An mp4 file
+### An mp4 file
 
 Does it loop automatically?
 
@@ -203,7 +212,7 @@ with nice div center:
 
 
 
-# Testing iframe for embedding html
+## Testing iframe for embedding html
 
 using `site.baseurl`:
 

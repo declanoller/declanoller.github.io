@@ -13,3 +13,8 @@ defaults:
   - scope: {path: ""}                  # whole site
     values:
       image: /favicon.png
+
+markdown: kramdown
+
+kramdown:
+  toc_levels: 2..6   # which heading levels to include (optional, but nice)
