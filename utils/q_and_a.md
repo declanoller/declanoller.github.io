@@ -1,10 +1,9 @@
 ---
 title: "Q & A"
-layout: base
-nav_exclude: false
+layout: q_and_a
 ---
 
-updated 8
+updated 9
 
 ---
 
