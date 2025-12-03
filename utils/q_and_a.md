@@ -1,10 +1,10 @@
 ---
-title: "Q & A"
 layout: q_and_a
 ---
 
-updated 9
+updated 10
 
+`title: "Q & A"`
 ---
 
 Here are some questions and answers:
