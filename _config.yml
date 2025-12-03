@@ -6,7 +6,7 @@ collections:
     output: true
   q_and_a:
     output: true       # generate HTML pages for each item
-    permalink: /q-and-a/:name/
+#    permalink: /q-and-a/:name/
 
 plugins:
   - jekyll-seo-tag
