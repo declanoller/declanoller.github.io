@@ -22,7 +22,7 @@ permalink: /misc/effect_pedals/
       </a>
       <div>
         <a href="/2017-07-22-orange-ya-glad-first-chassis-design" style="text-decoration: none; color: inherit;">
-          <h3 style="margin: 0;">Squall moan</h3>
+          <h3 style="margin: 0;">Orange ya glad</h3>
         </a>
       </div>
     </div>
@@ -33,7 +33,7 @@ permalink: /misc/effect_pedals/
       </a>
       <div>
         <a href="/2018-10-17-the-red-lama-red-llama-clone" style="text-decoration: none; color: inherit;">
-          <h3 style="margin: 0;">Squall moan</h3>
+          <h3 style="margin: 0;">Red Lama</h3>
         </a>
       </div>
     </div>

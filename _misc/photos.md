@@ -4,16 +4,7 @@ layout: page
 permalink: /misc/photos/
 ---
 
-<div style="display: flex; align-items: center; gap: 1em; margin-bottom: 2em;">
-      <a href="/misc/photos/us_southwest" style="flex-shrink: 0;">
-        <img src="/assets/photos/us_southwest/img_1091.jpg" style="width: 500px; height: auto; border-radius: 8px;">
-      </a>
-      <div>
-        <a href="/misc/photos/us_southwest" style="text-decoration: none; color: inherit;">
-          <h3 style="margin: 0;">Us Southwest</h3>
-        </a>
-      </div>
-    </div>
+
 
 <div style="display: flex; align-items: center; gap: 1em; margin-bottom: 2em;">
       <a href="/misc/photos/thailand" style="flex-shrink: 0;">
@@ -22,6 +13,18 @@ permalink: /misc/photos/
       <div>
         <a href="/misc/photos/thailand" style="text-decoration: none; color: inherit;">
           <h3 style="margin: 0;">Thailand</h3>
+        </a>
+      </div>
+    </div>
+
+
+<div style="display: flex; align-items: center; gap: 1em; margin-bottom: 2em;">
+      <a href="/misc/photos/us_southwest" style="flex-shrink: 0;">
+        <img src="/assets/photos/us_southwest/img_1091.jpg" style="width: 500px; height: auto; border-radius: 8px;">
+      </a>
+      <div>
+        <a href="/misc/photos/us_southwest" style="text-decoration: none; color: inherit;">
+          <h3 style="margin: 0;">Us Southwest</h3>
         </a>
       </div>
     </div>
