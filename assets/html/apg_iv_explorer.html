@@ -16,7 +16,7 @@
   }
 </style>
 
-<div id="viz" style="width:60vw; height:90vh;"></div>
+<div id="viz" style="width:90vw; height:90vh;"></div>
 <div id="tooltip"></div>
 
 <script type="module">
@@ -28,7 +28,7 @@ const tooltip = d3.select("#tooltip");
 const data = await d3.json("./all_species_taxon_tree.json");
 
 function chart(data) {
-  const W = Math.floor(window.innerWidth * 0.6);
+  const W = Math.floor(window.innerWidth * 0.9);
   const H = Math.floor(window.innerHeight * 0.9);
 
   const hierarchy = d3.hierarchy(data)
@@ -146,7 +146,7 @@ function chart(data) {
 
   const svg = d3.create("svg")
     .attr("viewBox", [0, 0, W, H])
-    .style("width", "60vw")
+    .style("width", "90vw")
     .style("height", "90vh")
     .style("display", "block")
     .style("font", "16px sans-serif");
