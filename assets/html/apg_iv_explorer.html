@@ -1,0 +1,317 @@
+<!doctype html>
+<meta charset="utf-8" />
+
+<style>
+  #tooltip{
+    position:fixed;
+    z-index:9999;
+    padding:6px 8px;
+    border:1px solid #999;
+    border-radius:6px;
+    background:rgba(255,255,255,0.95);
+    font:12px sans-serif;
+    pointer-events:none;
+    display:none;
+    white-space:nowrap;
+  }
+</style>
+
+<div id="viz" style="width:60vw; height:90vh;"></div>
+<div id="tooltip"></div>
+
+<script type="module">
+import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
+
+document.body.style.margin = "0";
+
+const tooltip = d3.select("#tooltip");
+const data = await d3.json("./all_species_taxon_tree.json");
+
+function chart(data) {
+  const W = Math.floor(window.innerWidth * 0.6);
+  const H = Math.floor(window.innerHeight * 0.9);
+
+  const hierarchy = d3.hierarchy(data)
+    .sum(d => d.value ?? 0)
+    .sort((a, b) => b.height - a.height || (b.value ?? 0) - (a.value ?? 0));
+
+  // NOTE: keep your "4 columns visible" geometry
+  const root = d3.partition()
+    .size([H, (hierarchy.height + 1) * W / 4])(hierarchy);
+
+  // tweak these:
+  const always_top_n = 5;
+  // This is the TOTAL fraction of the height to use for all the top n children
+  // that are below the min-height threshold
+  const total_top_n_min_height_fraction = 0.2;
+
+  // save original coords once (used for rescaling)
+  root.each(d => { d.ox0 = d.x0; d.ox1 = d.x1; });
+
+  // apply min-height rule recursively
+  applyMinHeightLayout(root);
+
+  function applyMinHeightLayout(node) {
+    if (!node.children || node.children.length === 0) return;
+
+    const kids = node.children;
+    const total = d3.sum(kids, c => c.value ?? 0) || 1;
+
+    // This is the proportion of the current node's total value
+    // represented by each child, based on original values
+    const kids_props = kids.map(c => (c.value ?? 0) / total);
+
+    // This is how many of the top children to consider for min-height adjustment
+    const K = Math.min(always_top_n, kids.length);
+    const topKids = kids.slice(0, K);
+
+    // These are the top K kids that are below the min-height threshold
+    const top_n_kids_below_threshold_set = new Set(
+      topKids.filter((c, i) => kids_props[i] < total_top_n_min_height_fraction)
+    );
+
+    const num_top_n_below_threshold = top_n_kids_below_threshold_set.size;
+
+    let targetProps;
+    if (num_top_n_below_threshold === 0) {
+      targetProps = kids_props.slice();
+    } else {
+      const fixedEach = total_top_n_min_height_fraction / num_top_n_below_threshold;
+      const frac_remaining = 1 - total_top_n_min_height_fraction;
+
+      const remKids = kids.filter(c => !top_n_kids_below_threshold_set.has(c));
+      const remPropSum = d3.sum(remKids, c => (c.value ?? 0) / total) || 1;
+
+      targetProps = kids.map(c => {
+        if (top_n_kids_below_threshold_set.has(c)) return fixedEach;
+        const p = (c.value ?? 0) / total;
+        return frac_remaining * (p / remPropSum);
+      });
+    }
+
+    const span = node.x1 - node.x0;
+    let cur = node.x0;
+
+    for (let i = 0; i < kids.length; i++) {
+      const child = kids[i];
+
+      const old0 = child.ox0;
+      const oldSpan = (child.ox1 - child.ox0) || 1e-9;
+
+      const new0 = cur;
+      const newSpan = span * targetProps[i];
+      const new1 = new0 + newSpan;
+
+      rescaleSubtree(child, old0, oldSpan, new0, newSpan);
+
+      cur = new1;
+      applyMinHeightLayout(child);
+    }
+  }
+
+  function rescaleSubtree(subroot, old0, oldSpan, new0, newSpan) {
+    const k = newSpan / oldSpan;
+    subroot.each(d => {
+      d.x0 = new0 + (d.ox0 - old0) * k;
+      d.x1 = new0 + (d.ox1 - old0) * k;
+    });
+  }
+
+  // stable unique key
+  root.each(d => {
+    d.uid = (d.parent ? (d.parent.uid + "/") : "") + (d.data?.name ?? "");
+  });
+
+  assignRanges(root, 0);
+  const total = root.value ?? 1;
+  const color = d3.scaleSequential(d3.interpolateRainbow).domain([0, 1]);
+
+  function assignRanges(node, start) {
+    node.range0 = start;
+    node.range1 = start + (node.value ?? 0);
+    if (node.children) {
+      let s = start;
+      for (const c of node.children) {
+        assignRanges(c, s);
+        s = c.range1;
+      }
+    }
+  }
+
+  function nodeColor(d) {
+    if (!d.depth) return "#ccc";
+    const mid = ((d.range0 ?? 0) + (d.range1 ?? 0)) / 2;
+    return color(mid / total);
+  }
+
+  const svg = d3.create("svg")
+    .attr("viewBox", [0, 0, W, H])
+    .style("width", "60vw")
+    .style("height", "90vh")
+    .style("display", "block")
+    .style("font", "16px sans-serif");
+
+  const g = svg.append("g");
+
+  // Scales
+  const x = d3.scaleLinear().range([0, H]); // vertical
+  const y = d3.scaleLinear().range([0, W]); // horizontal
+
+  // Virtualization knobs
+  const MAX_DEPTH_FROM_FOCUS = 3;
+  const MIN_PX = 1.5;
+  const LABEL_MIN_H = 16;
+  const LABEL_MIN_W = 70;
+
+  let focus = root;
+
+  function collectNodesLimitedDepth(focusNode) {
+    const out = [];
+    const maxDepth = focusNode.depth + MAX_DEPTH_FROM_FOCUS;
+    const stack = [focusNode];
+    while (stack.length) {
+      const n = stack.pop();
+      out.push(n);
+      if (n.depth >= maxDepth) continue;
+      if (n.children && n.children.length) {
+        for (let i = n.children.length - 1; i >= 0; i--) stack.push(n.children[i]);
+      }
+    }
+    return out;
+  }
+
+  function rectHeightPx(d) {
+    const h = x(d.x1) - x(d.x0);
+    return Math.max(0, h - Math.min(1, h / 2));
+  }
+
+  function rectWidthPx(d) {
+    return Math.max(0, (y(d.y1) - y(d.y0)) - 1);
+  }
+
+  function labelVisible(d) {
+    const h = x(d.x1) - x(d.x0);
+    const w = y(d.y1) - y(d.y0);
+    return h >= LABEL_MIN_H && w >= LABEL_MIN_W;
+  }
+
+  // tooltip throttling
+  let rafPending = false;
+  let lastTip = null;
+  function scheduleTooltipUpdate() {
+    if (rafPending) return;
+    rafPending = true;
+    requestAnimationFrame(() => {
+      rafPending = false;
+      if (!lastTip) return;
+      const { event, d } = lastTip;
+      tooltip
+        .style("display", "block")
+        .style("left", (event.clientX + 12) + "px")
+        .style("top", (event.clientY + 12) + "px")
+        .html(`<b>${d.data.name}</b><br>${d3.format(",d")(d.value ?? 0)}`);
+    });
+  }
+  function hideTooltip() {
+    lastTip = null;
+    tooltip.style("display", "none");
+  }
+
+  function render(nextFocus, withTransition = true) {
+    focus = nextFocus;
+
+    g.interrupt();
+
+    // ✅ FIX: your partition y is in "layout units", not [0,1].
+    // Show a window of width W in y-units so you still see ~4 columns.
+    x.domain([focus.x0, focus.x1]);
+    y.domain([focus.y0, focus.y0 + W]);
+
+    const nodes0 = collectNodesLimitedDepth(focus);
+    const nodes = nodes0.filter(d => (x(d.x1) - x(d.x0)) >= MIN_PX && rectWidthPx(d) >= 1);
+
+    const rectSel = g.selectAll("rect")
+      .data(nodes, d => d.uid);
+
+    rectSel.exit().remove();
+
+    const rectEnter = rectSel.enter().append("rect")
+      .attr("fill-opacity", 0.6)
+      .attr("stroke", "#fff")
+      .style("cursor", "pointer")
+      .attr("fill", d => nodeColor(d))
+      .on("click", (event, d) => {
+        event.stopPropagation();
+        hideTooltip();
+        // zoom in; clicking the current focus zooms out (if possible)
+        const target = (focus === d && d.parent) ? d.parent : d;
+        render(target, true);
+      })
+      .on("mousemove", (event, d) => {
+        lastTip = { event, d };
+        scheduleTooltipUpdate();
+      })
+      .on("mouseleave", hideTooltip);
+
+    const rectAll = rectEnter.merge(rectSel);
+
+    const labelNodes = nodes.filter(labelVisible);
+
+    const textSel = g.selectAll("text")
+      .data(labelNodes, d => d.uid);
+
+    textSel.exit().remove();
+
+    const textEnter = textSel.enter().append("text")
+      .style("user-select", "none")
+      .attr("pointer-events", "none");
+
+    textEnter.append("tspan")
+      .text(d => d.data.name);
+
+    textEnter.append("tspan")
+      .attr("opacity", 0.7)
+      .text(d => ` ${d3.format(",d")(d.value ?? 0)}`);
+
+    const textAll = textEnter.merge(textSel);
+
+    const applyRects = sel => sel
+      .attr("x", d => y(d.y0))
+      .attr("y", d => x(d.x0))
+      .attr("width", d => rectWidthPx(d))
+      .attr("height", d => rectHeightPx(d));
+
+    const applyText = sel => sel
+      .attr("x", d => y(d.y0) + 4)
+      .attr("y", d => x(d.x0) + 13);
+
+    if (withTransition) {
+      const t = svg.transition().duration(250);
+      rectAll.transition(t).call(applyRects);
+      textAll.transition(t).call(applyText);
+    } else {
+      rectAll.call(applyRects);
+      textAll.call(applyText);
+    }
+  }
+
+  // click background to zoom out
+  svg.on("click", () => {
+    if (focus.parent) {
+      hideTooltip();
+      render(focus.parent, true);
+    }
+  });
+
+  render(root, false);
+  return svg.node();
+}
+
+function render() {
+  const host = document.querySelector("#viz");
+  host.replaceChildren(chart(data));
+}
+
+render();
+window.addEventListener("resize", render);
+</script>
