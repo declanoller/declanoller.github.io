@@ -7,7 +7,7 @@ image: /assets/thumbnails/something_fishy.jpg
 title: "Something Fishy: BTDR Digital Reverb"
 ---
 
-Here's a pedal I made a looooong time ago, but somehow it never escaped the drafts folder. No more!
+Here's a pedal I made a looooong time ago, but somehow it never escaped the drafts folder. Be free!
 
 It's a pretty simple reverb pedal, but it has a great sound. In contrast to most of the other pedal circuits I've put together, which were entirely analog, this one is based on a digital chip, the BTDR chip from Accutronics/Belton (I'm pretty sure it's the -2H version [here](https://stompboxparts.com/semiconductors/belton-btdr-2h-reverb-ic/)). Sometimes digital chips can have an actual noticeable bit of latency to them (I guess due to the signal processing time?), but somehow this chip didn't, possible because it's relatively simple.
 
@@ -15,7 +15,7 @@ I'm *pretty* sure [this](https://tagboardeffects.blogspot.com/2014/07/rub-dub-re
 
 ## The circuit
 
-For previous pedals I had used [stripboard](https://en.wikipedia.org/wiki/Stripboard) to put together the circuits, which is pretty common for DIY pedals (in fact, you can see in the circuit link above that it's shown in stripboard!). It's cheap and real easy, but can become chaotic and looks a bit janky.
+For previous pedals I used [stripboard](https://en.wikipedia.org/wiki/Stripboard) to put together the circuits, which is pretty common for DIY pedals (in fact, you can see in the circuit link above that it's shown in stripboard!). It's cheap and real easy, but can become chaotic and looks a bit janky.
 
 So I think I used... KiCad? or something, to make an actual circuit pattern, which I'd print out on a certain printer paper, which I'd then iron onto a copper plate, and then etch.
 
@@ -41,20 +41,20 @@ Finally, I used a center punch (above) and teensy dremel bit to drill alllllllll
 
 Is this less work in the end than using stripboard? Absolutely not. Is it marginally cooler? I'll let you be the judge 😎
 
-Here it is, installed in the enclosure:
+These days, you'd be a madman not to use one of those services that'll drone strike you a thousand custom PCB's in the next 40 minutes for the price of a sandwich, but those weren't as widespread then, and it's also fun to do the whole process yourself... once, maybe.
 
+Here it is, installed in the enclosure:
 
 <div style="
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
   max-width: 600px;
-  margin:0 auto;
+  margin:20 auto;
 ">
   <img src="/assets/images/img_20170120_014149337.jpg" alt="Image 1" style="width:100%; display:block;">
   <img src="/assets/images/img_20170120_014159697.jpg" alt="Image 2" style="width:100%; display:block;">
 </div>
-
 
 You can see that for some reason I designed it so the pots were directly on the board, which is nice, but also made it pretty cramped. I did... not plan this one very carefully.
 
