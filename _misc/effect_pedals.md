@@ -18,12 +18,12 @@ permalink: /misc/effect_pedals/
 
 
 <div style="display: flex; align-items: center; gap: 1em; margin-bottom: 2em;">
-      <a href="/2026-1-7-something_fishy_pedal" style="flex-shrink: 0;">
+      <a href="/something_fishy_pedal" style="flex-shrink: 0;">
         <img src="/assets/thumbnails/something_fishy.jpg" style="width: 500px; height: auto; border-radius: 8px;">
       </a>
       <div>
-        <a href="/2026-1-7-something_fishy_pedal" style="text-decoration: none; color: inherit;">
-          <h3 style="margin: 0;">Red Lama</h3>
+        <a href="/something_fishy_pedal" style="text-decoration: none; color: inherit;">
+          <h3 style="margin: 0;">Something Fishy</h3>
         </a>
       </div>
     </div>
