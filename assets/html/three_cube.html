@@ -1,0 +1,1016 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Three.js: Lazy-loaded post cards + fixed camera + scroll Z</title>
+
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+      }
+    }
+    </script>
+
+    <style>
+      html, body { margin: 0; height: 100%; overflow: hidden; background: #0b0f14; }
+      canvas { display: block; }
+
+      #hint {
+        position: fixed;
+        left: 12px; top: 12px;
+        padding: 8px 10px;
+        border-radius: 10px;
+        color: rgba(255,255,255,0.85);
+        font: 13px system-ui, sans-serif;
+        background: rgba(0,0,0,0.4);
+        border: 1px solid rgba(255,255,255,0.15);
+        user-select: none;
+        z-index: 10;
+      }
+
+      #hud {
+        position: fixed;
+        right: 12px; top: 12px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        color: rgba(255,255,255,0.90);
+        font: 12px/1.35 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        background: rgba(0,0,0,0.45);
+        border: 1px solid rgba(255,255,255,0.14);
+        backdrop-filter: blur(6px);
+        user-select: text;
+        white-space: pre;
+        z-index: 10;
+        min-width: 250px;
+        display: none; /* default hidden (toggle with 'c') */
+      }
+
+      #err {
+        position: fixed;
+        left: 12px;
+        bottom: 12px;
+        max-width: min(720px, calc(100vw - 24px));
+        padding: 10px 12px;
+        border-radius: 12px;
+        color: rgba(255,255,255,0.92);
+        font: 12px/1.35 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        background: rgba(120, 20, 20, 0.35);
+        border: 1px solid rgba(255,255,255,0.14);
+        backdrop-filter: blur(6px);
+        user-select: text;
+        white-space: pre-wrap;
+        z-index: 10;
+        display: none;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="hint">Scroll = move forward/back · Click image/title to open post · “c” toggles HUD · “g” toggles grid</div>
+    <div id="hud"></div>
+    <div id="err"></div>
+
+    <script type="module">
+      import * as THREE from "three";
+      import { FontLoader } from "three/addons/loaders/FontLoader.js";
+      import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
+
+      // ============================================================
+      // Data / layout
+      // ============================================================
+      const postsJsonPath = "./posts.json";
+      const cardSpacingZ = 10.0;
+
+      const textSize = 0.2;
+
+      // Date text: same style, about half size + its own gap under image
+      const dateSizeScale        = 0.5;   // half size
+      const dateTopMargin        = 0.04;  // gap between image bottom and top of date text
+      const dateLineSpacingScale = 0.90;  // spacing multiplier for multi-line dates (rare)
+
+      // This is the GLOBAL y position of the card, w.r.t the scene. Note
+      // that the image and title are positioned RELATIVE to this, and the card
+      // center is at the same y position as the grid.
+      const cardCenterY = textSize + dateTopMargin;
+
+      // How tall the image is:
+      const imageThumbnailHeight = 2.2;
+      const imageThumbnailCenterY = 0.5 * imageThumbnailHeight;
+
+      const cameraY = 0.7 * imageThumbnailHeight;
+      const gridY = 0.0;
+      const tempGridY = 0.1;
+
+      // Lazy-loading controls
+      const num_load_posts_at_a_time = 10;
+      let num_posts_loaded = 0;
+      const load_more_when_within_n_posts = 5; // "5 posts from the end" trigger
+
+      // Wiggle controls
+      const z_margin_at_post = 4;     // start wiggling when |camera.z - card.z| <= this
+      const wiggle_speed = 3.0;       // rad/sec-ish
+      const wiggle_angle = 0.15;      // radians
+      const wiggle_axis = "y";        // rotate title group around local Y
+
+      // ============================================================
+      // Your tuned text params
+      // ============================================================
+      const titleMaxWidthFactor = 1.30;
+      const titleBottomMargin   = 0.18;
+
+      
+      const textDepth      = 0.001;
+      const bevelThickness = 0.01;
+      const bevelSize      = 0.003;
+      const lineSpacing    = 0.45;
+
+      
+
+      const fontUrl = "https://unpkg.com/three@0.160.0/examples/fonts/helvetiker_bold.typeface.json";
+
+      // ============================================================
+      // Fixed camera
+      // ============================================================
+      const fixedYawDeg = 45;
+      const fixedPitchDeg = 5;
+      const fixedRollDeg = 0;
+
+      const initialCamPos = new THREE.Vector3(3, cameraY, 3);
+      const scrollStepZ = 5;
+
+      // Bounds (computed after posts load)
+      let z_min_allowed = null;
+      const z_max_allowed = initialCamPos.z;
+
+      // ============================================================
+      // Renderer / Scene / Camera
+      // ============================================================
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      document.body.appendChild(renderer.domElement);
+
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0b0f14);
+
+      const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 300);
+      camera.position.copy(initialCamPos);
+
+      function deg2rad(d) { return d * Math.PI / 180; }
+      function applyFixedCameraRotation() {
+        camera.rotation.order = "YXZ";
+        camera.rotation.set(deg2rad(fixedPitchDeg), deg2rad(fixedYawDeg), deg2rad(fixedRollDeg));
+      }
+      applyFixedCameraRotation();
+
+      // ============================================================
+      // Lights
+      // ============================================================
+      scene.add(new THREE.AmbientLight(0xffffff, 0.28));
+
+      const key = new THREE.DirectionalLight(0xffffff, 1.25);
+      key.position.set(10, 12, 8);
+      scene.add(key);
+
+      const fill = new THREE.DirectionalLight(0xffffff, 0.55);
+      fill.position.set(-10, 6, 2);
+      scene.add(fill);
+
+      const rim = new THREE.DirectionalLight(0xffffff, 0.75);
+      rim.position.set(0, 8, -12);
+      scene.add(rim);
+
+      // ============================================================
+      // Grid (toggle with g): make faces opaque by adding a filled plane
+      // ============================================================
+      // Keep your existing GridHelper for lines:
+      const grid = new THREE.GridHelper(500, 500, 0xe825fa, 0xe825fa);
+      grid.position.y = gridY;
+      grid.visible = false; // default off
+      scene.add(grid);
+
+      // Add an opaque "floor" under it (same toggle behavior):
+      const gridFloorGeom = new THREE.PlaneGeometry(500, 500);
+      const gridFloorMat = new THREE.MeshStandardMaterial({
+        color: 0x0f0273,   // same as background-ish
+        roughness: 0.8,
+        // roughness: 1.0,
+        metalness: 0.5,
+        transparent: false,
+        opacity: 1.0,
+        side: THREE.DoubleSide,
+      });
+      const gridFloor = new THREE.Mesh(gridFloorGeom, gridFloorMat);
+      gridFloor.rotation.x = -Math.PI / 2;   // lay in XZ plane
+      gridFloor.position.y = gridY - 0.001;  // tiny offset to avoid z-fighting with grid lines
+      gridFloor.visible = false;             // default off
+      scene.add(gridFloor);
+
+      // ============================================================
+      // Stars (tube + twinkle per-star phase)
+      // ============================================================
+      const stars = {
+        points: null,
+        geom: null,
+        mat: null,
+        n: 0,
+        baseSize: 0.1,
+        twinkleAmp: 0.1,     // baseSize + amp -> 0.1..0.2
+        phases: null,        // Float32Array length n
+        sizes: null,         // Float32Array length n (BufferAttribute)
+        freq: 1.5,           // requested
+      };
+
+      function randBetween(a, b) { return a + Math.random() * (b - a); }
+
+      function buildStarTube(zMin, zMax) {
+        if (stars.points) {
+          scene.remove(stars.points);
+          stars.geom?.dispose?.();
+          stars.mat?.dispose?.();
+          stars.points = null;
+        }
+
+        const tubeLen = Math.max(1, zMax - zMin);
+        const starsPerUnitZ = 12;
+        const N = Math.floor(tubeLen * starsPerUnitZ);
+
+        const positions = new Float32Array(N * 3);
+        const phases = new Float32Array(N);
+        const sizes = new Float32Array(N);
+
+        const xCenter = 3.0;
+        const yCenter = -1.0;
+        const rx = 28;
+        const ry = 22;
+
+        for (let i = 0; i < N; i++) {
+          const z = randBetween(zMin, zMax);
+
+          const theta = Math.random() * Math.PI * 2;
+          const u = Math.sqrt(Math.random());
+          const x = xCenter + Math.cos(theta) * rx * u;
+          const y = yCenter + Math.sin(theta) * ry * u;
+
+          positions[i * 3 + 0] = x;
+          positions[i * 3 + 1] = y;
+          positions[i * 3 + 2] = z;
+
+          phases[i] = randBetween(0, Math.PI * 2);
+          sizes[i] = stars.baseSize;
+        }
+
+        const g = new THREE.BufferGeometry();
+        g.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+        g.setAttribute("aSize", new THREE.BufferAttribute(sizes, 1));
+
+        const m = new THREE.PointsMaterial({
+          size: stars.baseSize,
+          transparent: true,
+          opacity: 0.9
+        });
+
+        m.onBeforeCompile = (shader) => {
+          shader.vertexShader = shader.vertexShader
+            .replace(
+              "#include <common>",
+              `#include <common>
+               attribute float aSize;`
+            )
+            .replace(
+              "#include <begin_vertex>",
+              `#include <begin_vertex>
+               // per-point size (in px, then perspective scales it as usual)
+              `
+            );
+
+          shader.vertexShader = shader.vertexShader.replace(
+            "gl_PointSize = size;",
+            "gl_PointSize = aSize;"
+          );
+
+          m.userData._shader = shader;
+        };
+
+        const pts = new THREE.Points(g, m);
+        scene.add(pts);
+
+        stars.points = pts;
+        stars.geom = g;
+        stars.mat = m;
+        stars.n = N;
+        stars.phases = phases;
+        stars.sizes = sizes;
+      }
+
+      // ============================================================
+      // Clickables
+      // ============================================================
+      const clickable = [];
+      function tagLink(obj, url) {
+        obj.userData.link = url;
+        clickable.push(obj);
+      }
+
+      // ============================================================
+      // Candy material (unchanged)
+      // ============================================================
+      function makeCandyMaterial() {
+        const mat = new THREE.MeshStandardMaterial({
+          roughness: 0.35,
+          metalness: 0.05,
+          color: 0xffffff,
+        });
+
+        const u = {
+          time: { value: 0 },
+          saturation: { value: 1.05 },
+          brightness: { value: 1.06 },
+          rimPow: { value: 2.4 },
+          rimStrength: { value: 0.55 },
+        };
+
+        mat.onBeforeCompile = (shader) => {
+          shader.uniforms.uTime = u.time;
+          shader.uniforms.uSat = u.saturation;
+          shader.uniforms.uBri = u.brightness;
+          shader.uniforms.uRimPow = u.rimPow;
+          shader.uniforms.uRimStrength = u.rimStrength;
+
+          shader.vertexShader = shader.vertexShader.replace(
+            "#include <common>",
+            `#include <common>
+             varying vec3 vWorldPos;
+             varying vec3 vWorldNormal;`
+          );
+
+          shader.vertexShader = shader.vertexShader.replace(
+            "#include <beginnormal_vertex>",
+            `#include <beginnormal_vertex>
+             vec3 worldNormal = normalize(mat3(modelMatrix) * objectNormal);
+             vWorldNormal = worldNormal;`
+          );
+
+          shader.vertexShader = shader.vertexShader.replace(
+            "#include <begin_vertex>",
+            `#include <begin_vertex>
+             vec4 wp = modelMatrix * vec4(transformed, 1.0);
+             vWorldPos = wp.xyz;`
+          );
+
+          const inject = `
+            uniform float uTime;
+            uniform float uSat;
+            uniform float uBri;
+            uniform float uRimPow;
+            uniform float uRimStrength;
+            varying vec3 vWorldPos;
+            varying vec3 vWorldNormal;
+
+            vec3 hsv2rgb(vec3 c){
+              vec4 K = vec4(1.0, 2.0/3.0, 1.0/3.0, 3.0);
+              vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+              return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+            }
+            vec3 satBri(vec3 rgb, float sat, float bri){
+              float l = dot(rgb, vec3(0.2126, 0.7152, 0.0722));
+              vec3 gray = vec3(l);
+              return mix(gray, rgb, sat) * bri;
+            }
+          `;
+
+          shader.fragmentShader = shader.fragmentShader.replace(
+            "#include <common>",
+            `#include <common>\n${inject}`
+          );
+
+          shader.fragmentShader = shader.fragmentShader.replace(
+            "#include <color_fragment>",
+            `#include <color_fragment>
+             float nMix = clamp(vWorldNormal.z * 0.5 + 0.5, 0.0, 1.0);
+             float hue = fract(0.08 * vWorldPos.x + 0.06 * vWorldPos.y + 0.04 * vWorldPos.z
+                              + 0.33 * nMix + 0.05 * sin(uTime * 0.6));
+             vec3 candy = hsv2rgb(vec3(hue, 0.95, 1.0));
+             float bands = 0.5 + 0.5 * sin((vWorldPos.x * 2.2 + vWorldPos.y * 1.7) + uTime * 0.35);
+             candy = mix(candy, candy * vec3(1.08, 0.98, 1.12), 0.20 * bands);
+
+             vec3 V = normalize(cameraPosition - vWorldPos);
+             float rim = pow(1.0 - max(dot(normalize(vWorldNormal), V), 0.0), uRimPow);
+             vec3 rimCol = vec3(1.0, 0.95, 1.05) * rim * uRimStrength;
+
+             diffuseColor.rgb *= satBri(candy, uSat, uBri);
+             diffuseColor.rgb += rimCol;
+            `
+          );
+
+          mat.userData._shader = shader;
+        };
+
+        mat.userData.uniforms = u;
+        mat.emissive = new THREE.Color(0x12080f);
+        mat.emissiveIntensity = 0.35;
+        return mat;
+      }
+
+      // ============================================================
+      // Text wrapping
+      // ============================================================
+      function measureLineWidth(font, line, sizeOverride = null) {
+        const size = (sizeOverride == null) ? textSize : sizeOverride;
+        const g = new TextGeometry(line, { font, size, height: 0.01, bevelEnabled: false, curveSegments: 8 });
+        g.computeBoundingBox();
+        const bb = g.boundingBox;
+        const w = (bb.max.x - bb.min.x);
+        g.dispose();
+        return w;
+      }
+
+      function wrapTextToWidth(font, text, maxWidth, sizeOverride = null) {
+        const paragraphs = String(text).split("\n").map(s => s.trim()).filter(Boolean);
+        const lines = [];
+
+        for (const para of paragraphs) {
+          const words = para.split(/\s+/).filter(Boolean);
+          let cur = "";
+
+          for (const w of words) {
+            const candidate = cur ? (cur + " " + w) : w;
+            const width = measureLineWidth(font, candidate, sizeOverride);
+            if (width <= maxWidth || !cur) cur = candidate;
+            else { lines.push(cur); cur = w; }
+          }
+          if (cur) lines.push(cur);
+        }
+        return lines.length ? lines : [""];
+      }
+
+      // ============================================================
+      // Date formatting helper
+      // ============================================================
+      const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+      function formatDateMMMddyyyy(iso) {
+        // Expect "YYYY-MM-DD"
+        const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso).trim());
+        if (!m) return String(iso).trim(); // fallback
+        const year = Number(m[1]);
+        const monthIdx = Number(m[2]) - 1;
+        const day = Number(m[3]);
+        if (!(monthIdx >= 0 && monthIdx < 12) || !(day >= 1 && day <= 31)) return String(iso).trim();
+        return `${MONTHS[monthIdx]} ${day}, ${year}`;
+      }
+
+      // ============================================================
+      // Cards + end message + wiggle registry
+      // ============================================================
+      const texLoader = new THREE.TextureLoader();
+      const fontLoader = new FontLoader();
+
+      let loadedFont = null;
+      const animatedTitleMaterials = [];
+
+      let allPosts = [];
+      let endMessageGroup = null;
+
+      const cardTitleRegistry = new Map();
+
+      function showError(msg) {
+        const el = document.getElementById("err");
+        el.style.display = "block";
+        el.textContent = msg;
+      }
+
+      function clearError() {
+        const el = document.getElementById("err");
+        el.style.display = "none";
+        el.textContent = "";
+      }
+
+      function makeCardBaseGroup() {
+        const cardGroup = new THREE.Group();
+        cardGroup.position.set(0, cardCenterY, 0);
+        cardGroup.rotation.x = 0;
+        cardGroup.rotation.z = 0.0;
+        cardGroup.rotation.y = Math.PI * 0.25;
+        return cardGroup;
+      }
+
+      function buildCandyTextGroupLines({
+        text,
+        maxLineWidth,
+        postUrlOrNull,
+        size,
+        depth,
+        bevelThick,
+        bevelSz,
+        spacingMult,
+      }) {
+        const mat = makeCandyMaterial();
+        animatedTitleMaterials.push(mat);
+
+        const group = new THREE.Group();
+        group.rotation.x = 0.0;
+
+        const lines = wrapTextToWidth(loadedFont, text, maxLineWidth, size);
+
+        const meshes = [];
+        for (const line of lines) {
+          const geom = new TextGeometry(line, {
+            font: loadedFont,
+            size,
+            height: depth,
+            curveSegments: 12,
+            bevelEnabled: true,
+            bevelThickness: bevelThick,
+            bevelSize: bevelSz,
+            bevelOffset: 0.0,
+            bevelSegments: 6
+          });
+
+          geom.computeBoundingBox();
+          const bb = geom.boundingBox;
+          const w = (bb.max.x - bb.min.x);
+          const h = (bb.max.y - bb.min.y);
+
+          const mesh = new THREE.Mesh(geom, mat);
+          mesh.position.x = -w / 2;
+          mesh.position.z = 0.06;
+          meshes.push({ mesh, h });
+
+          if (postUrlOrNull) tagLink(mesh, postUrlOrNull);
+        }
+
+        const spacing = size * lineSpacing * spacingMult;
+        let totalHeight = 0;
+        for (let i = 0; i < meshes.length; i++) {
+          totalHeight += meshes[i].h;
+          if (i !== meshes.length - 1) totalHeight += spacing;
+        }
+
+        let yCursor = totalHeight;
+        for (let i = 0; i < meshes.length; i++) {
+          const { mesh, h } = meshes[i];
+          yCursor -= h;
+          mesh.position.y = yCursor;
+          yCursor -= spacing;
+          group.add(mesh);
+        }
+
+        return { group, material: mat };
+      }
+
+      function buildTitleIntoCard(cardGroup, titleText, imagePlaneWidth, imagePlaneHeight, postUrl, postIndex) {
+        const maxLineWidth = imagePlaneWidth * titleMaxWidthFactor;
+
+        const { group: titleGroup } = buildCandyTextGroupLines({
+          text: titleText,
+          maxLineWidth,
+          postUrlOrNull: postUrl,
+          size: textSize,
+          depth: textDepth,
+          bevelThick: bevelThickness,
+          bevelSz: bevelSize,
+          spacingMult: 1.0,
+        });
+
+        // In your new layout, the image center is at imageThumbnailCenterY,
+        // so image top is at imageThumbnailCenterY + imagePlaneHeight/2 == imagePlaneHeight
+        const imageTopY = imagePlaneHeight;
+        titleGroup.position.y = imageTopY + titleBottomMargin;
+
+        cardGroup.add(titleGroup);
+
+        cardTitleRegistry.set(postIndex, {
+          titleGroup,
+          baseRot: { x: titleGroup.rotation.x, y: titleGroup.rotation.y, z: titleGroup.rotation.z },
+          cardZ: cardGroup.position.z
+        });
+      }
+
+      function buildDateIntoCard(cardGroup, dateIso, imagePlaneWidth, imagePlaneHeight, postUrl) {
+        const dateText = formatDateMMMddyyyy(dateIso);
+
+        const dateSize = textSize * dateSizeScale;
+        const dateDepth = textDepth;
+        const dateBevelThickness = bevelThickness * 0.75;
+        const dateBevelSize = bevelSize * 0.75;
+
+        // Keep width aligned with title/image: same max line width (relative to image)
+        const maxLineWidth = imagePlaneWidth * titleMaxWidthFactor;
+
+        const { group: dateGroup } = buildCandyTextGroupLines({
+          text: dateText,
+          maxLineWidth,
+          postUrlOrNull: postUrl, // clickable too (optional; remove if you want only title/image clickable)
+          size: dateSize,
+          depth: dateDepth,
+          bevelThick: dateBevelThickness,
+          bevelSz: dateBevelSize,
+          spacingMult: dateLineSpacingScale,
+        });
+
+        // Place BELOW the image:
+        // image bottom (in card local coords) is at:
+        //   imageThumbnailCenterY - imagePlaneHeight/2 == 0
+        // We want the *top* of the date text slightly below that: y = -dateTopMargin.
+        // Our text groups are laid out with their top at y=totalHeight and bottom near 0.
+        // So if we place group.y = -dateTopMargin, the bottom will sit near -dateTopMargin.
+        // To make the TOP align at -dateTopMargin, we measure group bounds via a dummy box:
+        // Instead, easiest: move group down by dateTopMargin and then by its own height.
+        // We'll compute bounding box of the group after adding meshes.
+        const box = new THREE.Box3().setFromObject(dateGroup);
+        const height = box.max.y - box.min.y;
+
+        // Put bottom at -dateTopMargin - height? No:
+        // We want the TOP of the text to be just below image bottom => y = -dateTopMargin.
+        // If top is at (currentTop + group.position.y), set group.position.y so:
+        //   (box.max.y + groupY) = -dateTopMargin  => groupY = -dateTopMargin - box.max.y
+        dateGroup.position.y = -dateTopMargin - box.max.y;
+
+        cardGroup.add(dateGroup);
+      }
+
+      function ensureEndMessageAt(numPostsTotal) {
+        if (!loadedFont) return;
+
+        const z = -numPostsTotal * cardSpacingZ;
+
+        if (!endMessageGroup) {
+          endMessageGroup = makeCardBaseGroup();
+          endMessageGroup.position.set(0, cardCenterY, z);
+
+          const referenceWidth = 3.2;
+          const maxLineWidth = referenceWidth * titleMaxWidthFactor;
+
+          const { group: titleGroup } = buildCandyTextGroupLines({
+            text: "you've reached the end of history",
+            maxLineWidth,
+            postUrlOrNull: null,
+            size: textSize,
+            depth: textDepth,
+            bevelThick: bevelThickness,
+            bevelSz: bevelSize,
+            spacingMult: 1.0,
+          });
+
+          titleGroup.position.y = 0.5 * imageThumbnailHeight;
+
+          endMessageGroup.add(titleGroup);
+          scene.add(endMessageGroup);
+        } else {
+          endMessageGroup.position.z = z;
+        }
+      }
+
+      async function loadTexture(url) {
+        return new Promise((resolve, reject) => {
+          texLoader.load(
+            url,
+            (tex) => {
+              tex.colorSpace = THREE.SRGBColorSpace;
+              resolve(tex);
+            },
+            undefined,
+            (err) => reject(err)
+          );
+        });
+      }
+
+      async function buildCardFromPost(post, index) {
+        const title = String(post?.title_text ?? "").trim();
+        const thumb = String(post?.thumbnail_url ?? "").trim();
+        const postUrl = String(post?.post_url ?? "").trim();
+        const dateIso = String(post?.date ?? "").trim();
+
+        if (!title || !thumb || !postUrl || !dateIso) {
+          throw new Error(
+            `Post at index ${index} missing required key(s).\n` +
+            `Required: "title_text", "thumbnail_url", "post_url", "date"\n` +
+            `Got: ${JSON.stringify(post)}`
+          );
+        }
+
+        const cardGroup = makeCardBaseGroup();
+        cardGroup.position.set(0, cardCenterY, -index * cardSpacingZ);
+
+        const tex = await loadTexture(thumb);
+
+        const w = tex.image.width;
+        const h = tex.image.height;
+        const aspect = w / h;
+
+        const imagePlaneHeight = imageThumbnailHeight;
+        const imagePlaneWidth  = imagePlaneHeight * aspect;
+
+        const geom = new THREE.PlaneGeometry(imagePlaneWidth, imagePlaneHeight);
+        const mat  = new THREE.MeshBasicMaterial({ map: tex, transparent: true });
+
+        const imagePlane = new THREE.Mesh(geom, mat);
+        imagePlane.position.set(0, imageThumbnailCenterY, 0);
+        cardGroup.add(imagePlane);
+
+        tagLink(imagePlane, postUrl);
+
+        // Title above image
+        buildTitleIntoCard(cardGroup, title, imagePlaneWidth, imagePlaneHeight, postUrl, index);
+
+        // Date below image
+        buildDateIntoCard(cardGroup, dateIso, imagePlaneWidth, imagePlaneHeight, postUrl);
+
+        scene.add(cardGroup);
+      }
+
+      async function loadPostsJson(path) {
+        const resp = await fetch(path, { cache: "no-store" });
+        if (!resp.ok) throw new Error(`Failed to fetch ${path}: HTTP ${resp.status}`);
+        const data = await resp.json();
+        if (!Array.isArray(data)) throw new Error(`Expected JSON array in ${path}, got: ${typeof data}`);
+        return data;
+      }
+
+      function loadFontOnce() {
+        return new Promise((resolve, reject) => {
+          fontLoader.load(fontUrl, resolve, undefined, reject);
+        });
+      }
+
+      let isLoadingMore = false;
+      async function loadMorePostsIfNeeded() {
+        if (isLoadingMore) return;
+        if (!loadedFont) return;
+        if (!allPosts.length) return;
+        if (num_posts_loaded >= allPosts.length) return;
+
+        isLoadingMore = true;
+        try {
+          const start = num_posts_loaded;
+          const end = Math.min(num_posts_loaded + num_load_posts_at_a_time, allPosts.length);
+
+          for (let i = start; i < end; i++) {
+            await buildCardFromPost(allPosts[i], i);
+            await new Promise(requestAnimationFrame);
+          }
+
+          num_posts_loaded = end;
+
+          z_min_allowed = -allPosts.length * cardSpacingZ;
+          ensureEndMessageAt(allPosts.length);
+        } finally {
+          isLoadingMore = false;
+        }
+      }
+
+      function maybeTriggerPrefetch() {
+        if (!allPosts.length) return;
+        if (num_posts_loaded >= allPosts.length) return;
+
+        const triggerIndex = Math.max(0, num_posts_loaded - load_more_when_within_n_posts);
+        const zTrigger = -triggerIndex * cardSpacingZ;
+
+        if (camera.position.z <= zTrigger) {
+          loadMorePostsIfNeeded();
+        }
+      }
+
+      // Kick off
+      (async () => {
+        try {
+          clearError();
+          loadedFont = await loadFontOnce();
+          allPosts = await loadPostsJson(postsJsonPath);
+
+          if (allPosts.length === 0) {
+            showError(`Loaded ${postsJsonPath} but it was empty.\nAdd at least one post object.`);
+            return;
+          }
+
+          z_min_allowed = -allPosts.length * cardSpacingZ;
+          ensureEndMessageAt(allPosts.length);
+
+          const starZPad = 80;
+          buildStarTube(z_min_allowed - starZPad, z_max_allowed + starZPad);
+
+          num_posts_loaded = 0;
+          await loadMorePostsIfNeeded();
+
+        } catch (e) {
+          console.error(e);
+          showError(
+            `Error building cards.\n\n` +
+            `${String(e?.message ?? e)}\n\n` +
+            `Notes:\n` +
+            `- If you opened the page as file://, fetch() is often blocked.\n` +
+            `  Run: python3 -m http.server\n` +
+            `  Then open: http://localhost:8000/\n` +
+            `- Ensure ${postsJsonPath} exists next to this HTML.\n`
+          );
+        }
+      })();
+
+      // ============================================================
+      // Raycasting for clicks
+      // ============================================================
+      const raycaster = new THREE.Raycaster();
+      const mouseNDC = new THREE.Vector2();
+
+      function setMouseFromEvent(e) {
+        const rect = renderer.domElement.getBoundingClientRect();
+        mouseNDC.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        mouseNDC.y = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
+      }
+
+      function pickLink(e) {
+        setMouseFromEvent(e);
+        raycaster.setFromCamera(mouseNDC, camera);
+        const hits = raycaster.intersectObjects(clickable, true);
+        if (!hits.length) return null;
+
+        let obj = hits[0].object;
+        while (obj && !obj.userData.link) obj = obj.parent;
+        return obj?.userData.link ?? null;
+      }
+
+      renderer.domElement.addEventListener("pointermove", (e) => {
+        const url = pickLink(e);
+        document.body.style.cursor = url ? "pointer" : "default";
+      });
+
+      renderer.domElement.addEventListener("click", (e) => {
+        const url = pickLink(e);
+        if (!url) return;
+        window.open(url, "_blank", "noopener,noreferrer");
+      });
+
+      // ============================================================
+      // Wheel changes camera Z by +-5 with bounds clamp
+      // ============================================================
+      renderer.domElement.style.touchAction = "none";
+
+      function clamp(v, lo, hi) {
+        return Math.max(lo, Math.min(hi, v));
+      }
+
+      function onWheel(e) {
+        e.preventDefault();
+        if (z_min_allowed == null) return;
+
+        const dir = Math.sign(e.deltaY);
+        if (dir === 0) return;
+
+        const proposed = camera.position.z + dir * scrollStepZ;
+        const clamped = clamp(proposed, z_min_allowed, z_max_allowed);
+        camera.position.z = clamped;
+
+        applyFixedCameraRotation();
+        maybeTriggerPrefetch();
+      }
+
+      renderer.domElement.addEventListener("wheel", onWheel, { passive: false });
+
+      function tickPrefetch() {
+        maybeTriggerPrefetch();
+        requestAnimationFrame(tickPrefetch);
+      }
+      requestAnimationFrame(tickPrefetch);
+
+      // ============================================================
+      // HUD toggle (c), Grid toggle (g)
+      // ============================================================
+      const hudEl = document.getElementById("hud");
+      let hudVisible = false;
+
+      function setHudVisible(v) {
+        hudVisible = v;
+        hudEl.style.display = hudVisible ? "block" : "none";
+      }
+      setHudVisible(false);
+
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "c" || e.key === "C") {
+          setHudVisible(!hudVisible);
+        } else if (e.key === "g" || e.key === "G") {
+          const v = !grid.visible;
+          grid.visible = v;
+          gridFloor.visible = v; // keep filled plane in sync
+        }
+      });
+
+      // ============================================================
+      // HUD content
+      // ============================================================
+      const tmpEuler = new THREE.Euler();
+      const tmpQuat = new THREE.Quaternion();
+
+      function rad2deg(r) { return r * 180 / Math.PI; }
+      function fmt(n) { return (Math.abs(n) < 1e-6 ? 0 : n).toFixed(3); }
+
+      function updateHUD() {
+        if (!hudVisible) return;
+
+        const p = camera.position;
+        tmpQuat.copy(camera.quaternion);
+        tmpEuler.setFromQuaternion(tmpQuat, "YXZ");
+
+        const yaw   = rad2deg(tmpEuler.y);
+        const pitch = rad2deg(tmpEuler.x);
+        const roll  = rad2deg(tmpEuler.z);
+
+        hudEl.textContent =
+`camera.position:
+  x ${fmt(p.x)}
+  y ${fmt(p.y)}
+  z ${fmt(p.z)}
+
+camera.rotation (deg):
+  yaw   ${fmt(yaw)}
+  pitch ${fmt(pitch)}
+  roll  ${fmt(roll)}
+
+bounds:
+  z_min ${z_min_allowed == null ? "?" : fmt(z_min_allowed)}
+  z_max ${fmt(z_max_allowed)}
+
+lazy load:
+  num_load_posts_at_a_time ${num_load_posts_at_a_time}
+  num_posts_loaded ${num_posts_loaded}
+  total_posts ${allPosts.length}
+  prefetch_within_posts ${load_more_when_within_n_posts}
+
+stars:
+  count ${stars.n}
+  size_attr ${stars.geom?.getAttribute("aSize") ? "yes" : "no"}
+
+wiggle:
+  z_margin_at_post ${fmt(z_margin_at_post)}
+`;
+      }
+
+      // ============================================================
+      // Wiggle logic
+      // ============================================================
+      function updateWiggles(t) {
+        for (const [idx, info] of cardTitleRegistry.entries()) {
+          const dz = Math.abs(camera.position.z - info.cardZ);
+          if (dz <= z_margin_at_post) {
+            const phase = (t * wiggle_speed) + idx * 0.35;
+            const a = Math.sin(phase) * wiggle_angle;
+
+            if (wiggle_axis === "y") info.titleGroup.rotation.y = info.baseRot.y + a;
+            else if (wiggle_axis === "x") info.titleGroup.rotation.x = info.baseRot.x + a;
+            else info.titleGroup.rotation.z = info.baseRot.z + a;
+          } else {
+            info.titleGroup.rotation.x = info.baseRot.x;
+            info.titleGroup.rotation.y = info.baseRot.y;
+            info.titleGroup.rotation.z = info.baseRot.z;
+          }
+        }
+      }
+
+      // ============================================================
+      // Animate
+      // ============================================================
+      function animate() {
+        requestAnimationFrame(animate);
+
+        const t = performance.now() * 0.001;
+
+        applyFixedCameraRotation();
+
+        for (const mat of animatedTitleMaterials) {
+          if (mat?.userData?.uniforms) mat.userData.uniforms.time.value = t;
+        }
+
+        // Per-star twinkle with per-star phase (freq = 1.5)
+        if (stars.geom && stars.phases && stars.sizes) {
+          const aSizeAttr = stars.geom.getAttribute("aSize");
+          if (aSizeAttr) {
+            for (let i = 0; i < stars.n; i++) {
+              const tw = 0.5 + 0.5 * Math.sin(t * stars.freq + stars.phases[i]);
+              stars.sizes[i] = stars.baseSize + stars.twinkleAmp * tw; // 0.1..0.2
+            }
+            aSizeAttr.needsUpdate = true;
+          }
+        }
+
+        updateWiggles(t);
+
+        renderer.render(scene, camera);
+        updateHUD();
+      }
+      animate();
+
+      // ============================================================
+      // Resize
+      // ============================================================
+      window.addEventListener("resize", () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+    </script>
+  </body>
+</html>

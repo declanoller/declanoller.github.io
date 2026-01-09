@@ -1,0 +1,458 @@
+[
+  {
+    "date": "2026-01-07",
+    "post_url": "https://declanoller.github.io/something_fishy_pedal",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/something_fishy.jpg",
+    "title_text": "Something Fishy: BTDR Digital Reverb"
+  },
+  {
+    "date": "2025-12-24",
+    "post_url": "https://declanoller.github.io/iql_1",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/iql_thumbnail.png",
+    "title_text": "Touching grass: offline RL with the IQL algorithm"
+  },
+  {
+    "date": "2025-12-14",
+    "post_url": "https://declanoller.github.io/whats_the_word_belief",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/hilbert_monkey.png",
+    "title_text": "What's the word for this phenomenon?"
+  },
+  {
+    "date": "2025-11-30",
+    "post_url": "https://declanoller.github.io/proto_vfs",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/pvfs_mahadevan_thumbnail.png",
+    "title_text": "Rotational invariance strikes again! Proto VFs and proto RL"
+  },
+  {
+    "date": "2025-11-16",
+    "post_url": "https://declanoller.github.io/2025-11-16-netherlands",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/netherlands_thumbnail.png",
+    "title_text": "A voyage to the Nether regions -- Netherlands 2025"
+  },
+  {
+    "date": "2025-10-31",
+    "post_url": "https://declanoller.github.io/laplacian_graph_drawing_dim_reduction",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/graph_drawing_koren_thumbnail.png",
+    "title_text": "Dimensionality reduction by graph drawing with the Laplacian"
+  },
+  {
+    "date": "2025-10-15",
+    "post_url": "https://declanoller.github.io/ccvae",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/ccvae_thumbnail.png",
+    "title_text": "CCVAE experiments"
+  },
+  {
+    "date": "2025-10-03",
+    "post_url": "https://declanoller.github.io/laplacian_quadratic_form",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/quadratic_form_laplacian_thumbnail.png",
+    "title_text": "The quadratic form of the graph Laplacian and finding eigenfunctions with gradient descent"
+  },
+  {
+    "date": "2025-09-21",
+    "post_url": "https://declanoller.github.io/laplacian_basics_and_diffusion",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/laplacian_diffusion_thumbnail.png",
+    "title_text": "The Laplacian, graph Laplacian, and diffusion"
+  },
+  {
+    "date": "2025-09-10",
+    "post_url": "https://declanoller.github.io/2025-09-10-power_iteration",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/power_iteration_thumbnail.png",
+    "title_text": "\ud83c\udfb5 I've got the power (iteration) \ud83c\udfb5"
+  },
+  {
+    "date": "2025-09-03",
+    "post_url": "https://declanoller.github.io/isomap_1",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/isomap_swiss_roll_thumbnail.png",
+    "title_text": "Unrolling the Swiss - Isomap"
+  },
+  {
+    "date": "2025-08-27",
+    "post_url": "https://declanoller.github.io/the_rig_family_gcrl",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/rig_family_thumbnail.png",
+    "title_text": "Meet the RIGs! An overview of the RIG family of GCRL algorithms"
+  },
+  {
+    "date": "2025-08-21",
+    "post_url": "https://declanoller.github.io/2025-08-21-mds",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/mds_thumbnail.png",
+    "title_text": "Multidimensional scaling - MDS"
+  },
+  {
+    "date": "2025-08-14",
+    "post_url": "https://declanoller.github.io/GCRL_extras",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/seurat_goldilocks_reward_fn_thumbnail.png",
+    "title_text": "GCRL - extras"
+  },
+  {
+    "date": "2025-08-03",
+    "post_url": "https://declanoller.github.io/2025-08-03-rome-and-slovenia",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/slovenia_thumbnail.jpg",
+    "title_text": "Are you Tronky or are you Frondi? Rome and Slovenia"
+  },
+  {
+    "date": "2025-07-15",
+    "post_url": "https://declanoller.github.io/thin_manifolds",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/manifold_hypothesis_thumbnail.png",
+    "title_text": "A guessing game with thin manifolds"
+  },
+  {
+    "date": "2025-07-03",
+    "post_url": "https://declanoller.github.io/the-dogtail-party-problem",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/radio_dogs_thumbnail.png",
+    "title_text": "The dogtail party problem: ICA and blind source separation"
+  },
+  {
+    "date": "2025-06-23",
+    "post_url": "https://declanoller.github.io/GCRL_motivations",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/robot_ruler_led_renoir_thumbnail.png",
+    "title_text": "GCRL - Motivations"
+  },
+  {
+    "date": "2025-06-16",
+    "post_url": "https://declanoller.github.io/deltas_pixel_concept_space",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/pixel_concept_space_thumbnail.png",
+    "title_text": "Deltas in pixel space are very different than deltas in concept space"
+  },
+  {
+    "date": "2025-06-08",
+    "post_url": "https://declanoller.github.io/2025-06-08-terrarium_1",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/terrarium_1_thumbnail.jpg",
+    "title_text": "Mossariums, vivariums, and terrariums, oh my!"
+  },
+  {
+    "date": "2025-05-28",
+    "post_url": "https://declanoller.github.io/2025-05-28-Goal_conditioned_RL_background_and_overview",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/cryingrobot.png",
+    "title_text": "Goal conditioned RL - background and overview"
+  },
+  {
+    "date": "2025-05-24",
+    "post_url": "https://declanoller.github.io/2025-05-24-hello-blogness",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/iaintreadingallthat_thumb.jpg",
+    "title_text": "Hello blogness, my old friend"
+  },
+  {
+    "date": "2021-01-01",
+    "post_url": "https://declanoller.github.io/2021-01-01-making-diy-lenses",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/IMG_20200117_181132-1.jpg",
+    "title_text": "Making DIY lenses"
+  },
+  {
+    "date": "2020-11-14",
+    "post_url": "https://declanoller.github.io/2020-11-14-back-to-the-mpcnc",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/PXL_20201113_005234845_feat.jpg",
+    "title_text": "Back to the MPCNC!"
+  },
+  {
+    "date": "2020-05-05",
+    "post_url": "https://declanoller.github.io/2020-05-05-an-interactive-arxiv-reference-graph",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/arxiv_feat.png",
+    "title_text": "An interactive arXiV reference graph"
+  },
+  {
+    "date": "2020-03-26",
+    "post_url": "https://declanoller.github.io/2020-03-26-recreating-dawn-dedeaux",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/euler_smeared-4.jpg",
+    "title_text": "Recreating Dawn DeDeaux"
+  },
+  {
+    "date": "2020-03-03",
+    "post_url": "https://declanoller.github.io/2020-03-03-top-down-program-synthesis-with-a-repl-and-reinforcement-learning",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/top_down_feat_img2.png",
+    "title_text": "Top-down program synthesis with a REPL and reinforcement learning"
+  },
+  {
+    "date": "2020-01-13",
+    "post_url": "https://declanoller.github.io/2020-01-13-how-to-use-an-arduino-to-keep-a-crazy-pup-from-wrecking-the-house-while-youre-out",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/dog_feeder_featimage.png",
+    "title_text": "How to use an Arduino to keep a crazy pup from wrecking the house while you're"
+  },
+  {
+    "date": "2019-11-15",
+    "post_url": "https://declanoller.github.io/2019-11-15-variational-autoencoders-in-haskell-or-how-i-learned-to-stop-worrying-and-turn-my-friends-into-dogs",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/dogs_vae_cover_smaller.png",
+    "title_text": "Variational Autoencoders in Haskell, or: How I Learned to Stop Worrying and"
+  },
+  {
+    "date": "2019-09-26",
+    "post_url": "https://declanoller.github.io/2019-09-26-a-fun-little-combinatorics-puzzle",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/naive.png",
+    "title_text": "A fun little combinatorics puzzle"
+  },
+  {
+    "date": "2019-09-13",
+    "post_url": "https://declanoller.github.io/2019-09-13-making-sol-lewitts-colored-bands-interactive-with-d3-js",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/full_withturb.png",
+    "title_text": "Making Sol LeWitt's colored bands interactive with d3.js"
+  },
+  {
+    "date": "2019-08-30",
+    "post_url": "https://declanoller.github.io/2019-08-30-solving-numberphiles-cat-and-mouse-puzzle-using-the-ddpg-and-a2c-reinforcement-learning-algorithms",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/cat_mouse_cover.png",
+    "title_text": "Solving Numberphile's Cat and Mouse puzzle using the DDPG and A2C reinforcement"
+  },
+  {
+    "date": "2019-08-11",
+    "post_url": "https://declanoller.github.io/2019-08-11-skydog-2019-winners-again",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/IMG_20190810_121222_cover.jpg",
+    "title_text": "Skydog 2019, winners again!"
+  },
+  {
+    "date": "2019-08-08",
+    "post_url": "https://declanoller.github.io/2019-08-08-albania-montenegro-and-croatia-if-youre-balkin-dont-be",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/IMG_20190801_130422.jpg",
+    "title_text": "Albania, Montenegro, and Croatia: if you''re balkin'', don''t be!"
+  },
+  {
+    "date": "2019-06-21",
+    "post_url": "https://declanoller.github.io/2019-06-21-programmatically-recreating-sol-lewitts-all-two-part-combinations-of-arcs-from-corners-and-sides-and-straight-not-straight-and-broken-lines-with-d3-js",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/SL_cover_small.png",
+    "title_text": "Programmatically recreating Sol LeWitt's \"All two-part combinations of arcs"
+  },
+  {
+    "date": "2019-06-12",
+    "post_url": "https://declanoller.github.io/2019-06-12-the-trials-and-tribulations-of-training-a-physical-robot-with-reinforcement-learning",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/cover_pic_robo2_small.png",
+    "title_text": "The trials and tribulations of training a physical robot with reinforcement"
+  },
+  {
+    "date": "2019-06-04",
+    "post_url": "https://declanoller.github.io/2019-06-04-an-interactive-introduction-to-simulated-annealing",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/sim_anneal_cover_small.png",
+    "title_text": "An interactive introduction to Simulated Annealing!"
+  },
+  {
+    "date": "2019-05-24",
+    "post_url": "https://declanoller.github.io/2019-05-24-descending-into-modular-neuroevolution-for-logic-circuits",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/blog_NE_GD_cover_small.png",
+    "title_text": "Descending into modular neuroevolution for logic circuits"
+  },
+  {
+    "date": "2019-05-16",
+    "post_url": "https://declanoller.github.io/2019-05-16-in-case-hexapods-werent-creepy-enough-the-centipede-robot",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/centipede_cover_small.png",
+    "title_text": "In case hexapods weren't creepy enough: the centipede robot!"
+  },
+  {
+    "date": "2019-05-10",
+    "post_url": "https://declanoller.github.io/2019-05-10-the-mostly-printed-cnc-mpcnc-mostly",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/MPCNC_feat_small.png",
+    "title_text": "The Mostly Printed CNC (MPCNC), mostly"
+  },
+  {
+    "date": "2019-04-30",
+    "post_url": "https://declanoller.github.io/2019-04-30-chile-hilly-will-y-thrilly-and-uh-chilly",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/IMG_20190411_110755.jpg",
+    "title_text": "Chile: hilly, Will-y, thrilly, and, uh...chilly"
+  },
+  {
+    "date": "2019-03-27",
+    "post_url": "https://declanoller.github.io/2019-03-27-training-a-real-robot-to-play-puckworld-with-reinforcement-learning",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/robo_blog_cover_small.png",
+    "title_text": "Training a real robot to play Puckworld with reinforcement learning"
+  },
+  {
+    "date": "2019-01-25",
+    "post_url": "https://declanoller.github.io/2019-01-25-beating-openai-games-with-neuroevolution-agents-pretty-neat",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/featimg_NE1.png",
+    "title_text": "Beating OpenAI games with neuroevolution agents: pretty NEAT!"
+  },
+  {
+    "date": "2019-01-06",
+    "post_url": "https://declanoller.github.io/2019-01-06-first-project-with-the-new-3d-printer-a-tof-sensor-mount",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/TOF_mount_sensor1.png",
+    "title_text": "First project with the new 3D printer: a TOF sensor mount"
+  },
+  {
+    "date": "2018-12-24",
+    "post_url": "https://declanoller.github.io/2018-12-24-solving-the-brachistochrone-and-a-cool-parallel-between-diversity-in-genetic-algorithms-and-simulated-annealing",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/86.png",
+    "title_text": "Solving the Brachistochrone and a cool parallel between diversity in genetic"
+  },
+  {
+    "date": "2018-12-19",
+    "post_url": "https://declanoller.github.io/2018-12-19-animation-stand-from-design-to-build-with-onshape",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/both.png",
+    "title_text": "Animation stand: from design to build with Onshape"
+  },
+  {
+    "date": "2018-11-04",
+    "post_url": "https://declanoller.github.io/2018-11-04-training-an-rl-agent-to-play-puckworld-with-a-ddqn",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/puckworld_featimage.png",
+    "title_text": "Training an RL agent to play Puckworld with a DDQN"
+  },
+  {
+    "date": "2018-10-17",
+    "post_url": "https://declanoller.github.io/2018-10-17-the-red-lama-red-llama-clone",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/redlama.jpg",
+    "title_text": "The Red Lama (Red Llama clone)"
+  },
+  {
+    "date": "2018-10-08",
+    "post_url": "https://declanoller.github.io/2018-10-08-genetic-algorithms-part-2",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/evolve_BoardUnconstrained__pop20__gen2000__N30__00-30-09.png",
+    "title_text": "Genetic Algorithms, part 2"
+  },
+  {
+    "date": "2018-10-03",
+    "post_url": "https://declanoller.github.io/2018-10-03-mountain-car-q-learning-and-experience-replay-with-pytorch",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/TD0_coarse_13-27-00_ub3_x00.0_dt0.1_a0.98_alpha0.7_epsilon0.0_epsdecay1.0_lambda0.0_gamma1.0_Nd120_3000eps_VF.png",
+    "title_text": "Mountain car, Q-learning, and Experience Replay with Pytorch"
+  },
+  {
+    "date": "2018-09-24",
+    "post_url": "https://declanoller.github.io/2018-09-24-using-reinforcement-learning-to-solve-the-egg-drop-puzzle",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/feat.png",
+    "title_text": "Using Reinforcement Learning to solve the Egg drop puzzle"
+  },
+  {
+    "date": "2018-09-17",
+    "post_url": "https://declanoller.github.io/2018-09-17-some-mathy-tesselating-stamp-art",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/hstripes_mod3_size15-1.png",
+    "title_text": "Some mathy tesselating stamp art!"
+  },
+  {
+    "date": "2018-09-10",
+    "post_url": "https://declanoller.github.io/2018-09-10-skyscraper-fun-with-or-tools",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/ss_hard_77.png",
+    "title_text": "Skyscraper fun with OR-Tools!"
+  },
+  {
+    "date": "2018-09-03",
+    "post_url": "https://declanoller.github.io/2018-09-03-the-egg-drop-puzzle-brute-force-dynamic-programming-and-markov-decision-processes",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/BH100_1.png",
+    "title_text": "The egg drop puzzle: brute force, Dynamic Programming, and Markov Decision"
+  },
+  {
+    "date": "2018-08-20",
+    "post_url": "https://declanoller.github.io/2018-08-20-neato-sequence-art",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/ex_color_recaman_100terms_x00_2018-07-27_14-59-10.png",
+    "title_text": "Neato sequence art"
+  },
+  {
+    "date": "2018-08-13",
+    "post_url": "https://declanoller.github.io/2018-08-13-rpi-camera-part-3-a-few-incremental-fixes",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/sliding_window1.png",
+    "title_text": "RPi camera, part 3: a few incremental fixes"
+  },
+  {
+    "date": "2018-08-08",
+    "post_url": "https://declanoller.github.io/2018-08-08-fun-with-genetic-algorithms-and-the-n-queens-problem",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/30queens_sol1.png",
+    "title_text": "Fun with Genetic Algorithms and the N Queens Problem"
+  },
+  {
+    "date": "2018-07-20",
+    "post_url": "https://declanoller.github.io/2018-07-20-motion-detection-with-the-raspberry-pi-part-2",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/2018-07-01_14-41-57.642_0.jpg",
+    "title_text": "Motion detection with the Raspberry Pi, part 2"
+  },
+  {
+    "date": "2018-07-12",
+    "post_url": "https://declanoller.github.io/2018-07-12-snackin-my-way-across-viet-nom-nom-nom",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/IMG_1860.jpg",
+    "title_text": "Snackin my way across Viet-nom nom nom"
+  },
+  {
+    "date": "2018-06-25",
+    "post_url": "https://declanoller.github.io/2018-06-25-motion-detection-with-the-raspberry-pi-part-1",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/2018-06-24_16-53-56.jpg",
+    "title_text": "Motion detection with the Raspberry Pi, part 1"
+  },
+  {
+    "date": "2018-06-05",
+    "post_url": "https://declanoller.github.io/2018-06-05-squall-moan-small-clone-clone",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/squallmoan.jpg",
+    "title_text": "Squall Moan: Small Clone clone"
+  },
+  {
+    "date": "2018-05-11",
+    "post_url": "https://declanoller.github.io/2018-05-11-fruits-of-south-east-asia",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/IMG_3787.jpg",
+    "title_text": "Fruits of south east asia!"
+  },
+  {
+    "date": "2018-05-05",
+    "post_url": "https://declanoller.github.io/2018-05-05-reading-a-book-in-one-hour",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/book.png",
+    "title_text": "Reading a book in one hour!"
+  },
+  {
+    "date": "2018-04-27",
+    "post_url": "https://declanoller.github.io/2018-04-27-stickin-it-to-the-myan-mar",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/IMG_0331.jpg",
+    "title_text": "Stickin it to the Myan-mar"
+  },
+  {
+    "date": "2018-02-11",
+    "post_url": "https://declanoller.github.io/2018-02-11-yes-we-cam-bodia",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/IMG_8079.jpg",
+    "title_text": "Yes we Cam..bodia"
+  },
+  {
+    "date": "2018-01-25",
+    "post_url": "https://declanoller.github.io/2018-01-25-vientiane-to-the-4000-islands-the-laost-of-laos",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/IMG_6989.jpg",
+    "title_text": "Vientiane to the 4000 Islands, the La(o)st of Laos"
+  },
+  {
+    "date": "2018-01-06",
+    "post_url": "https://declanoller.github.io/2018-01-06-hoo-boy-ive-fallen-behind-luang-prabang-to-vientiane",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/IMG_6124.jpg",
+    "title_text": "Hoo boy, I''ve fallen behind: Luang Prabang to Vientiane"
+  },
+  {
+    "date": "2017-12-07",
+    "post_url": "https://declanoller.github.io/2017-12-07-a-little-catchup-the-slow-boat-and-beginning-of-luang-prabang",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/IMG_5225.jpg",
+    "title_text": "A little catchup: the slow boat and beginning of Luang Prabang"
+  },
+  {
+    "date": "2017-11-22",
+    "post_url": "https://declanoller.github.io/2017-11-22-11-13-2017-first-couple-weeks-in-sea",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/IMG_4223.jpg",
+    "title_text": "11.13.2017: First couple weeks in SEA"
+  },
+  {
+    "date": "2017-10-10",
+    "post_url": "https://declanoller.github.io/2017-10-10-a-spoooooooooky-project",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/bloodhead1.jpg",
+    "title_text": "A spooOOOOoooky project!"
+  },
+  {
+    "date": "2017-09-25",
+    "post_url": "https://declanoller.github.io/2017-09-25-back-to-the-blog-and-the-nyc-maker-faire",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/opilioneslarge.jpeg",
+    "title_text": "Back to the blog and the NYC Maker Faire"
+  },
+  {
+    "date": "2017-08-14",
+    "post_url": "https://declanoller.github.io/2017-08-14-my-first-boat",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/img_6408.jpg",
+    "title_text": "My first boat"
+  },
+  {
+    "date": "2017-08-10",
+    "post_url": "https://declanoller.github.io/2017-08-10-low-power-arduino-experiments-part-1",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/pro_mini_led.jpg",
+    "title_text": "Low power Arduinos, part 1"
+  },
+  {
+    "date": "2017-07-25",
+    "post_url": "https://declanoller.github.io/2017-07-25-manual-acking-with-the-nrf24l01",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/img_20161127_175851992.jpg",
+    "title_text": "Manual ACKing with the nRF24L01"
+  },
+  {
+    "date": "2017-07-22",
+    "post_url": "https://declanoller.github.io/2017-07-22-servo-controller-box",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/servobox.jpg",
+    "title_text": "Servo controller box"
+  },
+  {
+    "date": "2017-07-22",
+    "post_url": "https://declanoller.github.io/2017-07-22-orange-ya-glad-first-chassis-design",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/orangeyaglad.jpg",
+    "title_text": "Orange Ya Glad: first chassis design"
+  }
+]
