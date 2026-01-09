@@ -83,10 +83,19 @@
       // ============================================================
       const postsJsonPath = "./posts.json";
       const cardSpacingZ = 10.0;
+
+      const textSize = 0.2;
+
+      // Date text: same style, about half size + its own gap under image
+      const dateSizeScale        = 0.5;   // half size
+      const dateTopMargin        = 0.04;  // gap between image bottom and top of date text
+      const dateLineSpacingScale = 0.90;  // spacing multiplier for multi-line dates (rare)
+
       // This is the GLOBAL y position of the card, w.r.t the scene. Note
       // that the image and title are positioned RELATIVE to this, and the card
       // center is at the same y position as the grid.
-      const cardCenterY = 0.0;
+      const cardCenterY = textSize + dateTopMargin;
+
       // How tall the image is:
       const imageThumbnailHeight = 2.2;
       const imageThumbnailCenterY = 0.5 * imageThumbnailHeight;
@@ -112,11 +121,13 @@
       const titleMaxWidthFactor = 1.30;
       const titleBottomMargin   = 0.18;
 
-      const textSize       = 0.2;
+      
       const textDepth      = 0.001;
       const bevelThickness = 0.01;
       const bevelSize      = 0.003;
       const lineSpacing    = 0.45;
+
+      
 
       const fontUrl = "https://unpkg.com/three@0.160.0/examples/fonts/helvetiker_bold.typeface.json";
 
@@ -124,7 +135,7 @@
       // Fixed camera
       // ============================================================
       const fixedYawDeg = 45;
-      const fixedPitchDeg = -2;
+      const fixedPitchDeg = 5;
       const fixedRollDeg = 0;
 
       const initialCamPos = new THREE.Vector3(3, cameraY, 3);
@@ -174,22 +185,34 @@
       scene.add(rim);
 
       // ============================================================
-      // Grid (toggle with g) + Stars (tube + twinkle per-star phase)
+      // Grid (toggle with g): make faces opaque by adding a filled plane
       // ============================================================
-      const grid = new THREE.GridHelper(50, 50, 0x223042, 0x1a2330);
+      // Keep your existing GridHelper for lines:
+      const grid = new THREE.GridHelper(500, 500, 0xe825fa, 0xe825fa);
       grid.position.y = gridY;
       grid.visible = false; // default off
       scene.add(grid);
 
-    //   const temp_grid = new THREE.GridHelper(50, 50, 0xFF0000, 0xee0000);
-    //   temp_grid.position.y = tempGridY;
-    //   temp_grid.visible = true;
-    //   scene.add(temp_grid);
+      // Add an opaque "floor" under it (same toggle behavior):
+      const gridFloorGeom = new THREE.PlaneGeometry(500, 500);
+      const gridFloorMat = new THREE.MeshStandardMaterial({
+        color: 0x0f0273,   // same as background-ish
+        roughness: 0.8,
+        // roughness: 1.0,
+        metalness: 0.5,
+        transparent: false,
+        opacity: 1.0,
+        side: THREE.DoubleSide,
+      });
+      const gridFloor = new THREE.Mesh(gridFloorGeom, gridFloorMat);
+      gridFloor.rotation.x = -Math.PI / 2;   // lay in XZ plane
+      gridFloor.position.y = gridY - 0.001;  // tiny offset to avoid z-fighting with grid lines
+      gridFloor.visible = false;             // default off
+      scene.add(gridFloor);
 
-
-
-      // Stars as Points with per-star size attribute
-      // so each star can twinkle with its own phase offset.
+      // ============================================================
+      // Stars (tube + twinkle per-star phase)
+      // ============================================================
       const stars = {
         points: null,
         geom: null,
@@ -238,13 +261,12 @@
           positions[i * 3 + 2] = z;
 
           phases[i] = randBetween(0, Math.PI * 2);
-          sizes[i] = stars.baseSize; // start all at base
+          sizes[i] = stars.baseSize;
         }
 
-        // BufferGeometry with per-point "aSize"
         const g = new THREE.BufferGeometry();
         g.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-        g.setAttribute("aSize", new THREE.BufferAttribute(sizes, 1)); // dynamic
+        g.setAttribute("aSize", new THREE.BufferAttribute(sizes, 1));
 
         const m = new THREE.PointsMaterial({
           size: stars.baseSize,
@@ -252,8 +274,6 @@
           opacity: 0.9
         });
 
-        // Patch the PointsMaterial shader to use a per-vertex size attribute.
-        // gl_PointSize is set in vertex shader.
         m.onBeforeCompile = (shader) => {
           shader.vertexShader = shader.vertexShader
             .replace(
@@ -268,15 +288,11 @@
               `
             );
 
-          // Insert gl_PointSize assignment near end of vertex shader.
-          // PointsMaterial normally sets gl_PointSize = size; then applies sizeAttenuation.
-          // We'll replace that assignment.
           shader.vertexShader = shader.vertexShader.replace(
             "gl_PointSize = size;",
             "gl_PointSize = aSize;"
           );
 
-          // Keep a reference so we can debug if needed.
           m.userData._shader = shader;
         };
 
@@ -403,8 +419,9 @@
       // ============================================================
       // Text wrapping
       // ============================================================
-      function measureLineWidth(font, line) {
-        const g = new TextGeometry(line, { font, size: textSize, height: 0.01, bevelEnabled: false, curveSegments: 8 });
+      function measureLineWidth(font, line, sizeOverride = null) {
+        const size = (sizeOverride == null) ? textSize : sizeOverride;
+        const g = new TextGeometry(line, { font, size, height: 0.01, bevelEnabled: false, curveSegments: 8 });
         g.computeBoundingBox();
         const bb = g.boundingBox;
         const w = (bb.max.x - bb.min.x);
@@ -412,7 +429,7 @@
         return w;
       }
 
-      function wrapTextToWidth(font, text, maxWidth) {
+      function wrapTextToWidth(font, text, maxWidth, sizeOverride = null) {
         const paragraphs = String(text).split("\n").map(s => s.trim()).filter(Boolean);
         const lines = [];
 
@@ -422,13 +439,29 @@
 
           for (const w of words) {
             const candidate = cur ? (cur + " " + w) : w;
-            const width = measureLineWidth(font, candidate);
+            const width = measureLineWidth(font, candidate, sizeOverride);
             if (width <= maxWidth || !cur) cur = candidate;
             else { lines.push(cur); cur = w; }
           }
           if (cur) lines.push(cur);
         }
         return lines.length ? lines : [""];
+      }
+
+      // ============================================================
+      // Date formatting helper
+      // ============================================================
+      const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+      function formatDateMMMddyyyy(iso) {
+        // Expect "YYYY-MM-DD"
+        const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso).trim());
+        if (!m) return String(iso).trim(); // fallback
+        const year = Number(m[1]);
+        const monthIdx = Number(m[2]) - 1;
+        const day = Number(m[3]);
+        if (!(monthIdx >= 0 && monthIdx < 12) || !(day >= 1 && day <= 31)) return String(iso).trim();
+        return `${MONTHS[monthIdx]} ${day}, ${year}`;
       }
 
       // ============================================================
@@ -466,27 +499,36 @@
         return cardGroup;
       }
 
-      function buildTitleGroupLines(titleText, maxLineWidth, postUrlOrNull) {
-        const titleMaterial = makeCandyMaterial();
-        animatedTitleMaterials.push(titleMaterial);
+      function buildCandyTextGroupLines({
+        text,
+        maxLineWidth,
+        postUrlOrNull,
+        size,
+        depth,
+        bevelThick,
+        bevelSz,
+        spacingMult,
+      }) {
+        const mat = makeCandyMaterial();
+        animatedTitleMaterials.push(mat);
 
-        const titleGroup = new THREE.Group();
-        titleGroup.rotation.x = 0.0;
+        const group = new THREE.Group();
+        group.rotation.x = 0.0;
 
-        const lines = wrapTextToWidth(loadedFont, titleText, maxLineWidth);
+        const lines = wrapTextToWidth(loadedFont, text, maxLineWidth, size);
 
         const meshes = [];
         for (const line of lines) {
           const geom = new TextGeometry(line, {
             font: loadedFont,
-            size: textSize,
-            height: textDepth,
-            curveSegments: 12,
+            size,
+            height: depth,
+            curveSegments: 3,
             bevelEnabled: true,
-            bevelThickness,
-            bevelSize,
+            bevelThickness: bevelThick,
+            bevelSize: bevelSz,
             bevelOffset: 0.0,
-            bevelSegments: 6
+            bevelSegments: 2
           });
 
           geom.computeBoundingBox();
@@ -494,7 +536,7 @@
           const w = (bb.max.x - bb.min.x);
           const h = (bb.max.y - bb.min.y);
 
-          const mesh = new THREE.Mesh(geom, titleMaterial);
+          const mesh = new THREE.Mesh(geom, mat);
           mesh.position.x = -w / 2;
           mesh.position.z = 0.06;
           meshes.push({ mesh, h });
@@ -502,7 +544,7 @@
           if (postUrlOrNull) tagLink(mesh, postUrlOrNull);
         }
 
-        const spacing = textSize * lineSpacing;
+        const spacing = size * lineSpacing * spacingMult;
         let totalHeight = 0;
         for (let i = 0; i < meshes.length; i++) {
           totalHeight += meshes[i].h;
@@ -515,18 +557,28 @@
           yCursor -= h;
           mesh.position.y = yCursor;
           yCursor -= spacing;
-          titleGroup.add(mesh);
+          group.add(mesh);
         }
 
-        return { titleGroup, titleMaterial };
+        return { group, material: mat };
       }
 
       function buildTitleIntoCard(cardGroup, titleText, imagePlaneWidth, imagePlaneHeight, postUrl, postIndex) {
         const maxLineWidth = imagePlaneWidth * titleMaxWidthFactor;
-        const { titleGroup } = buildTitleGroupLines(titleText, maxLineWidth, postUrl);
 
-        // div 2 because it's with respect to the center of the group, which is halfway
-        // up the image
+        const { group: titleGroup } = buildCandyTextGroupLines({
+          text: titleText,
+          maxLineWidth,
+          postUrlOrNull: postUrl,
+          size: textSize,
+          depth: textDepth,
+          bevelThick: bevelThickness,
+          bevelSz: bevelSize,
+          spacingMult: 1.0,
+        });
+
+        // In your new layout, the image center is at imageThumbnailCenterY,
+        // so image top is at imageThumbnailCenterY + imagePlaneHeight/2 == imagePlaneHeight
         const imageTopY = imagePlaneHeight;
         titleGroup.position.y = imageTopY + titleBottomMargin;
 
@@ -537,6 +589,49 @@
           baseRot: { x: titleGroup.rotation.x, y: titleGroup.rotation.y, z: titleGroup.rotation.z },
           cardZ: cardGroup.position.z
         });
+      }
+
+      function buildDateIntoCard(cardGroup, dateIso, imagePlaneWidth, imagePlaneHeight, postUrl) {
+        const dateText = formatDateMMMddyyyy(dateIso);
+
+        const dateSize = textSize * dateSizeScale;
+        const dateDepth = textDepth;
+        const dateBevelThickness = bevelThickness * 0.75;
+        const dateBevelSize = bevelSize * 0.75;
+
+        // Keep width aligned with title/image: same max line width (relative to image)
+        const maxLineWidth = imagePlaneWidth * titleMaxWidthFactor;
+
+        const { group: dateGroup } = buildCandyTextGroupLines({
+          text: dateText,
+          maxLineWidth,
+          postUrlOrNull: postUrl, // clickable too (optional; remove if you want only title/image clickable)
+          size: dateSize,
+          depth: dateDepth,
+          bevelThick: dateBevelThickness,
+          bevelSz: dateBevelSize,
+          spacingMult: dateLineSpacingScale,
+        });
+
+        // Place BELOW the image:
+        // image bottom (in card local coords) is at:
+        //   imageThumbnailCenterY - imagePlaneHeight/2 == 0
+        // We want the *top* of the date text slightly below that: y = -dateTopMargin.
+        // Our text groups are laid out with their top at y=totalHeight and bottom near 0.
+        // So if we place group.y = -dateTopMargin, the bottom will sit near -dateTopMargin.
+        // To make the TOP align at -dateTopMargin, we measure group bounds via a dummy box:
+        // Instead, easiest: move group down by dateTopMargin and then by its own height.
+        // We'll compute bounding box of the group after adding meshes.
+        const box = new THREE.Box3().setFromObject(dateGroup);
+        const height = box.max.y - box.min.y;
+
+        // Put bottom at -dateTopMargin - height? No:
+        // We want the TOP of the text to be just below image bottom => y = -dateTopMargin.
+        // If top is at (currentTop + group.position.y), set group.position.y so:
+        //   (box.max.y + groupY) = -dateTopMargin  => groupY = -dateTopMargin - box.max.y
+        dateGroup.position.y = -dateTopMargin - box.max.y;
+
+        cardGroup.add(dateGroup);
       }
 
       function ensureEndMessageAt(numPostsTotal) {
@@ -550,7 +645,18 @@
 
           const referenceWidth = 3.2;
           const maxLineWidth = referenceWidth * titleMaxWidthFactor;
-          const { titleGroup } = buildTitleGroupLines("you've reached the end of history", maxLineWidth, null);
+
+          const { group: titleGroup } = buildCandyTextGroupLines({
+            text: "you've reached the end of history",
+            maxLineWidth,
+            postUrlOrNull: null,
+            size: textSize,
+            depth: textDepth,
+            bevelThick: bevelThickness,
+            bevelSz: bevelSize,
+            spacingMult: 1.0,
+          });
+
           titleGroup.position.y = 0.5 * imageThumbnailHeight;
 
           endMessageGroup.add(titleGroup);
@@ -578,11 +684,12 @@
         const title = String(post?.title_text ?? "").trim();
         const thumb = String(post?.thumbnail_url ?? "").trim();
         const postUrl = String(post?.post_url ?? "").trim();
+        const dateIso = String(post?.date ?? "").trim();
 
-        if (!title || !thumb || !postUrl) {
+        if (!title || !thumb || !postUrl || !dateIso) {
           throw new Error(
             `Post at index ${index} missing required key(s).\n` +
-            `Required: "title_text", "thumbnail_url", "post_url"\n` +
+            `Required: "title_text", "thumbnail_url", "post_url", "date"\n` +
             `Got: ${JSON.stringify(post)}`
           );
         }
@@ -603,12 +710,16 @@
         const mat  = new THREE.MeshBasicMaterial({ map: tex, transparent: true });
 
         const imagePlane = new THREE.Mesh(geom, mat);
-        // This is RELATIVE to the cardGroup y origin:
         imagePlane.position.set(0, imageThumbnailCenterY, 0);
         cardGroup.add(imagePlane);
 
         tagLink(imagePlane, postUrl);
+
+        // Title above image
         buildTitleIntoCard(cardGroup, title, imagePlaneWidth, imagePlaneHeight, postUrl, index);
+
+        // Date below image
+        buildDateIntoCard(cardGroup, dateIso, imagePlaneWidth, imagePlaneHeight, postUrl);
 
         scene.add(cardGroup);
       }
@@ -782,7 +893,9 @@
         if (e.key === "c" || e.key === "C") {
           setHudVisible(!hudVisible);
         } else if (e.key === "g" || e.key === "G") {
-          grid.visible = !grid.visible;
+          const v = !grid.visible;
+          grid.visible = v;
+          gridFloor.visible = v; // keep filled plane in sync
         }
       });
 
