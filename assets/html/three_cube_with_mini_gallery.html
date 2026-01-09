@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Three.js: Lazy-loaded post cards + fixed camera + scroll Z</title>
+    <title>Blogging, but in 3D</title>
 
     <script type="importmap">
     {
@@ -44,8 +44,8 @@
         user-select: text;
         white-space: pre;
         z-index: 10;
-        min-width: 250px;
-        display: none; /* default hidden (toggle with 'c') */
+        min-width: 280px;
+        display: none; /* default hidden (toggle with 'd') */
       }
 
       #err {
@@ -65,18 +65,63 @@
         z-index: 10;
         display: none;
       }
+
+      /* Mobile nav buttons (only shown on mobile) */
+      #mobileNav {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 14px;
+        display: none;
+        justify-content: center;
+        gap: 14px;
+        z-index: 20;
+        pointer-events: none; /* buttons themselves will re-enable */
+      }
+      .navBtn {
+        pointer-events: auto;
+        width: 56px;
+        height: 56px;
+        border-radius: 16px;
+        border: 1px solid rgba(255,255,255,0.18);
+        background: rgba(0,0,0,0.45);
+        backdrop-filter: blur(6px);
+        color: rgba(255,255,255,0.92);
+        font: 22px system-ui, sans-serif;
+        display: grid;
+        place-items: center;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+      }
+      .navBtn:active {
+        transform: translateY(1px);
+      }
     </style>
   </head>
 
   <body>
-    <div id="hint">Scroll = move forward/back · Click image/title to open post · “c” toggles HUD · “g” toggles grid</div>
+    <div id="hint">Scroll = move forward/back · Click image/title to open post · “d” toggles debug · “g” toggles grid</div>
     <div id="hud"></div>
     <div id="err"></div>
+
+    <!-- mobile-only nav -->
+    <div id="mobileNav" aria-hidden="true">
+      <div class="navBtn" id="btnLeft" title="More recent">◀</div>
+      <div class="navBtn" id="btnRight" title="Less recent">▶</div>
+    </div>
 
     <script type="module">
       import * as THREE from "three";
       import { FontLoader } from "three/addons/loaders/FontLoader.js";
       import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
+
+      // ============================================================
+      // Mobile detect + FOV tweak
+      // ============================================================
+      const isMobile =
+        window.matchMedia?.("(pointer: coarse)")?.matches ||
+        Math.min(window.innerWidth, window.innerHeight) < 700;
 
       // ============================================================
       // Data / layout
@@ -100,7 +145,12 @@
       const imageThumbnailHeight = 2.2;
       const imageThumbnailCenterY = 0.5 * imageThumbnailHeight;
 
+      // Camera constants
       const cameraY = 0.7 * imageThumbnailHeight;
+      // amount camera is offset from card center in Z
+      const cameraOffsetZ = 3.0;
+
+      // Grid stuff
       const gridY = 0.0;
       const tempGridY = 0.1;
 
@@ -121,13 +171,10 @@
       const titleMaxWidthFactor = 1.30;
       const titleBottomMargin   = 0.18;
 
-      
       const textDepth      = 0.001;
       const bevelThickness = 0.01;
       const bevelSize      = 0.003;
       const lineSpacing    = 0.45;
-
-      
 
       const fontUrl = "https://unpkg.com/three@0.160.0/examples/fonts/helvetiker_bold.typeface.json";
 
@@ -138,7 +185,7 @@
       const fixedPitchDeg = 5;
       const fixedRollDeg = 0;
 
-      const initialCamPos = new THREE.Vector3(3, cameraY, 3);
+      const initialCamPos = new THREE.Vector3(3, cameraY, cameraOffsetZ);
       const scrollStepZ = 5;
 
       // Bounds (computed after posts load)
@@ -157,7 +204,10 @@
       const scene = new THREE.Scene();
       scene.background = new THREE.Color(0x0b0f14);
 
-      const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 300);
+      // Increase FOV on mobile only
+      const fovDesktop = 60;
+      const fovMobile  = 90;
+      const camera = new THREE.PerspectiveCamera(isMobile ? fovMobile : fovDesktop, window.innerWidth / window.innerHeight, 0.1, 300);
       camera.position.copy(initialCamPos);
 
       function deg2rad(d) { return d * Math.PI / 180; }
@@ -196,18 +246,17 @@
       // Add an opaque "floor" under it (same toggle behavior):
       const gridFloorGeom = new THREE.PlaneGeometry(500, 500);
       const gridFloorMat = new THREE.MeshStandardMaterial({
-        color: 0x0f0273,   // same as background-ish
+        color: 0x0f0273,
         roughness: 0.8,
-        // roughness: 1.0,
         metalness: 0.5,
         transparent: false,
         opacity: 1.0,
         side: THREE.DoubleSide,
       });
       const gridFloor = new THREE.Mesh(gridFloorGeom, gridFloorMat);
-      gridFloor.rotation.x = -Math.PI / 2;   // lay in XZ plane
-      gridFloor.position.y = gridY - 0.001;  // tiny offset to avoid z-fighting with grid lines
-      gridFloor.visible = false;             // default off
+      gridFloor.rotation.x = -Math.PI / 2;
+      gridFloor.position.y = gridY - 0.001;
+      gridFloor.visible = false;
       scene.add(gridFloor);
 
       // ============================================================
@@ -280,12 +329,6 @@
               "#include <common>",
               `#include <common>
                attribute float aSize;`
-            )
-            .replace(
-              "#include <begin_vertex>",
-              `#include <begin_vertex>
-               // per-point size (in px, then perspective scales it as usual)
-              `
             );
 
           shader.vertexShader = shader.vertexShader.replace(
@@ -454,9 +497,8 @@
       const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
       function formatDateMMMddyyyy(iso) {
-        // Expect "YYYY-MM-DD"
         const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso).trim());
-        if (!m) return String(iso).trim(); // fallback
+        if (!m) return String(iso).trim();
         const year = Number(m[1]);
         const monthIdx = Number(m[2]) - 1;
         const day = Number(m[3]);
@@ -577,8 +619,6 @@
           spacingMult: 1.0,
         });
 
-        // In your new layout, the image center is at imageThumbnailCenterY,
-        // so image top is at imageThumbnailCenterY + imagePlaneHeight/2 == imagePlaneHeight
         const imageTopY = imagePlaneHeight;
         titleGroup.position.y = imageTopY + titleBottomMargin;
 
@@ -599,13 +639,12 @@
         const dateBevelThickness = bevelThickness * 0.75;
         const dateBevelSize = bevelSize * 0.75;
 
-        // Keep width aligned with title/image: same max line width (relative to image)
         const maxLineWidth = imagePlaneWidth * titleMaxWidthFactor;
 
         const { group: dateGroup } = buildCandyTextGroupLines({
           text: dateText,
           maxLineWidth,
-          postUrlOrNull: postUrl, // clickable too (optional; remove if you want only title/image clickable)
+          postUrlOrNull: postUrl,
           size: dateSize,
           depth: dateDepth,
           bevelThick: dateBevelThickness,
@@ -613,22 +652,7 @@
           spacingMult: dateLineSpacingScale,
         });
 
-        // Place BELOW the image:
-        // image bottom (in card local coords) is at:
-        //   imageThumbnailCenterY - imagePlaneHeight/2 == 0
-        // We want the *top* of the date text slightly below that: y = -dateTopMargin.
-        // Our text groups are laid out with their top at y=totalHeight and bottom near 0.
-        // So if we place group.y = -dateTopMargin, the bottom will sit near -dateTopMargin.
-        // To make the TOP align at -dateTopMargin, we measure group bounds via a dummy box:
-        // Instead, easiest: move group down by dateTopMargin and then by its own height.
-        // We'll compute bounding box of the group after adding meshes.
         const box = new THREE.Box3().setFromObject(dateGroup);
-        const height = box.max.y - box.min.y;
-
-        // Put bottom at -dateTopMargin - height? No:
-        // We want the TOP of the text to be just below image bottom => y = -dateTopMargin.
-        // If top is at (currentTop + group.position.y), set group.position.y so:
-        //   (box.max.y + groupY) = -dateTopMargin  => groupY = -dateTopMargin - box.max.y
         dateGroup.position.y = -dateTopMargin - box.max.y;
 
         cardGroup.add(dateGroup);
@@ -776,7 +800,73 @@
         }
       }
 
+      // ============================================================
+      // Navigation helpers (keyboard + mobile buttons)
+      // ============================================================
+      function clamp(v, lo, hi) {
+        return Math.max(lo, Math.min(hi, v));
+      }
+
+      function snapToNearestCardZ(z) {
+        // Cards are at z = -i*cardSpacingZ for i >= 0.
+        // We "snap index" to the nearest integer i (clamped to [0..allPosts.length]).
+        const i = Math.round((-z) / cardSpacingZ);
+        return -i * cardSpacingZ;
+      }
+
+      function getNextCardZ(currentZ, direction) {
+        // direction: -1 => left arrow (more recent) => move toward z_max (increase z)
+        // direction: +1 => right arrow (less recent) => move toward negative z (decrease z)
+        //
+        // We consider the camera might be between card planes.
+        // Compute fractional index f = (-z)/spacing.
+        const f = (-currentZ) / cardSpacingZ;
+
+        // Epsilon for "exactly on" handling
+        const eps = 1e-6;
+
+        let targetIndex;
+        if (direction > 0) {
+          // less recent: go to next deeper (more negative z): index should increase
+          // if exactly on integer, go to +1; else go to ceil(f)
+          const isInt = Math.abs(f - Math.round(f)) < eps;
+          targetIndex = isInt ? (Math.round(f) + 1) : Math.ceil(f);
+        } else {
+          // more recent: go back toward 0: index should decrease
+          // if exactly on integer, go to -1; else go to floor(f)
+          const isInt = Math.abs(f - Math.round(f)) < eps;
+          targetIndex = isInt ? (Math.round(f) - 1) : Math.floor(f);
+        }
+
+        // Clamp to allowed range:
+        // index 0 corresponds to z=0; last "end message" is at index=allPosts.length (z = -N*spacing)
+        const maxIndex = allPosts.length; // allow reaching end-message plane
+        targetIndex = Math.max(0, Math.min(maxIndex, targetIndex));
+        return -targetIndex * cardSpacingZ;
+      }
+
+      function moveCameraToZ(newZ) {
+        if (z_min_allowed == null) return;
+        camera.position.z = clamp(newZ, z_min_allowed, z_max_allowed);
+        applyFixedCameraRotation();
+        maybeTriggerPrefetch();
+      }
+
+      function navMoreRecent() {
+        // toward z_max_allowed (increase z)
+        const z = getNextCardZ(camera.position.z - cameraOffsetZ, -1);
+        moveCameraToZ(z + cameraOffsetZ);
+      }
+
+      function navLessRecent() {
+        // toward z_min_allowed (decrease z)
+        const z = getNextCardZ(camera.position.z - cameraOffsetZ, +1);
+        moveCameraToZ(z + cameraOffsetZ);
+      }
+
+      // ============================================================
       // Kick off
+      // ============================================================
       (async () => {
         try {
           clearError();
@@ -796,6 +886,13 @@
 
           num_posts_loaded = 0;
           await loadMorePostsIfNeeded();
+
+          // Mobile UI buttons
+          const mobileNav = document.getElementById("mobileNav");
+          if (isMobile) {
+            mobileNav.style.display = "flex";
+            mobileNav.setAttribute("aria-hidden", "false");
+          }
 
         } catch (e) {
           console.error(e);
@@ -850,10 +947,6 @@
       // ============================================================
       renderer.domElement.style.touchAction = "none";
 
-      function clamp(v, lo, hi) {
-        return Math.max(lo, Math.min(hi, v));
-      }
-
       function onWheel(e) {
         e.preventDefault();
         if (z_min_allowed == null) return;
@@ -869,6 +962,7 @@
         maybeTriggerPrefetch();
       }
 
+      // Keep wheel listener; on many mobile browsers it won't fire anyway.
       renderer.domElement.addEventListener("wheel", onWheel, { passive: false });
 
       function tickPrefetch() {
@@ -878,7 +972,7 @@
       requestAnimationFrame(tickPrefetch);
 
       // ============================================================
-      // HUD toggle (c), Grid toggle (g)
+      // HUD toggle (d), Grid toggle (g), Desktop arrow nav
       // ============================================================
       const hudEl = document.getElementById("hud");
       let hudVisible = false;
@@ -890,14 +984,34 @@
       setHudVisible(false);
 
       window.addEventListener("keydown", (e) => {
-        if (e.key === "c" || e.key === "C") {
+        if (e.key === "d" || e.key === "D") {
           setHudVisible(!hudVisible);
         } else if (e.key === "g" || e.key === "G") {
           const v = !grid.visible;
           grid.visible = v;
-          gridFloor.visible = v; // keep filled plane in sync
+          gridFloor.visible = v;
+        } else if (!isMobile && (e.key === "ArrowLeft" || e.key === "ArrowRight")) {
+          // prevent page scroll / browser history weirdness
+          e.preventDefault();
+          if (e.key === "ArrowLeft") navMoreRecent();
+          else navLessRecent();
         }
-      });
+      }, { passive: false });
+
+      // Mobile buttons (click/tap)
+      {
+        const btnLeft = document.getElementById("btnLeft");
+        const btnRight = document.getElementById("btnRight");
+
+        function bindTap(el, fn) {
+          if (!el) return;
+          el.addEventListener("pointerdown", (e) => { e.preventDefault(); fn(); }, { passive: false });
+          el.addEventListener("click", (e) => { e.preventDefault(); fn(); }, { passive: false });
+        }
+
+        bindTap(btnLeft, navMoreRecent);
+        bindTap(btnRight, navLessRecent);
+      }
 
       // ============================================================
       // HUD content
@@ -920,7 +1034,13 @@
         const roll  = rad2deg(tmpEuler.z);
 
         hudEl.textContent =
-`camera.position:
+`debug:
+  isMobile ${isMobile ? "true" : "false"}
+  fov ${fmt(camera.fov)}
+  viewport ${window.innerWidth}x${window.innerHeight}
+  devicePixelRatio ${fmt(window.devicePixelRatio)}
+
+camera.position:
   x ${fmt(p.x)}
   y ${fmt(p.y)}
   z ${fmt(p.z)}
@@ -933,6 +1053,11 @@ camera.rotation (deg):
 bounds:
   z_min ${z_min_allowed == null ? "?" : fmt(z_min_allowed)}
   z_max ${fmt(z_max_allowed)}
+
+layout:
+  cardSpacingZ ${fmt(cardSpacingZ)}
+  cardCenterY ${fmt(cardCenterY)}
+  imageThumbnailHeight ${fmt(imageThumbnailHeight)}
 
 lazy load:
   num_load_posts_at_a_time ${num_load_posts_at_a_time}

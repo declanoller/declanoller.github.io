@@ -206,7 +206,7 @@
 
       // Increase FOV on mobile only
       const fovDesktop = 60;
-      const fovMobile  = 80;
+      const fovMobile  = 90;
       const camera = new THREE.PerspectiveCamera(isMobile ? fovMobile : fovDesktop, window.innerWidth / window.innerHeight, 0.1, 300);
       camera.position.copy(initialCamPos);
 
@@ -237,13 +237,11 @@
       // ============================================================
       // Grid (toggle with g): make faces opaque by adding a filled plane
       // ============================================================
-      // Keep your existing GridHelper for lines:
       const grid = new THREE.GridHelper(500, 500, 0xe825fa, 0xe825fa);
       grid.position.y = gridY;
-      grid.visible = false; // default off
+      grid.visible = false;
       scene.add(grid);
 
-      // Add an opaque "floor" under it (same toggle behavior):
       const gridFloorGeom = new THREE.PlaneGeometry(500, 500);
       const gridFloorMat = new THREE.MeshStandardMaterial({
         color: 0x0f0273,
@@ -268,10 +266,10 @@
         mat: null,
         n: 0,
         baseSize: 0.1,
-        twinkleAmp: 0.1,     // baseSize + amp -> 0.1..0.2
-        phases: null,        // Float32Array length n
-        sizes: null,         // Float32Array length n (BufferAttribute)
-        freq: 1.5,           // requested
+        twinkleAmp: 0.1,
+        phases: null,
+        sizes: null,
+        freq: 1.5,
       };
 
       function randBetween(a, b) { return a + Math.random() * (b - a); }
@@ -739,10 +737,7 @@
 
         tagLink(imagePlane, postUrl);
 
-        // Title above image
         buildTitleIntoCard(cardGroup, title, imagePlaneWidth, imagePlaneHeight, postUrl, index);
-
-        // Date below image
         buildDateIntoCard(cardGroup, dateIso, imagePlaneWidth, imagePlaneHeight, postUrl);
 
         scene.add(cardGroup);
@@ -808,39 +803,24 @@
       }
 
       function snapToNearestCardZ(z) {
-        // Cards are at z = -i*cardSpacingZ for i >= 0.
-        // We "snap index" to the nearest integer i (clamped to [0..allPosts.length]).
         const i = Math.round((-z) / cardSpacingZ);
         return -i * cardSpacingZ;
       }
 
       function getNextCardZ(currentZ, direction) {
-        // direction: -1 => left arrow (more recent) => move toward z_max (increase z)
-        // direction: +1 => right arrow (less recent) => move toward negative z (decrease z)
-        //
-        // We consider the camera might be between card planes.
-        // Compute fractional index f = (-z)/spacing.
         const f = (-currentZ) / cardSpacingZ;
-
-        // Epsilon for "exactly on" handling
         const eps = 1e-6;
 
         let targetIndex;
         if (direction > 0) {
-          // less recent: go to next deeper (more negative z): index should increase
-          // if exactly on integer, go to +1; else go to ceil(f)
           const isInt = Math.abs(f - Math.round(f)) < eps;
           targetIndex = isInt ? (Math.round(f) + 1) : Math.ceil(f);
         } else {
-          // more recent: go back toward 0: index should decrease
-          // if exactly on integer, go to -1; else go to floor(f)
           const isInt = Math.abs(f - Math.round(f)) < eps;
           targetIndex = isInt ? (Math.round(f) - 1) : Math.floor(f);
         }
 
-        // Clamp to allowed range:
-        // index 0 corresponds to z=0; last "end message" is at index=allPosts.length (z = -N*spacing)
-        const maxIndex = allPosts.length; // allow reaching end-message plane
+        const maxIndex = allPosts.length;
         targetIndex = Math.max(0, Math.min(maxIndex, targetIndex));
         return -targetIndex * cardSpacingZ;
       }
@@ -853,13 +833,11 @@
       }
 
       function navMoreRecent() {
-        // toward z_max_allowed (increase z)
         const z = getNextCardZ(camera.position.z - cameraOffsetZ, -1);
         moveCameraToZ(z + cameraOffsetZ);
       }
 
       function navLessRecent() {
-        // toward z_min_allowed (decrease z)
         const z = getNextCardZ(camera.position.z - cameraOffsetZ, +1);
         moveCameraToZ(z + cameraOffsetZ);
       }
@@ -887,7 +865,6 @@
           num_posts_loaded = 0;
           await loadMorePostsIfNeeded();
 
-          // Mobile UI buttons
           const mobileNav = document.getElementById("mobileNav");
           if (isMobile) {
             mobileNav.style.display = "flex";
@@ -962,7 +939,6 @@
         maybeTriggerPrefetch();
       }
 
-      // Keep wheel listener; on many mobile browsers it won't fire anyway.
       renderer.domElement.addEventListener("wheel", onWheel, { passive: false });
 
       function tickPrefetch() {
@@ -991,26 +967,45 @@
           grid.visible = v;
           gridFloor.visible = v;
         } else if (!isMobile && (e.key === "ArrowLeft" || e.key === "ArrowRight")) {
-          // prevent page scroll / browser history weirdness
           e.preventDefault();
           if (e.key === "ArrowLeft") navMoreRecent();
           else navLessRecent();
         }
       }, { passive: false });
 
-      // Mobile buttons (click/tap)
+      // ============================================================
+      // Mobile buttons (single-trigger fix)
+      // ============================================================
+      // Your double-trigger is because you bind BOTH pointerdown and click.
+      // On touch devices, a tap commonly generates: pointerdown/up -> (synthetic) click.
+      // Fix: handle ONE unified pointer event, and never also bind click.
       {
         const btnLeft = document.getElementById("btnLeft");
         const btnRight = document.getElementById("btnRight");
 
-        function bindTap(el, fn) {
+        function bindTapOnce(el, fn) {
           if (!el) return;
-          el.addEventListener("pointerdown", (e) => { e.preventDefault(); fn(); }, { passive: false });
-          el.addEventListener("click", (e) => { e.preventDefault(); fn(); }, { passive: false });
+
+          // Ensure we only act on primary pointer; ignore multi-touch / secondary buttons.
+          el.addEventListener("pointerup", (e) => {
+            if (e.pointerType === "mouse" && e.button !== 0) return;
+            if (e.isPrimary === false) return;
+
+            e.preventDefault();
+            e.stopPropagation();
+            fn();
+          }, { passive: false });
+
+          // Prevent the browser from generating a "click" default action after touch.
+          // (Also helps avoid focus/selection weirdness.)
+          el.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }, { passive: false });
         }
 
-        bindTap(btnLeft, navMoreRecent);
-        bindTap(btnRight, navLessRecent);
+        bindTapOnce(btnLeft, navMoreRecent);
+        bindTapOnce(btnRight, navLessRecent);
       }
 
       // ============================================================
@@ -1056,6 +1051,7 @@ bounds:
 
 layout:
   cardSpacingZ ${fmt(cardSpacingZ)}
+  cameraOffsetZ ${fmt(cameraOffsetZ)}
   cardCenterY ${fmt(cardCenterY)}
   imageThumbnailHeight ${fmt(imageThumbnailHeight)}
 
@@ -1109,13 +1105,12 @@ wiggle:
           if (mat?.userData?.uniforms) mat.userData.uniforms.time.value = t;
         }
 
-        // Per-star twinkle with per-star phase (freq = 1.5)
         if (stars.geom && stars.phases && stars.sizes) {
           const aSizeAttr = stars.geom.getAttribute("aSize");
           if (aSizeAttr) {
             for (let i = 0; i < stars.n; i++) {
               const tw = 0.5 + 0.5 * Math.sin(t * stars.freq + stars.phases[i]);
-              stars.sizes[i] = stars.baseSize + stars.twinkleAmp * tw; // 0.1..0.2
+              stars.sizes[i] = stars.baseSize + stars.twinkleAmp * tw;
             }
             aSizeAttr.needsUpdate = true;
           }
