@@ -1,0 +1,537 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Three.js Low-Poly Grass + Pine Trees + Sandy Path (Wind Sway)</title>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+
+    <style>
+      html, body { margin: 0; height: 100%; overflow: hidden; background: #0b0f14; }
+      canvas { display: block; }
+      #hint{
+        position:fixed; left:12px; top:12px;
+        padding:8px 10px; border-radius:10px;
+        background:rgba(0,0,0,0.35);
+        color:rgba(255,255,255,0.85);
+        font:12px/1.3 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        user-select:none;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="hint">Drag to orbit • Scroll to zoom • R to reset</div>
+
+    <script type="module">
+      import * as THREE from "three";
+      import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+      import * as BufferGeometryUtils from "three/addons/utils/BufferGeometryUtils.js";
+
+
+      // ----------------------------
+      // Scene / camera / renderer
+      // ----------------------------
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0b0f14);
+      scene.fog = new THREE.Fog(0x0b0f14, 10, 42);
+
+      const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 120);
+      camera.position.set(7.5, 5.8, 10.5);
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      document.body.appendChild(renderer.domElement);
+
+      const controls = new OrbitControls(camera, renderer.domElement);
+      controls.target.set(0, 1.2, 0);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.06;
+      controls.minDistance = 3;
+      controls.maxDistance = 30;
+      controls.maxPolarAngle = Math.PI * 0.49;
+
+      // ----------------------------
+      // Lights
+      // ----------------------------
+      const hemi = new THREE.HemisphereLight(0xbddcff, 0x081010, 0.55);
+      scene.add(hemi);
+
+      const dir = new THREE.DirectionalLight(0xffffff, 1.05);
+      dir.position.set(7, 12, 5);
+      dir.castShadow = true;
+      dir.shadow.mapSize.set(2048, 2048);
+      dir.shadow.camera.left = -16;
+      dir.shadow.camera.right = 16;
+      dir.shadow.camera.top = 16;
+      dir.shadow.camera.bottom = -16;
+      dir.shadow.camera.near = 0.5;
+      dir.shadow.camera.far = 55;
+      scene.add(dir);
+
+      // ----------------------------
+      // Helpers
+      // ----------------------------
+      function rand01() { return Math.random(); }
+      function randRange(a, b) { return a + (b - a) * Math.random(); }
+      function clamp(x, a, b) { return Math.max(a, Math.min(b, x)); }
+
+      // ----------------------------
+      // Ground plane
+      // ----------------------------
+      const ground = new THREE.Mesh(
+        new THREE.PlaneGeometry(80, 80, 1, 1),
+        new THREE.MeshStandardMaterial({
+          color: 0x0f171a,
+          roughness: 1.0,
+          metalness: 0.0
+        })
+      );
+      ground.rotation.x = -Math.PI / 2;
+      ground.receiveShadow = true;
+      scene.add(ground);
+
+      // ----------------------------
+      // Sandy dirt path (CanvasTexture)
+      // ----------------------------
+      function makeSandTexture(size = 512) {
+        const c = document.createElement("canvas");
+        c.width = c.height = size;
+        const ctx = c.getContext("2d");
+
+        // Base
+        ctx.fillStyle = "#b79a6a";
+        ctx.fillRect(0, 0, size, size);
+
+        // Broad variation (blotches)
+        for (let i = 0; i < 180; i++) {
+          const r = randRange(12, 55);
+          const x = randRange(0, size);
+          const y = randRange(0, size);
+          const a = randRange(0.04, 0.12);
+          const hueShift = randRange(-12, 12);
+          ctx.fillStyle = `rgba(${clamp(183 + hueShift,0,255)},${clamp(154 + hueShift,0,255)},${clamp(106 + hueShift,0,255)},${a})`;
+          ctx.beginPath();
+          ctx.ellipse(x, y, r * randRange(0.6, 1.2), r * randRange(0.6, 1.2), randRange(0, Math.PI), 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Fine grain (noise speckles)
+        const img = ctx.getImageData(0, 0, size, size);
+        const d = img.data;
+        for (let i = 0; i < d.length; i += 4) {
+          const n = (Math.random() - 0.5) * 40; // grain amount
+          d[i + 0] = clamp(d[i + 0] + n, 0, 255);
+          d[i + 1] = clamp(d[i + 1] + n, 0, 255);
+          d[i + 2] = clamp(d[i + 2] + n, 0, 255);
+        }
+        ctx.putImageData(img, 0, 0);
+
+        // Small darker pebbles
+        for (let i = 0; i < 900; i++) {
+          const x = randRange(0, size);
+          const y = randRange(0, size);
+          const r = randRange(0.8, 2.2);
+          const a = randRange(0.12, 0.30);
+          ctx.fillStyle = `rgba(70,60,45,${a})`;
+          ctx.beginPath();
+          ctx.arc(x, y, r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Faint streaks
+        ctx.strokeStyle = "rgba(255,255,255,0.06)";
+        ctx.lineWidth = 2;
+        for (let i = 0; i < 60; i++) {
+          ctx.beginPath();
+          const y = randRange(0, size);
+          ctx.moveTo(0, y + randRange(-6, 6));
+          ctx.bezierCurveTo(size * 0.33, y + randRange(-14, 14), size * 0.66, y + randRange(-14, 14), size, y + randRange(-6, 6));
+          ctx.stroke();
+        }
+
+        const tex = new THREE.CanvasTexture(c);
+        tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set(6, 2);
+        tex.anisotropy = renderer.capabilities.getMaxAnisotropy?.() ?? 8;
+        tex.colorSpace = THREE.SRGBColorSpace;
+        return tex;
+      }
+
+      const sandTex = makeSandTexture(512);
+
+      // A slightly raised, curved ribbon path using a segmented plane
+      const pathWidth = 3.2;
+      const pathLength = 18.0;
+      const pathGeo = new THREE.PlaneGeometry(pathWidth, pathLength, 24, 90);
+      pathGeo.rotateX(-Math.PI / 2);
+      pathGeo.translate(0.0, 0.02, 0.0);
+
+      // Bend the path into a gentle S-curve in X as Z changes
+      {
+        const pos = pathGeo.attributes.position;
+        for (let i = 0; i < pos.count; i++) {
+          const x = pos.getX(i);
+          const z = pos.getZ(i);
+          // z is along length; center around 0
+          const t = z / (pathLength * 0.5); // ~[-1,1]
+          const curve = Math.sin(t * 1.2) * 1.0 + Math.sin(t * 2.1) * 0.35;
+          pos.setX(i, x + curve);
+          // tiny edge feather (dip edges slightly)
+          const edge = Math.abs(x) / (pathWidth * 0.5);
+          pos.setY(i, 0.02 - 0.02 * Math.pow(edge, 1.5));
+        }
+        pos.needsUpdate = true;
+        pathGeo.computeVertexNormals();
+      }
+
+      const path = new THREE.Mesh(
+        pathGeo,
+        new THREE.MeshStandardMaterial({
+          map: sandTex,
+          roughness: 1.0,
+          metalness: 0.0
+        })
+      );
+      path.receiveShadow = true;
+      path.castShadow = false;
+      // place it a bit forward
+      path.position.set(-0.2, 0, 1.5);
+      scene.add(path);
+
+      // ----------------------------
+      // Low-poly grass instancing (same as before)
+      // ----------------------------
+      const bladeW = 0.10;
+      const bladeH = 1.05;
+      const bladeGeo = new THREE.PlaneGeometry(bladeW, bladeH, 1, 4);
+      bladeGeo.translate(0, bladeH * 0.5, 0);
+
+      // Taper the blade
+      {
+        const pos = bladeGeo.attributes.position;
+        for (let i = 0; i < pos.count; i++) {
+          const x = pos.getX(i);
+          const y = pos.getY(i);
+          const t = THREE.MathUtils.clamp(y / bladeH, 0, 1);
+          const taper = THREE.MathUtils.lerp(1.0, 0.15, t);
+          pos.setX(i, x * taper);
+        }
+        pos.needsUpdate = true;
+        bladeGeo.computeVertexNormals();
+      }
+
+      const grassMat = new THREE.MeshStandardMaterial({
+        color: 0x7fe36a,
+        roughness: 0.95,
+        metalness: 0.0,
+        side: THREE.DoubleSide
+      });
+
+      grassMat.onBeforeCompile = (shader) => {
+        shader.uniforms.uTime = { value: 0.0 };
+        shader.uniforms.uWindStrength = { value: 0.55 };
+        shader.uniforms.uWindScale = { value: 0.9 };
+
+        shader.vertexShader = shader.vertexShader
+          .replace(
+            "#include <common>",
+            `
+            #include <common>
+            uniform float uTime;
+            uniform float uWindStrength;
+            uniform float uWindScale;
+            attribute float aPhase;
+            `
+          )
+          .replace(
+            "#include <begin_vertex>",
+            `
+            #include <begin_vertex>
+            vec3 iPos = instanceMatrix[3].xyz;
+            float h = clamp(position.y / ${bladeH.toFixed(4)}, 0.0, 1.0);
+
+            float gust = sin(uTime * 0.9 + aPhase + (iPos.x + iPos.z) * 0.35 * uWindScale);
+            float flutter = sin(uTime * 2.3 + aPhase * 1.7 + (iPos.x - iPos.z) * 0.65 * uWindScale);
+
+            vec2 windDir = normalize(vec2(
+              sin((iPos.x) * 0.12 + aPhase),
+              cos((iPos.z) * 0.12 + aPhase * 0.7)
+            ));
+
+            float bend = pow(h, 1.7) * (0.65 * gust + 0.35 * flutter) * uWindStrength;
+
+            transformed.x += windDir.x * bend;
+            transformed.z += windDir.y * bend;
+            transformed.y -= 0.08 * bend * h;
+            `
+          );
+
+        grassMat.userData.shader = shader;
+      };
+
+      const GRASS_COUNT = 5200;
+      const grass = new THREE.InstancedMesh(bladeGeo, grassMat, GRASS_COUNT);
+      grass.castShadow = true;
+      scene.add(grass);
+
+      const grassPhases = new Float32Array(GRASS_COUNT);
+      grass.geometry.setAttribute("aPhase", new THREE.InstancedBufferAttribute(grassPhases, 1));
+
+      const dummy = new THREE.Object3D();
+      const patchRadius = 6.5;
+
+      for (let i = 0; i < GRASS_COUNT; i++) {
+        // avoid placing grass on the path by rejecting near the path centerline (rough approximation)
+        let x, z;
+        for (let tries = 0; tries < 6; tries++) {
+          const r = patchRadius * Math.sqrt(rand01());
+          const ang = randRange(0, Math.PI * 2);
+          x = Math.cos(ang) * r + randRange(-0.25, 0.25);
+          z = Math.sin(ang) * r + randRange(-0.25, 0.25);
+
+          // rough path exclusion band (since path is forward and curved a bit)
+          const zLocal = z - 1.5;
+          const t = zLocal / (18.0 * 0.5);
+          const curve = Math.sin(t * 1.2) * 1.0 + Math.sin(t * 2.1) * 0.35;
+          const pathCenterX = -0.2 + curve;
+          const distToPath = Math.abs(x - pathCenterX);
+          if (z > -7 && z < 11 && distToPath < 1.25) continue; // reject (on/near path)
+          break;
+        }
+
+        const rotY = randRange(0, Math.PI);
+        const hScale = randRange(0.55, 1.55);
+        const wScale = randRange(0.65, 1.25);
+
+        dummy.position.set(x, 0.0, z);
+        dummy.rotation.set(0, rotY, 0);
+        dummy.scale.set(wScale, hScale, wScale);
+        dummy.updateMatrix();
+        grass.setMatrixAt(i, dummy.matrix);
+
+        grassPhases[i] = randRange(0, Math.PI * 2);
+      }
+      grass.instanceMatrix.needsUpdate = true;
+      grass.geometry.attributes.aPhase.needsUpdate = true;
+
+      // ----------------------------
+      // Low-poly pine trees (instanced) + slow sway
+      // ----------------------------
+      function makePineTreeGeometry() {
+        const geos = [];
+
+        // Trunk: low-poly cylinder
+        const trunkH = 2.4;
+        const trunkR = 0.16;
+        const trunk = new THREE.CylinderGeometry(trunkR * 0.75, trunkR, trunkH, 6, 1, false);
+        trunk.translate(0, trunkH * 0.5, 0);
+        geos.push(trunk);
+
+        // Foliage: stacked cones (very low poly)
+        const coneSeg = 6;
+        const layers = [
+          { y: 1.6, r: 1.05, h: 1.25 },
+          { y: 2.25, r: 0.85, h: 1.05 },
+          { y: 2.85, r: 0.62, h: 0.85 },
+          { y: 3.35, r: 0.40, h: 0.60 }
+        ];
+
+        for (const L of layers) {
+          const cone = new THREE.ConeGeometry(L.r, L.h, coneSeg, 1, false);
+          cone.translate(0, L.y + L.h * 0.5, 0);
+          geos.push(cone);
+        }
+
+        const merged = BufferGeometryUtils.mergeGeometries(geos, false);
+
+        // Add a "height factor" attribute for wind bending: 0 at base, 1 at top.
+        merged.computeBoundingBox();
+        const bb = merged.boundingBox;
+        const yMin = bb.min.y;
+        const yMax = bb.max.y;
+        const span = Math.max(1e-6, yMax - yMin);
+
+        const pos = merged.attributes.position;
+        const aY = new Float32Array(pos.count);
+        for (let i = 0; i < pos.count; i++) {
+          const y = pos.getY(i);
+          aY[i] = clamp((y - yMin) / span, 0, 1);
+        }
+        merged.setAttribute("aY", new THREE.BufferAttribute(aY, 1));
+
+        merged.computeVertexNormals();
+        return merged;
+      }
+
+      const pineGeo = makePineTreeGeometry();
+
+      // Two materials: trunk-ish and needles-ish is overkill for a single mesh.
+      // We'll do a single stylized dark-green and rely on lighting. (Still looks “low poly”.)
+      const pineMat = new THREE.MeshStandardMaterial({
+        color: 0x2d6b3b,
+        roughness: 1.0,
+        metalness: 0.0
+      });
+
+      // Wind bend in vertex shader (subtle, slower than grass)
+      pineMat.onBeforeCompile = (shader) => {
+        shader.uniforms.uTime = { value: 0.0 };
+        shader.uniforms.uTreeWind = { value: 0.8 };
+        shader.uniforms.uTreeScale = { value: 0.7 };
+        shader.vertexShader = shader.vertexShader
+          .replace(
+            "#include <common>",
+            `
+            #include <common>
+            uniform float uTime;
+            uniform float uTreeWind;
+            uniform float uTreeScale;
+            attribute float aPhase;
+            attribute float aY;
+            `
+          )
+          .replace(
+            "#include <begin_vertex>",
+            `
+            #include <begin_vertex>
+
+            // Instance position
+            vec3 iPos = instanceMatrix[3].xyz;
+
+            // Gentle sway, much slower than grass.
+            float gust = sin(uTime * 0.45 + aPhase + (iPos.x + iPos.z) * 0.08 * uTreeScale);
+            float gust2 = sin(uTime * 0.22 + aPhase * 1.7 + (iPos.x - iPos.z) * 0.05 * uTreeScale);
+
+            // Wind direction varies across world
+            vec2 windDir = normalize(vec2(
+              sin(iPos.x * 0.07 + aPhase),
+              cos(iPos.z * 0.07 + aPhase * 0.8)
+            ));
+
+            // Bending increases toward top; trunk stays mostly stiff
+            float h = pow(clamp(aY, 0.0, 1.0), 1.9);
+            float bend = (0.65 * gust + 0.35 * gust2) * uTreeWind * h;
+
+            transformed.x += windDir.x * bend;
+            transformed.z += windDir.y * bend;
+
+            // tiny vertical compensation so it arcs slightly
+            transformed.y -= 0.10 * bend * h;
+            `
+          );
+
+        pineMat.userData.shader = shader;
+      };
+
+      const TREE_COUNT = 8;
+      const pines = new THREE.InstancedMesh(pineGeo, pineMat, TREE_COUNT);
+      pines.castShadow = true;
+      pines.receiveShadow = false;
+      scene.add(pines);
+
+      const treePhases = new Float32Array(TREE_COUNT);
+      pines.geometry.setAttribute("aPhase", new THREE.InstancedBufferAttribute(treePhases, 1));
+
+      // Place a few trees near the patch, mostly off the path
+      const treePositions = [
+        new THREE.Vector3(-4.0, 0.0, -2.0),
+        new THREE.Vector3(-5.2, 0.0,  2.2),
+        new THREE.Vector3(-3.8, 0.0,  5.0),
+        new THREE.Vector3( 4.8, 0.0, -3.2),
+        new THREE.Vector3( 5.6, 0.0,  1.4),
+        new THREE.Vector3( 3.9, 0.0,  5.5),
+        new THREE.Vector3( 1.8, 0.0, -6.0),
+        new THREE.Vector3(-1.0, 0.0,  6.6),
+      ];
+
+      for (let i = 0; i < TREE_COUNT; i++) {
+        const p = treePositions[i] ?? new THREE.Vector3(randRange(-6, 6), 0, randRange(-6, 6));
+        const rotY = randRange(0, Math.PI * 2);
+        const s = randRange(1.1, 1.9);
+
+        dummy.position.copy(p);
+        dummy.rotation.set(0, rotY, 0);
+        dummy.scale.set(s, s, s);
+        dummy.updateMatrix();
+        pines.setMatrixAt(i, dummy.matrix);
+
+        treePhases[i] = randRange(0, Math.PI * 2);
+      }
+      pines.instanceMatrix.needsUpdate = true;
+      pines.geometry.attributes.aPhase.needsUpdate = true;
+
+      // Darker trunk hint: add a separate trunk-only instanced mesh (cheap but effective)
+      // (Optional but makes it feel more like the reference image.)
+      const trunkGeo = new THREE.CylinderGeometry(0.12, 0.16, 2.5, 6, 1, false);
+      trunkGeo.translate(0, 1.25, 0);
+      const trunkMat = new THREE.MeshStandardMaterial({ color: 0x4c3322, roughness: 1.0, metalness: 0.0 });
+      const trunks = new THREE.InstancedMesh(trunkGeo, trunkMat, TREE_COUNT);
+      trunks.castShadow = true;
+      scene.add(trunks);
+
+      for (let i = 0; i < TREE_COUNT; i++) {
+        // match pine matrices but slightly smaller and centered
+        pines.getMatrixAt(i, dummy.matrix);
+        dummy.matrix.decompose(dummy.position, dummy.quaternion, dummy.scale);
+        // keep trunk a bit slimmer relative to the foliage scale
+        const s = dummy.scale.x;
+        dummy.scale.set(s * 0.95, s * 1.02, s * 0.95);
+        dummy.updateMatrix();
+        trunks.setMatrixAt(i, dummy.matrix);
+      }
+      trunks.instanceMatrix.needsUpdate = true;
+
+      // ----------------------------
+      // Animation loop
+      // ----------------------------
+      const clock = new THREE.Clock();
+
+      function animate() {
+        requestAnimationFrame(animate);
+
+        controls.update();
+
+        const t = clock.getElapsedTime();
+
+        const gShader = grassMat.userData.shader;
+        if (gShader) gShader.uniforms.uTime.value = t;
+
+        const pShader = pineMat.userData.shader;
+        if (pShader) pShader.uniforms.uTime.value = t;
+
+        renderer.render(scene, camera);
+      }
+      animate();
+
+      // ----------------------------
+      // Resize + keys
+      // ----------------------------
+      window.addEventListener("resize", () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+      });
+
+      window.addEventListener("keydown", (e) => {
+        if (e.key.toLowerCase() === "r") {
+          camera.position.set(7.5, 5.8, 10.5);
+          controls.target.set(0, 1.2, 0);
+          controls.update();
+        }
+      });
+    </script>
+  </body>
+</html>

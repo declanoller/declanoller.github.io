@@ -101,7 +101,7 @@
   </head>
 
   <body>
-    <div id="hint">Scroll = move forward/back · Click image/title to open post · “d” toggles debug · “g” toggles grid</div>
+    <div id="hint">Scroll or L/R keys = move forward/back · Click to open post · “d” = toggle debug · “g” = toggle grid</div>
     <div id="hud"></div>
     <div id="err"></div>
 
@@ -186,7 +186,7 @@
       const fixedRollDeg = 0;
 
       const initialCamPos = new THREE.Vector3(3, cameraY, cameraOffsetZ);
-      const scrollStepZ = 5;
+      const scrollStepZ = 0.75;
 
       // Bounds (computed after posts load)
       let z_min_allowed = null;
