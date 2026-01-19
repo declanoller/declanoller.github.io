@@ -5,8 +5,8 @@ from typing import Optional, Tuple
 from termcolor import colored
 import argparse
 
-FILESIZE_THRESHOLD_KB = 500
-FILESIZE_THRESHOLD_TOLERANCE = 1.05
+FILESIZE_THRESHOLD_KB = 800
+FILESIZE_THRESHOLD_TOLERANCE = 1.1
 
 
 def get_image_info(file_path: str) -> Optional[Tuple[float, int, int]]:
@@ -27,7 +27,7 @@ def main() -> None:
     parser.add_argument(
         "--path",
         type=str,
-        default="/home/declan/Documents/code/declanoller.github.io/assets/images/thumbnails/",
+        default="/home/declan/Documents/code/declanoller.github.io/assets/thumbnails/",
         help="Path to the directory containing images to resize.",
     )
 

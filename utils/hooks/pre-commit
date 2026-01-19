@@ -27,3 +27,14 @@ done
 
 echo "✅ Image path rewrite complete."
 
+
+echo "\nRunning image resize script...\n"
+
+# Get repo root reliably even if git runs hook from elsewhere
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+
+# Run your python util (pick python3 explicitly)
+RESIZE_THUMBNAIL_SCRIPT="$REPO_ROOT/utils/resize_thumbnails.py"
+
+echo "[pre-commit] running $RESIZE_THUMBNAIL_SCRIPT"
+python3 "$RESIZE_THUMBNAIL_SCRIPT"

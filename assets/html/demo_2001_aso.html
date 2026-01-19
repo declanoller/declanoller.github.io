@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>2001-ish visor reflection demo (vertical streaks)</title>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <style>
+    html, body { margin:0; height:100%; overflow:hidden; background:#000; }
+    canvas { display:block; }
+    #hud{
+      position:fixed; left:12px; top:12px; z-index:10;
+      color:rgba(255,255,255,0.88);
+      font: 12px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      background: rgba(0,0,0,0.35);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 10px;
+      padding: 10px 12px;
+      max-width: 660px;
+      backdrop-filter: blur(6px);
+      user-select: none;
+    }
+    #hud .row { display:flex; gap:10px; flex-wrap:wrap; margin-top:6px; opacity:0.95; }
+    #hud b { font-weight:700; }
+    #hud code { color: rgba(255,255,255,0.95); }
+    .kv { white-space: nowrap; }
+  </style>
+</head>
+<body>
+  <div id="hud">
+    <div><b>Visor reflection demo</b></div>
+    <div style="margin-top:6px;">
+      Set <code>BACKGROUND_URL</code> to your image.
+    </div>
+
+    <div id="stats" class="row"></div>
+    <div id="camstats" class="row"></div>
+
+    <div class="row" style="opacity:0.9;">
+      Keys:
+      <span><code>[</code>/<code>]</code> speed</span>
+      <span><code>-</code>/<code>=</code> brightness</span>
+    </div>
+  </div>
+
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+// =====================
+// 1) USER BACKGROUND
+// =====================
+const BACKGROUND_URL = "./bacondog_transparent.png";
+
+// =====================
+// 2) CONTROLS
+// =====================
+let speedLevel = 10.0;
+let brightnessLevel = 60.0;     // range [30..100]
+const BRIGHT_MIN = 30.0;
+const BRIGHT_MAX = 100.0;
+
+function clamp(x, a, b) { return Math.max(a, Math.min(b, x)); }
+function fmt(n, d=2){ return Number(n).toFixed(d); }
+
+// HUD
+const statsEl = document.getElementById("stats");
+const camStatsEl = document.getElementById("camstats");
+
+function updateHUD() {
+  statsEl.innerHTML = `
+    <span class="kv">Speed: <b>${speedLevel.toFixed(0)}</b></span>
+    <span class="kv">Brightness: <b>${brightnessLevel.toFixed(0)}</b></span>
+  `;
+}
+updateHUD();
+
+// =====================
+// 3) RENDERER
+// =====================
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+document.body.appendChild(renderer.domElement);
+
+// =====================
+// 4) MAIN SCENE
+// =====================
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x000000, 0.06);
+
+const camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.01, 100);
+const cameraInitZ = 2.35;
+camera.position.set(0, 0.0, cameraInitZ);
+
+
+const helmetInitZ = 0.35;
+
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.enablePan = false;
+controls.minDistance = 1.9;
+controls.maxDistance = 3.2;
+controls.target.set(0, 0.02, 0);
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+const key = new THREE.DirectionalLight(0xffffff, 0.55);
+key.position.set(2, 2, 3);
+scene.add(key);
+
+// Camera HUD (updated continuously)
+function updateCameraHUD() {
+  const pos = camera.position;
+  const tgt = controls.target;
+  const dir = new THREE.Vector3();
+  camera.getWorldDirection(dir);
+
+  camStatsEl.innerHTML = `
+    <span class="kv">Cam: <b>(${fmt(pos.x)}, ${fmt(pos.y)}, ${fmt(pos.z)})</b></span>
+    <span class="kv">Target: <b>(${fmt(tgt.x)}, ${fmt(tgt.y)}, ${fmt(tgt.z)})</b></span>
+    <span class="kv">Dir: <b>(${fmt(dir.x)}, ${fmt(dir.y)}, ${fmt(dir.z)})</b></span>
+    <span class="kv">FOV: <b>${fmt(camera.fov,1)}°</b></span>
+    <span class="kv">Aspect: <b>${fmt(camera.aspect,2)}</b></span>
+  `;
+}
+
+// Load background texture
+const loader = new THREE.TextureLoader();
+const bgTex = await new Promise((resolve, reject) => {
+  loader.load(BACKGROUND_URL, t => resolve(t), undefined, e => reject(e));
+});
+bgTex.colorSpace = THREE.SRGBColorSpace;
+bgTex.anisotropy = 8;
+
+// Background plane behind visor window
+const BG_PLANE_Y = -0.03;
+const BG_PLANE_Z = 0.2;
+
+const bgPlane = new THREE.Mesh(
+  new THREE.PlaneGeometry(1.6, 1.0, 1, 1),
+  new THREE.MeshStandardMaterial({
+    map: bgTex,
+    roughness: 0.95,
+    metalness: 0.0,
+    transparent: true
+  })
+);
+bgPlane.position.set(0, BG_PLANE_Y, BG_PLANE_Z);
+scene.add(bgPlane);
+
+function fitBackgroundPlane() {
+  const w = (bgTex.image?.width || 16);
+  const h = (bgTex.image?.height || 9);
+  const imgAspect = w / h;
+
+  const targetH = 1.35;
+  const targetW = targetH * imgAspect;
+
+  bgPlane.geometry.dispose();
+  bgPlane.geometry = new THREE.PlaneGeometry(targetW, targetH, 1, 1);
+}
+fitBackgroundPlane();
+
+// =====================
+// 5) LIGHTS SCENE -> render target
+// =====================
+const lightsScene = new THREE.Scene();
+lightsScene.fog = new THREE.FogExp2(0x000000, 0.22);
+lightsScene.add(new THREE.AmbientLight(0xffffff, 1.0));
+
+const lightsCam = new THREE.PerspectiveCamera(60, 1, 0.01, 120);
+lightsCam.position.set(0, 0, 1);
+lightsCam.lookAt(0, 0, -1);
+
+const rt = new THREE.WebGLRenderTarget(1024, 1024, {
+  minFilter: THREE.LinearMipmapLinearFilter,
+  magFilter: THREE.LinearFilter,
+  format: THREE.RGBAFormat,
+  type: THREE.UnsignedByteType,
+  depthBuffer: false,
+  stencilBuffer: false
+});
+rt.texture.generateMipmaps = true;
+rt.texture.colorSpace = THREE.SRGBColorSpace;
+
+const palette = [0xff2d55,0xff9500,0xffcc00,0x34c759,0x00c7be,0x0a84ff,0xbf5af2];
+function rand(min, max) { return min + Math.random() * (max - min); }
+function pick(arr) { return arr[(Math.random() * arr.length) | 0]; }
+
+const bars = [];
+const BAR_COUNT = 260;
+const Z_FAR_MIN = 40;
+const Z_FAR_MAX = 110;
+
+const barGeom = new THREE.PlaneGeometry(1, 1, 1, 1);
+
+function spawnBar(m) {
+  const left = Math.random() < 0.5;
+  const x = left ? -rand(1.1, 2.4) : rand(1.1, 2.4);
+  const y = rand(-1.5, 1.5);
+
+  const sx = rand(0.05, 0.14);
+  const sy = rand(0.6, 2.9);
+
+  m.position.set(x, y, -rand(Z_FAR_MIN, Z_FAR_MAX));
+  m.scale.set(sx, sy, 1);
+  m.rotation.z = 0.0;
+
+  m.userData.speed = rand(9, 22);
+  m.userData.baseOpacity = rand(0.55, 1.0);
+  m.material.opacity = m.userData.baseOpacity;
+  m.material.color.setHex(pick(palette));
+}
+
+for (let i = 0; i < BAR_COUNT; i++) {
+  const mat = new THREE.MeshBasicMaterial({
+    color: new THREE.Color(pick(palette)),
+    transparent: true,
+    opacity: rand(0.55, 1.0),
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+  });
+
+  const m = new THREE.Mesh(barGeom, mat);
+  spawnBar(m);
+  lightsScene.add(m);
+  bars.push(m);
+}
+
+const centerGlow = new THREE.Mesh(
+  new THREE.PlaneGeometry(0.25, 10),
+  new THREE.MeshBasicMaterial({
+    color: 0xffffff,
+    transparent: true,
+    opacity: 0.06,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+  })
+);
+centerGlow.position.set(0, 0, -20);
+lightsScene.add(centerGlow);
+
+// =====================
+// 6) VISOR + BULGED RINGS (real holes)
+// =====================
+
+// Rounded-rect shape helper
+function roundedRectShape(w, h, r) {
+  const s = new THREE.Shape();
+  const x = -w/2, y = -h/2;
+  const rr = Math.min(r, w/2, h/2);
+
+  s.moveTo(x + rr, y);
+  s.lineTo(x + w - rr, y);
+  s.quadraticCurveTo(x + w, y, x + w, y + rr);
+  s.lineTo(x + w, y + h - rr);
+  s.quadraticCurveTo(x + w, y + h, x + w - rr, y + h);
+  s.lineTo(x + rr, y + h);
+  s.quadraticCurveTo(x, y + h, x, y + h - rr);
+  s.lineTo(x, y + rr);
+  s.quadraticCurveTo(x, y, x + rr, y);
+  s.closePath();
+  return s;
+}
+
+// Bulge a BufferGeometry in XY using the same rule as your visor.
+// IMPORTANT: For ring geometries, keep the normalization based on *outer* dims
+// so the bulge matches across visor/gasket/helmet surfaces.
+function bulgeGeometry(geom, outerW, outerH, bulgeAmt, bulgeFY) {
+  const pos = geom.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i);
+    const y = pos.getY(i);
+    const nx = x / (outerW * 0.5);
+    const ny = y / (outerH * 0.5);
+    const r2 = nx*nx + ny*ny*bulgeFY;
+    const bulge = Math.sqrt(Math.max(0.0, 1.0 - r2));
+    pos.setZ(i, bulgeAmt * bulge);
+  }
+  geom.computeVertexNormals();
+  pos.needsUpdate = true;
+}
+
+// === Your visor params ===
+const visorW = 1.85;
+const visorH = 1.0;
+
+const helmetOuterW = visorW * 1.55;
+const helmetOuterH = visorH * 1.75;
+
+// const bulgeAmount = 0.0;
+const bulgeAmount = 0.2;
+const bulgeFactorY = 0.0;
+
+// Visor plane (keep yours)
+const visorGeom = new THREE.PlaneGeometry(visorW, visorH, 64, 32);
+bulgeGeometry(visorGeom, helmetOuterW, visorH, bulgeAmount, bulgeFactorY);
+
+// Visor shader material (yours, unchanged aside from comment string)
+const visorMat = new THREE.ShaderMaterial({
+  transparent: true,
+  depthWrite: false,
+  uniforms: {
+    uLightsTex: { value: rt.texture },
+    uTime: { value: 0 },
+    uBrightness: { value: brightnessLevel },
+    uTint: { value: new THREE.Color(0x9ad7ff) }
+  },
+  vertexShader: `
+    varying vec2 vUv;
+    varying vec3 vNormal;
+    varying vec3 vViewDir;
+
+    void main() {
+      vUv = uv;
+      vec4 worldPos = modelMatrix * vec4(position, 1.0);
+      vec3 worldNormal = normalize(mat3(modelMatrix) * normal);
+      vNormal = worldNormal;
+      vViewDir = normalize(cameraPosition - worldPos.xyz);
+      gl_Position = projectionMatrix * viewMatrix * worldPos;
+    }
+  `,
+  fragmentShader: `
+    uniform sampler2D uLightsTex;
+    uniform float uTime;
+    uniform float uBrightness; // 30..100
+    uniform vec3 uTint;
+
+    varying vec2 vUv;
+    varying vec3 vNormal;
+    varying vec3 vViewDir;
+
+    float sat(float x){ return clamp(x, 0.0, 1.0); }
+
+    void main(){
+      float ndv = sat(dot(normalize(vNormal), normalize(vViewDir)));
+      float fresnel = pow(1.0 - ndv, 2.1);
+
+      vec2 uv = vUv;
+      vec2 c = uv * 2.0 - 1.0;
+      float r2 = dot(c, c);
+
+      float wobble = 0.0035 * sin(uTime * 1.5 + c.y * 5.0)
+                   + 0.0025 * sin(uTime * 2.1 + c.x * 6.0);
+
+      vec2 warped = uv + c * (0.055 * r2) + vec2(wobble, -wobble);
+
+      vec3 L0 = texture2D(uLightsTex, warped).rgb;
+      vec3 L1 = texture2D(uLightsTex, warped + vec2(0.010, -0.006)).rgb;
+
+      // brightness scaling (your updated range): keep it strong but stable
+      float bright = uBrightness / 25.0; // 30..100 -> 1.2..4.0
+
+      vec3 lights = bright * (L0 + 0.7 * L1);
+
+      float baseAlpha = 0.06 + 0.10 * fresnel;
+      vec3 glass = uTint * (0.08 + 0.16 * fresnel);
+
+      float refl = (0.22 + 1.6 * fresnel);
+
+      float stripe = smoothstep(0.0, 1.0, 1.0 - abs(c.x + 0.18));
+      stripe *= smoothstep(0.0, 1.0, 1.0 - abs(c.y - 0.18));
+      vec3 glare = vec3(0.12) * pow(stripe, 7.0) * (0.2 + 0.8 * fresnel);
+
+      vec3 color = glass + refl * lights + glare;
+
+      float lum = dot(lights, vec3(0.333));
+      float alpha = sat(baseAlpha + 0.60 * refl * lum);
+
+      gl_FragColor = vec4(color, alpha);
+    }
+  `
+});
+
+const visor = new THREE.Mesh(visorGeom, visorMat);
+visor.position.set(0, 0.0, helmetInitZ);
+scene.add(visor);
+
+// --- GASKET RING (real hole, thinner) ---
+// "picks up exactly where screen ends": gasket inner == visor outer
+const gasketInnerW = visorW;
+const gasketInnerH = visorH;
+
+// thinner: about half of your original ring thickness
+const gasketOuterW = visorW * 1.055;
+const gasketOuterH = visorH * 1.065;
+
+// Rounded corners scale with size; tune to taste
+const visorCornerR = 0.12;
+const gasketCornerR = 0.13;
+
+function makeRoundedRingGeometry(outerW, outerH, outerR, innerW, innerH, innerR, curveSegments=32) {
+  const outer = roundedRectShape(outerW, outerH, outerR);
+  const hole = roundedRectShape(innerW, innerH, innerR);
+  outer.holes.push(hole);
+  // ShapeGeometry is triangulated in XY plane. We'll bulge after creation.
+  const g = new THREE.ShapeGeometry(outer, curveSegments);
+  return g;
+}
+
+const gasketGeom = makeRoundedRingGeometry(
+  gasketOuterW, gasketOuterH, gasketCornerR,
+  gasketInnerW, gasketInnerH, visorCornerR,
+  48
+);
+bulgeGeometry(gasketGeom, helmetOuterW, gasketOuterH, bulgeAmount, bulgeFactorY);
+
+const gasketMat = new THREE.MeshStandardMaterial({
+  // color: 0x0b0c10,
+  color: 0x008000,
+  roughness: 0.95,
+  metalness: 0.05,
+  side: THREE.DoubleSide
+});
+
+const gasket = new THREE.Mesh(gasketGeom, gasketMat);
+gasket.position.set(0, 0.0, helmetInitZ);
+// scene.add(gasket);
+
+// --- HELMET RING (real hole) ---
+// "helmet picks up exactly where gasket ends": helmet inner == gasket outer
+const helmetInnerW = gasketOuterW;
+const helmetInnerH = gasketOuterH;
+
+const helmetCornerR = 0.22;
+const helmetInnerCornerR = gasketCornerR; // match gasket outer cornering
+
+const helmetGeom = makeRoundedRingGeometry(
+  helmetOuterW, helmetOuterH, helmetCornerR,
+  helmetInnerW, helmetInnerH, helmetInnerCornerR,
+  120
+);
+// Bulge based on helmet outer dims so it looks like a continuous shell
+bulgeGeometry(helmetGeom, helmetOuterW, helmetOuterH, bulgeAmount, bulgeFactorY);
+
+const helmetMat = new THREE.MeshStandardMaterial({
+  color: 0xb71f1f,
+  roughness: 0.35,
+  metalness: 0.05,
+  side: THREE.DoubleSide
+});
+
+const helmet = new THREE.Mesh(helmetGeom, helmetMat);
+helmet.position.set(0, 0.0, helmetInitZ);
+scene.add(helmet);
+
+// =====================
+// 7) ANIMATION LOOP
+// =====================
+const clock = new THREE.Clock();
+
+function updateTunnel(dt) {
+  const opacityBoost = clamp(brightnessLevel / 14.0, 0.4, 2.2);
+
+  for (const b of bars) {
+    b.position.z += (b.userData.speed * speedLevel * 0.05) * dt;
+
+    const flick = 0.78 + 0.22 * Math.sin((b.position.z * 2.4) + clock.elapsedTime * 10.0);
+    b.material.opacity = clamp(b.userData.baseOpacity * flick * opacityBoost, 0.05, 1.0);
+
+    if (b.position.z > -0.2) spawnBar(b);
+  }
+
+  centerGlow.position.z += (12.0 * speedLevel * 0.02) * dt;
+  if (centerGlow.position.z > -2) centerGlow.position.z = -40;
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+
+  const dt = Math.min(clock.getDelta(), 0.05);
+  const t = clock.elapsedTime;
+
+  controls.update();
+  updateCameraHUD();
+
+  updateTunnel(dt);
+
+  const size = Math.min(1500, Math.max(800, Math.floor(Math.min(innerWidth, innerHeight) * 1.0)));
+  if (rt.width !== size || rt.height !== size) rt.setSize(size, size);
+
+  renderer.setRenderTarget(rt);
+  renderer.clear();
+  renderer.render(lightsScene, lightsCam);
+  renderer.setRenderTarget(null);
+
+  visorMat.uniforms.uTime.value = t;
+  visorMat.uniforms.uBrightness.value = brightnessLevel;
+
+  renderer.render(scene, camera);
+}
+animate();
+
+// =====================
+// 8) RESIZE + INPUT
+// =====================
+addEventListener("resize", () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+addEventListener("keydown", (e) => {
+  if (e.key === "[") speedLevel = clamp(speedLevel - 1.0, 1.0, 30.0);
+  if (e.key === "]") speedLevel = clamp(speedLevel + 1.0, 1.0, 30.0);
+
+  if (e.key === "-") brightnessLevel = clamp(brightnessLevel - 1.0, BRIGHT_MIN, BRIGHT_MAX);
+  if (e.key === "=") brightnessLevel = clamp(brightnessLevel + 1.0, BRIGHT_MIN, BRIGHT_MAX);
+
+  updateHUD();
+});
+</script>
+</body>
+</html>

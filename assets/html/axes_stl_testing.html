@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Three.js STL multi-group loader (standalone)</title>
+
+  <!-- Importmap: three + addons -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <style>
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #0b0f14; }
+    canvas { display: block; }
+    #hud{
+      position: fixed; left: 12px; top: 12px; z-index: 10;
+      font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      color: rgba(255,255,255,0.85);
+      background: rgba(0,0,0,0.35);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      padding: 8px 10px;
+      max-width: 520px;
+      pointer-events: none;
+      line-height: 1.35;
+    }
+    #hud code{ color: rgba(255,255,255,0.9); }
+  </style>
+</head>
+
+<body>
+  <div id="hud">
+    <div><b>STL multi-group loader demo</b></div>
+    <div>OrbitControls: <code>Left-drag</code> rotate, <code>Right-drag</code> pan, <code>Wheel</code> zoom</div>
+    <div>Edit the file URLs near the bottom.</div>
+  </div>
+
+  <script type="module">
+    import * as THREE from "three";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+    import { STLLoader } from "three/addons/loaders/STLLoader.js";
+
+    // ----------------------------
+    // STL Group Loader (per-group state)
+    // ----------------------------
+    function createSTLGroupLoader({
+      scene = null,
+      group = null,
+      autoAddToScene = true,
+      computeUVs = true,
+    } = {}) {
+      const stlLoader = new STLLoader();
+      const stlGroup = group ?? new THREE.Group();
+      if (scene && autoAddToScene) scene.add(stlGroup);
+
+      let rootScale = null;
+      let rootOffset = null;
+
+      function ensurePlanarUVsFromBBox(geometry) {
+        if (geometry.attributes.uv) return;
+
+        geometry.computeBoundingBox();
+        const bb = geometry.boundingBox;
+        const size = new THREE.Vector3();
+        bb.getSize(size);
+
+        const pos = geometry.attributes.position;
+        const uv = new Float32Array(pos.count * 2);
+
+        // Pick projection plane by smallest extent
+        const ax = size.x, ay = size.y, az = size.z;
+        let mode = "XY";
+        if (ay <= ax && ay <= az) mode = "XZ";
+        else if (az <= ax && az <= ay) mode = "XY";
+        else mode = "YZ";
+
+        const inv = (a, b) => 1 / Math.max(1e-9, (b - a));
+        const invX = inv(bb.min.x, bb.max.x);
+        const invY = inv(bb.min.y, bb.max.y);
+        const invZ = inv(bb.min.z, bb.max.z);
+
+        for (let i = 0; i < pos.count; i++) {
+          const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+
+          let u = 0, v = 0;
+          if (mode === "XY") {
+            u = (x - bb.min.x) * invX;
+            v = (y - bb.min.y) * invY;
+          } else if (mode === "XZ") {
+            u = (x - bb.min.x) * invX;
+            v = (z - bb.min.z) * invZ;
+          } else { // YZ
+            u = (y - bb.min.y) * invY;
+            v = (z - bb.min.z) * invZ;
+          }
+
+          uv[i * 2 + 0] = u;
+          uv[i * 2 + 1] = v;
+        }
+
+        geometry.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
+      }
+
+      function setRootFromGeometry(geometry, { normalizeToUnit = true } = {}) {
+        geometry.computeBoundingBox();
+        const box = geometry.boundingBox;
+
+        const size = new THREE.Vector3();
+        box.getSize(size);
+
+        rootScale = normalizeToUnit ? 1 / Math.max(size.x, size.y, size.z) : 1.0;
+        rootOffset = new THREE.Vector3();
+        box.getCenter(rootOffset); // in STL units
+      }
+
+      function applyRootTransform(mesh) {
+        if (rootScale == null || rootOffset == null) {
+          throw new Error("Root transform not set. Load a root STL with isRoot=true first.");
+        }
+        mesh.scale.setScalar(rootScale);
+        mesh.position.copy(rootOffset).multiplyScalar(-rootScale);
+      }
+
+      function addSTL(url, material, { isRoot = false, normalizeToUnit = true, name } = {}) {
+        return new Promise((resolve, reject) => {
+          stlLoader.load(
+            url,
+            (geometry) => {
+              geometry.computeVertexNormals();
+              if (computeUVs) ensurePlanarUVsFromBBox(geometry);
+
+              if (isRoot) setRootFromGeometry(geometry, { normalizeToUnit });
+
+              const mesh = new THREE.Mesh(geometry, material);
+              if (name) mesh.name = name;
+
+              if (rootScale != null && rootOffset != null) {
+                applyRootTransform(mesh);
+              } else if (!isRoot) {
+                throw new Error(
+                  `Tried to add non-root STL before setting a root: ${url}\n` +
+                  `Load a root first, or pass isRoot:true for the first mesh.`
+                );
+              }
+
+              stlGroup.add(mesh);
+              resolve(mesh);
+            },
+            undefined,
+            reject
+          );
+        });
+      }
+
+      function reapplyRootToAllMeshes() {
+        if (rootScale == null || rootOffset == null) throw new Error("Root transform not set.");
+        stlGroup.traverse((obj) => { if (obj.isMesh) applyRootTransform(obj); });
+      }
+
+      return {
+        group: stlGroup,
+        addSTL,
+        reapplyRootToAllMeshes,
+        getRootScale: () => rootScale,
+        getRootOffset: () => rootOffset?.clone() ?? null,
+      };
+    }
+
+    // ----------------------------
+    // Basic scene setup
+    // ----------------------------
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    document.body.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0b0f14);
+
+    const camera = new THREE.PerspectiveCamera(
+      55,
+      window.innerWidth / window.innerHeight,
+      0.01,
+      200
+    );
+    camera.position.set(2.2, 1.6, 3.0);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.target.set(0, 0, 0);
+    controls.update();
+
+    // Lights
+    scene.add(new THREE.AmbientLight(0xffffff, 0.45));
+    const dir = new THREE.DirectionalLight(0xffffff, 0.9);
+    dir.position.set(3, 5, 2);
+    scene.add(dir);
+
+    // Helpers
+    const grid = new THREE.GridHelper(10, 20);
+    grid.position.y = -0.5;
+    grid.material.opacity = 0.35;
+    grid.material.transparent = true;
+    scene.add(grid);
+
+    scene.add(new THREE.AxesHelper(1.2));
+
+    // ----------------------------
+    // Usage example: multiple STL groups
+    // ----------------------------
+    const matGreen = new THREE.MeshStandardMaterial({ color: 0x32a852, roughness: 0.6, metalness: 0.0 });
+    const matBlue  = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.6, metalness: 0.0 });
+    const matGray  = new THREE.MeshStandardMaterial({ color: 0x9aa4b2, roughness: 0.85, metalness: 0.05 });
+    const matWhite  = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85, metalness: 0.05 });
+    const matGlass  = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85, metalness: 0.05 });
+    const matRed  = new THREE.MeshStandardMaterial({ color: 0xff0000, roughness: 0.85, metalness: 0.05 });
+
+    const g1 = createSTLGroupLoader({ scene });
+    const g2 = createSTLGroupLoader({ scene });
+    const g3 = createSTLGroupLoader({ scene });
+
+    // --- IMPORTANT ---
+    // Replace these URLs with your STL paths.
+    // The first STL added per group should be the root (isRoot:true).
+    const STL_ROOT_1 = "./axes_planes.stl";
+    const STL_OTHER_1 = "./visor.stl";   // example
+    const STL_ROOT_2 = "./axes_planes.stl";
+    const STL_OTHER_2 = "./helmet.stl";  // example
+
+    async function loadAll() {
+      try {
+        // Group 1
+        await g1.addSTL(STL_ROOT_1, matGreen, { isRoot: true, name: "g1_root" });
+        // Comment out if you don't have this STL:
+        // await g1.addSTL(STL_OTHER_1, matGray, { name: "g1_other" });
+        g1.group.position.set(0, 0, 0);
+
+        // Group 2
+        await g2.addSTL(STL_ROOT_2, matBlue, { isRoot: true, name: "g2_root" });
+        // Comment out if you don't have this STL:
+        // await g2.addSTL(STL_OTHER_2, matGray, { name: "g2_other" });
+        g2.group.position.set(2.0, 0, 0);
+        
+        
+        await g3.addSTL("./column.stl", matWhite, { isRoot: true, name: "g3_root" });
+        await g3.addSTL("./wineglass.stl", matGlass, { isRoot: false, name: "g3_root" });
+        await g3.addSTL("./sodacan.stl", matRed, { isRoot: false, name: "g3_root" });
+        g3.group.position.set(0.0, 0, -2.0);
+
+
+        // Make controls target sit between groups
+        controls.target.set(1.0, 0.0, 0.0);
+        controls.update();
+      } catch (err) {
+        console.error(err);
+        const hud = document.getElementById("hud");
+        hud.innerHTML += `<div style="margin-top:8px;color:#ffb4b4;">
+          <b>Load error:</b> ${String(err).replaceAll("<","&lt;").replaceAll(">","&gt;")}
+        </div>`;
+      }
+    }
+
+    await loadAll();
+
+    // ----------------------------
+    // Render loop + resize
+    // ----------------------------
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener("resize", () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>

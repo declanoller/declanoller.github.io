@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Approach Frame (Three.js)</title>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <style>
+    html, body { margin: 0; height: 100%; background: #0b0f14; overflow: hidden; }
+    canvas { display: block; }
+    #hud {
+      position: fixed; left: 12px; top: 12px;
+      color: rgba(255,255,255,0.90);
+      font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      user-select: none; pointer-events: none;
+      padding: 10px 10px;
+      background: rgba(0,0,0,0.28);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px;
+      max-width: min(520px, calc(100vw - 24px));
+      max-height: min(55vh, calc(100vh - 24px));
+      overflow: hidden;
+    }
+    #hud .title { opacity: 0.9; margin-bottom: 6px; }
+    #hud .log { overflow: auto; max-height: inherit; }
+    #hud .evt { white-space: pre; }
+  </style>
+</head>
+<body>
+  <div id="hud">
+    <div class="title">Events</div>
+    <div id="hudLog" class="log"></div>
+  </div>
+
+  <script type="module">
+    import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js";
+    import { STLLoader } from "three/addons/loaders/STLLoader.js";
+    // =========================
+    // HUD EVENT LOG
+    // =========================
+    const t0 = performance.now();
+    const hudLogEl = document.getElementById("hudLog");
+    const events = [];
+    function logEvent(message) {
+      const ts = ((performance.now() - t0) / 1000).toFixed(2);
+      const line = `[${ts}s] ${message}`;
+      events.push(line);
+      // grow list (keep it simple + readable)
+      hudLogEl.innerHTML = events.map(e => `<div class="evt">${e}</div>`).join("");
+      hudLogEl.scrollTop = hudLogEl.scrollHeight;
+    }
+
+    logEvent("script start");
+
+    // =========================
+    // TWEAKABLE SCENE VARIABLES
+    // =========================
+    const HEAD_HEIGHT_Y = 1.65;
+    const GROUND_Y = 0;
+
+    const RECT_DISTANCE_Z = 6;
+    const RECT_WIDTH = 2.4;
+    const RECT_HEIGHT = 1.4;
+    const RECT_CENTER_Y = HEAD_HEIGHT_Y;
+
+    const PILLAR_OFFSET_X = 0.7;
+    const PILLAR_DISTANCE_Z = 4.0;
+    const PILLAR_RADIUS = 0.18;
+    const PILLAR_HEIGHT = 1.25;
+
+    const WALK_DISTANCE = 3.0;
+    const WALK_SPEED = 1.0;
+    const BOB_FREQUENCY_HZ = 1.7;
+    const BOB_AMPLITUDE_Y = 0.02;
+
+    const TARGET_Z_EPSILON = 0.02;      // stop walking when |z - targetZ| <= this
+    const STOP_LINGER_SECONDS = 0.2;
+
+    // Named offsets for items on pillar (replace "mystery" literals)
+    const CAN_OFFSET_X = 0.06;          // +X from pillar center
+    const CAN_OFFSET_Z = 0.02;          // +Z from pillar center
+    const WINE_OFFSET_X = -0.06;        // -X from pillar center
+    const WINE_OFFSET_Z = -0.03;        // -Z from pillar center
+
+    // =========================
+    // THREE.JS BOILERPLATE
+    // =========================
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0b0f14);
+
+    const camFieldOfView = 45;
+    const camera = new THREE.PerspectiveCamera(camFieldOfView, window.innerWidth / window.innerHeight, 0.05, 500);
+    camera.position.set(0, HEAD_HEIGHT_Y, 0);
+    camera.lookAt(0, HEAD_HEIGHT_Y, -1);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    document.body.appendChild(renderer.domElement);
+
+    // Lighting
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x202830, 0.7));
+    const dir = new THREE.DirectionalLight(0xffffff, 0.9);
+    dir.position.set(2.5, 5.0, 1.5);
+    scene.add(dir);
+
+    // =========================
+    // GROUND (infinite-looking)
+    // =========================
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(4000, 4000),
+      new THREE.MeshStandardMaterial({ color: 0xa8caff, roughness: 1.0, metalness: 0.0 })
+    );
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = GROUND_Y;
+    scene.add(ground);
+
+  const stlLoader = new STLLoader();
+  const stlGroup = new THREE.Group();
+  scene.add(stlGroup);
+
+  let rootScale = null;
+  let rootOffset = null;
+
+  function addSTL(url, material, isRoot=false) {
+      return new Promise((resolve, reject) => {
+        stlLoader.load(url, (geometry) => {
+          geometry.computeVertexNormals();
+
+          // Ensure we have UVs for the visor shader.
+          // STL has no UVs; we generate planar UVs from the geometry's bounding box.
+          if (!geometry.attributes.uv) {
+            geometry.computeBoundingBox();
+            const bb = geometry.boundingBox;
+            const size = new THREE.Vector3();
+            bb.getSize(size);
+
+            const pos = geometry.attributes.position;
+            const uv = new Float32Array(pos.count * 2);
+
+            // Heuristic: pick the "dominant" plane for UV projection by smallest extent
+            // (i.e., normal points along that axis).
+            const ax = size.x, ay = size.y, az = size.z;
+            // If z extent is smallest, project to XY; if y smallest, project to XZ; else YZ.
+            let mode = "XY";
+            if (ay <= ax && ay <= az) mode = "XZ";
+            else if (az <= ax && az <= ay) mode = "XY";
+            else mode = "YZ";
+
+            for (let i = 0; i < pos.count; i++) {
+              const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+              let u = 0, v = 0;
+
+              if (mode === "XY") {
+                u = (x - bb.min.x) / Math.max(1e-9, (bb.max.x - bb.min.x));
+                v = (y - bb.min.y) / Math.max(1e-9, (bb.max.y - bb.min.y));
+              } else if (mode === "XZ") {
+                u = (x - bb.min.x) / Math.max(1e-9, (bb.max.x - bb.min.x));
+                v = (z - bb.min.z) / Math.max(1e-9, (bb.max.z - bb.min.z));
+              } else { // YZ
+                u = (y - bb.min.y) / Math.max(1e-9, (bb.max.y - bb.min.y));
+                v = (z - bb.min.z) / Math.max(1e-9, (bb.max.z - bb.min.z));
+              }
+
+              uv[i*2+0] = u;
+              uv[i*2+1] = v;
+            }
+
+            geometry.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
+          }
+
+          geometry.computeBoundingBox();
+          const box = geometry.boundingBox;
+
+          if (isRoot) {
+            const size = new THREE.Vector3(); box.getSize(size);
+            rootScale = 1 / Math.max(size.x, size.y, size.z);
+
+            rootOffset = new THREE.Vector3();
+            box.getCenter(rootOffset); // in STL units
+          }
+
+          const mesh = new THREE.Mesh(geometry, material);
+
+          // Apply shared transform (root)
+          mesh.scale.setScalar(rootScale);
+          mesh.position.copy(rootOffset).multiplyScalar(-rootScale);
+
+          stlGroup.add(mesh);
+          resolve(mesh);
+        }, undefined, reject);
+      });
+    }
+
+    const axesMesh = await addSTL("./axes_planes.stl", new THREE.MeshStandardMaterial({ color: 0x32a852, roughness: 0.6, metalness: 0.0 }), true);
+    stlGroup.position.set(
+      PILLAR_OFFSET_X,
+      GROUND_Y + PILLAR_HEIGHT / 2,
+      -PILLAR_DISTANCE_Z
+    );
+    
+    // =========================
+    // RED RECTANGLE (facing camera)
+    // =========================
+    const redRect = new THREE.Mesh(
+      new THREE.PlaneGeometry(RECT_WIDTH, RECT_HEIGHT),
+      new THREE.MeshStandardMaterial({ color: 0xff2a2a, roughness: 0.6, metalness: 0.0 })
+    );
+    redRect.position.set(0, RECT_CENTER_Y, -RECT_DISTANCE_Z);
+    // PlaneGeometry default normal points +Z; with camera looking -Z, this faces the camera as-is.
+    scene.add(redRect);
+
+    // =========================
+    // PILLAR (small, white)
+    // =========================
+    const pillar = new THREE.Mesh(
+      new THREE.CylinderGeometry(PILLAR_RADIUS, PILLAR_RADIUS, PILLAR_HEIGHT, 24),
+      new THREE.MeshStandardMaterial({ color: 0xf5f7ff, roughness: 0.35, metalness: 0.05 })
+    );
+    pillar.position.set(
+      PILLAR_OFFSET_X,
+      GROUND_Y + PILLAR_HEIGHT / 2,
+      -PILLAR_DISTANCE_Z
+    );
+    scene.add(pillar);
+
+    // =========================
+    // OBJECTS ON PILLAR (spawn on arrival)
+    // =========================
+    const itemsGroup = new THREE.Group();
+    itemsGroup.visible = false;
+    scene.add(itemsGroup);
+
+    const pillarTopY = GROUND_Y + PILLAR_HEIGHT;
+
+    // Soda can (simple cylinder)
+    const canHeight = 0.13;
+    const canRadius = 0.035;
+    const sodaCan = new THREE.Mesh(
+      new THREE.CylinderGeometry(canRadius, canRadius, canHeight, 32),
+      new THREE.MeshStandardMaterial({ color: 0xd8dde6, roughness: 0.25, metalness: 0.75 })
+    );
+    sodaCan.position.set(
+      pillar.position.x + CAN_OFFSET_X,
+      pillarTopY + canHeight / 2,
+      pillar.position.z + CAN_OFFSET_Z
+    );
+    itemsGroup.add(sodaCan);
+
+    // Wine glass (stylized: bowl + stem + base)
+    const glassMat = new THREE.MeshPhysicalMaterial({
+      color: 0xffffff,
+      roughness: 0.05,
+      metalness: 0.0,
+      transparent: true,
+      opacity: 0.95,
+      transmission: 1.0,
+      thickness: 0.08,
+      ior: 1.45
+    });
+
+    const phiStart = 0.0;
+    const phiLength = Math.PI * 2;
+    const thetaStart = 0.0;
+    const thetaLength = Math.PI * 0.55;
+    const bowl = new THREE.Mesh(
+      new THREE.SphereGeometry(0.055, 24, 18, phiStart, phiLength, thetaStart, thetaLength),
+      glassMat
+    );
+    bowl.scale.y = 1.15;
+    bowl.rotation.x = Math.PI; // flip bowl upside down
+
+    const stem = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.007, 0.008, 0.09, 18),
+      glassMat
+    );
+
+    const base = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.04, 0.045, 0.01, 24),
+      glassMat
+    );
+
+    const wineGlass = new THREE.Group();
+    bowl.position.y = 0.11;
+    stem.position.y = 0.055;
+    base.position.y = 0.005;
+    wineGlass.add(bowl, stem, base);
+
+    wineGlass.position.set(
+      pillar.position.x + WINE_OFFSET_X,
+      pillarTopY,
+      pillar.position.z + WINE_OFFSET_Z
+    );
+    itemsGroup.add(wineGlass);
+
+    // =========================
+    // WALK ANIMATION (short clip)
+    // =========================
+    const clock = new THREE.Clock();
+
+    const startZ = camera.position.z;
+    const targetZ = startZ - WALK_DISTANCE;
+
+    let state = "walking"; // "walking" -> "linger" -> "turn_to_pillar"
+    let lingerT = 0;
+    let didSpawn = false;
+    let didEndLog = false;
+
+    logEvent("beginning walk");
+
+    function spawnItemsOnce() {
+      if (didSpawn) return;
+      didSpawn = true;
+      itemsGroup.visible = true;
+      logEvent("reaching pillar (end of walk)");
+      logEvent("spawning wine glass");
+      logEvent("spawning soda can");
+    }
+
+    function updateWalk(dt, t) {
+      // forward along -Z
+      camera.position.z = camera.position.z - WALK_SPEED * dt;
+
+      // stop based on epsilon-to-targetZ (not distance-to-pillar)
+      if (Math.abs(camera.position.z - targetZ) <= TARGET_Z_EPSILON || camera.position.z <= targetZ) {
+        camera.position.z = targetZ;
+        
+        state = "linger";
+      }
+
+      // subtle head bob
+      const bob = Math.sin(t * Math.PI * 2 * BOB_FREQUENCY_HZ) * BOB_AMPLITUDE_Y;
+      camera.position.y = HEAD_HEIGHT_Y + bob;
+
+      camera.lookAt(camera.position.x, HEAD_HEIGHT_Y, camera.position.z - 1);
+    }
+
+    function updateLinger(dt, t) {
+      lingerT += dt;
+
+      // settle bobbing a bit while stopped
+      const settle = Math.exp(-lingerT * 2.2);
+      const bob = Math.sin(t * Math.PI * 2 * BOB_FREQUENCY_HZ) * (BOB_AMPLITUDE_Y * 0.35) * settle;
+      camera.position.y = HEAD_HEIGHT_Y + bob;
+
+      camera.lookAt(camera.position.x, HEAD_HEIGHT_Y, camera.position.z - 1);
+
+      if (!didEndLog && lingerT > STOP_LINGER_SECONDS) {
+        didEndLog = true;
+        logEvent("linger finished");
+        state = "turn_to_pillar";
+      }
+    }
+
+    function updateTurnToPillar(dt, t) {
+      // Turn to face top of pillar
+        const targetPos = new THREE.Vector3(
+            pillar.position.x,
+            GROUND_Y + PILLAR_HEIGHT,
+            pillar.position.z
+        );
+        // smooth turn: slerp camera quaternion toward the quaternion that looks at targetPos
+        const turnSpeed = 2.0; // higher = faster turn
+        const m = new THREE.Matrix4();
+        m.lookAt(camera.position, targetPos, camera.up);
+        const targetQuat = new THREE.Quaternion().setFromRotationMatrix(m);
+
+        // slerp toward target orientation
+        camera.quaternion.slerp(targetQuat, Math.min(1, turnSpeed * dt));
+
+        // finish when close enough
+        if (camera.quaternion.angleTo(targetQuat) < 0.0001) {
+          camera.quaternion.copy(targetQuat);
+          logEvent("facing pillar");
+          state = "idle";
+        }
+    }
+
+    // Resize
+    window.addEventListener("resize", () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    spawnItemsOnce();
+
+    // Render loop
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = clock.getDelta();
+      const t = clock.elapsedTime;
+
+    switch (state) {
+        case "walking":
+            updateWalk(dt, t);
+            break;
+        case "linger":
+            updateLinger(dt, t);
+            break;
+        case "turn_to_pillar":
+            updateTurnToPillar(dt, t);
+            break;
+        default:
+            // handle other states if needed
+            // enable interactive OrbitControls when we reach the "idle" state
+            if (!camera.userData.orbitControls && !camera.userData.orbitControlsLoading) {
+              camera.userData.orbitControlsLoading = true;
+              import("three/addons/controls/OrbitControls.js")
+            .then((m) => {
+              const OrbitControls = m.OrbitControls;
+              const controls = new OrbitControls(camera, renderer.domElement);
+              controls.enableDamping = true;
+              // controls.dampingFactor = 0.07;
+              // controls.screenSpacePanning = false;
+              controls.enablePan = true;
+              controls.enableZoom = true;
+              controls.minDistance = 0.2;
+              controls.maxDistance = 50;
+
+              // Initialize target to current look direction so control doesn't jump
+              const dir = new THREE.Vector3();
+              camera.getWorldDirection(dir);
+              const target = new THREE.Vector3().copy(camera.position).add(dir);
+              controls.target.copy(target);
+
+              controls.update();
+              camera.userData.orbitControls = controls;
+              logEvent("interactive camera controls enabled");
+            })
+            .catch((err) => {
+              console.error("Failed to load OrbitControls:", err);
+              logEvent("failed to enable interactive controls");
+              camera.userData.orbitControlsLoading = false;
+            });
+            } else if (camera.userData.orbitControls) {
+              camera.userData.orbitControls.update();
+            }
+            break;
+    }
+
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
+</html>
