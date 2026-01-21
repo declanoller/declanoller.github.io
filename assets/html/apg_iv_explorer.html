@@ -25,7 +25,7 @@ import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 document.body.style.margin = "0";
 
 const tooltip = d3.select("#tooltip");
-const data = await d3.json("./all_species_taxon_tree.json");
+const data = await d3.json("./all_genera_taxon_tree.json");
 
 function chart(data) {
   const W = Math.floor(window.innerWidth * 0.9);
@@ -209,7 +209,7 @@ function chart(data) {
         .style("display", "block")
         .style("left", (event.clientX + 12) + "px")
         .style("top", (event.clientY + 12) + "px")
-        .html(`<b>${d.data.name}</b><br>${d3.format(",d")(d.value ?? 0)}`);
+        .html(`<b>${d.data.name}</b> (${d.data.taxon ?? ""})<br>${d3.format(",d")(d.value ?? 0)} species`);
     });
   }
   function hideTooltip() {
@@ -266,14 +266,56 @@ function chart(data) {
       .style("user-select", "none")
       .attr("pointer-events", "none");
 
-    textEnter.append("tspan")
-      .text(d => d.data.name);
-
-    textEnter.append("tspan")
-      .attr("opacity", 0.7)
-      .text(d => ` ${d3.format(",d")(d.value ?? 0)}`);
-
     const textAll = textEnter.merge(textSel);
+
+    // ✅ NEW: rebuild label contents every render so focus changes update links/text
+    function updateLabelContent(sel) {
+      sel.each(function(d) {
+        const t = d3.select(this);
+        t.selectAll("*").remove();
+
+        const isLeftmost = (d === focus); // most recently clicked
+        
+        if (isLeftmost) {
+          console.log("isLeftmost", isLeftmost, d.data.name);
+          const title = `${d.data.name} (${d.data.taxon ?? ""})`;
+          const suffix = ` -- ${d3.format(",d")(d.value ?? 0)} species`;
+
+          if (d.data.wikipedia_link) {
+            console.log("has wikipedia link", d.data.wikipedia_link);
+            const a = t.append("a")
+              .attr("href", d.data.wikipedia_link)
+              .attr("xlink:href", d.data.wikipedia_link)     // important for some SVG renderers
+              .attr("target", "_blank")
+              .attr("rel", "noopener noreferrer")
+              .style("pointer-events", "all")                // override parent's pointer-events:none
+              .style("cursor", "pointer");
+
+            a.append("tspan")
+              .style("text-decoration", "underline")         // make it look like a link
+              .text(title);
+
+            // optional: prevent background zoom-out click from firing when clicking the link
+            a.on("click", (event) => event.stopPropagation());
+          } else {
+            t.append("tspan").text(title);
+          }
+
+
+          t.append("tspan")
+            .attr("opacity", 0.7)
+            .text(suffix);
+        } else {
+          t.append("tspan").text(d.data.name);
+          t.append("tspan")
+            .attr("opacity", 0.7)
+            .text(` -- ${d3.format(",d")(d.value ?? 0)} species`);
+        }
+      });
+    }
+
+    // update before positioning/transitions
+    updateLabelContent(textAll);
 
     const applyRects = sel => sel
       .attr("x", d => y(d.y0))
