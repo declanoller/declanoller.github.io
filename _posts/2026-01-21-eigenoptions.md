@@ -14,7 +14,7 @@ In a bunch of recent posts on the Laplacian ([🐙]({{site.baseurl}}/laplacian_b
 
 ## The big ideas
 
-This paper really follows from [Mahadevan's Proto value functions paper](https://icml.cc/Conferences/2005/proceedings/papers/070_ProtoValue_Mahadevan.pdf), so check out [my post on it]({{site.baseurl}}/proto_vfs_mahadevan) if you're not familiar. The PVF paper uses the PVFs mostly as a basis to construct other value functions (VFs). 
+This paper really follows from [Mahadevan's Proto value functions paper](https://icml.cc/Conferences/2005/proceedings/papers/070_ProtoValue_Mahadevan.pdf), so check out [my post on it]({{site.baseurl}}/proto_vfs) if you're not familiar. The PVF paper uses the PVFs mostly as a basis to construct other value functions (VFs). 
 
 One of the main ideas of the Eigenoptions paper is that we can use PVFs not only as a basis, but also to define interesting *tasks*. PVFs tend to capture task-independent structure of the environment, like all those pretty pictures you can see in the PVF post. The idea here is that if we use a given PVF to define a reward, that reward should also capture some fundamental structure of the environment. Then, we can train a policy to optimize for this reward. 
 
