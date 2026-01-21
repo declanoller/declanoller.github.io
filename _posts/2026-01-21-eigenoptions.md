@@ -9,7 +9,7 @@ title: Eigenpurposes, eigenbehaviors, and eigenoptions, oh my!
 
 ## Approaching the present
 
-In a bunch of recent posts on the Laplacian ([🐙]({{site.baseurl}}/laplacian_basics_and_diffusion), [🦣]({{site.baseurl}}/laplacian_quadratic_form), [🐷]({{site.baseurl}}/laplacian_graph_drawing_dim_reduction), [🦜]({{site.baseurl}}/transition_matrix_and_laplacians), [🦫]({{site.baseurl}}/proto_vfs)), I've been reviewing basics and concepts, and then looking at a couple older papers involving the Laplacian. Those were all interesting, but very old news by now. Today we're gonna look at a more recent work in the same vein, ["A Laplacian Framework for Option Discovery in Reinforcement Learning"](https://arxiv.org/abs/1703.00956) (2017). It's a very fun and clever idea, and definitely influential on later work.
+In a bunch of recent posts on the Laplacian ([🐙]({{site.baseurl}}/laplacian_basics_and_diffusion), [🦣]({{site.baseurl}}/laplacian_quadratic_form), [🐷]({{site.baseurl}}/laplacian_graph_drawing_dim_reduction), [🦜]({{site.baseurl}}/proto_vfs)), I've been reviewing basics and concepts, and then looking at a couple older papers involving the Laplacian. Those were all interesting, but very old news by now. Today we're gonna look at a more recent work in the same vein, ["A Laplacian Framework for Option Discovery in Reinforcement Learning"](https://arxiv.org/abs/1703.00956) (2017). It's a very fun and clever idea, and definitely influential on later work.
 
 
 ## The big ideas
