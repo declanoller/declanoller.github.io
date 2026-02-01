@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Approach Frame + STL Group Loader (Three.js)</title>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <style>
+    html, body { margin: 0; height: 100%; background: #0b0f14; overflow: hidden; }
+    canvas { display: block; }
+    #hud {
+      position: fixed; left: 12px; top: 12px;
+      color: rgba(255,255,255,0.90);
+      font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      user-select: none; pointer-events: none;
+      padding: 10px 10px;
+      background: rgba(0,0,0,0.28);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px;
+      max-width: min(520px, calc(100vw - 24px));
+      max-height: min(55vh, calc(100vh - 24px));
+      overflow: hidden;
+    }
+    #hud .title { opacity: 0.9; margin-bottom: 6px; }
+    #hud .log { overflow: auto; max-height: inherit; }
+    #hud .evt { white-space: pre; }
+  </style>
+</head>
+<body>
+  <div id="hud">
+    <div class="title">Events</div>
+    <div id="hudLog" class="log"></div>
+  </div>
+
+  <script type="module">
+    import * as THREE from "three";
+    import { STLLoader } from "three/addons/loaders/STLLoader.js";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+    // =========================
+    // HUD EVENT LOG
+    // =========================
+    const t0 = performance.now();
+    const hudLogEl = document.getElementById("hudLog");
+    const events = [];
+    function logEvent(message) {
+      const ts = ((performance.now() - t0) / 1000).toFixed(2);
+      const line = `[${ts}s] ${message}`;
+      events.push(line);
+      hudLogEl.innerHTML = events.map(e => `<div class="evt">${e}</div>`).join("");
+      hudLogEl.scrollTop = hudLogEl.scrollHeight;
+    }
+    logEvent("script start");
+
+    // =========================
+    // TWEAKABLE SCENE VARIABLES
+    // =========================
+    const HEAD_HEIGHT_Y = 1.65;
+    const GROUND_Y = 0;
+
+    const RECT_DISTANCE_Z = 6;
+    const RECT_WIDTH = 2.4;
+    const RECT_HEIGHT = 1.4;
+    const RECT_CENTER_Y = HEAD_HEIGHT_Y;
+
+    // Where the STL pillar group sits
+    const PILLAR_OFFSET_X = 0.7;
+    const PILLAR_DISTANCE_Z = 4.0;
+    const PILLAR_HEIGHT = 1.25; // only used for look-at target; adjust to match your STL pillar
+
+    const WALK_DISTANCE = 3.0;
+    const WALK_SPEED = 1.0;
+    const BOB_FREQUENCY_HZ = 1.7;
+    const BOB_AMPLITUDE_Y = 0.02;
+
+    const TARGET_Z_EPSILON = 0.02;
+    const STOP_LINGER_SECONDS = 0.2;
+
+    // Turn smoothing
+    const TURN_DURATION_SECONDS = 1.25; // longer = smoother
+    const TURN_EASE_POWER = 2.0;        // 2 = smoothstep-ish (accelerate then decelerate)
+    const TURN_FINISH_ANGLE_EPS = 0.0002;
+
+    // =========================
+    // THREE.JS BOILERPLATE
+    // =========================
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0b0f14);
+
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.05, 500);
+    camera.position.set(0, HEAD_HEIGHT_Y, 0);
+    camera.lookAt(0, HEAD_HEIGHT_Y, -1);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    document.body.appendChild(renderer.domElement);
+
+    // Lighting
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x202830, 0.7));
+    const dir = new THREE.DirectionalLight(0xffffff, 0.9);
+    dir.position.set(2.5, 5.0, 1.5);
+    scene.add(dir);
+
+    // =========================
+    // GROUND
+    // =========================
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(4000, 4000),
+      new THREE.MeshStandardMaterial({ color: 0xa8caff, roughness: 1.0, metalness: 0.0 })
+    );
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = GROUND_Y;
+    scene.add(ground);
+
+    // =========================
+    // RED RECTANGLE (facing camera)
+    // =========================
+    const redRect = new THREE.Mesh(
+      new THREE.PlaneGeometry(RECT_WIDTH, RECT_HEIGHT),
+      new THREE.MeshStandardMaterial({ color: 0xff2a2a, roughness: 0.6, metalness: 0.0 })
+    );
+    redRect.position.set(0, RECT_CENTER_Y, -RECT_DISTANCE_Z);
+    scene.add(redRect);
+
+    // ============================================================
+    // STL Group Loader (per-group state)
+    // ============================================================
+    function createSTLGroupLoader({
+      scene = null,
+      group = null,
+      autoAddToScene = true,
+      computeUVs = true,
+    } = {}) {
+      const stlLoader = new STLLoader();
+      const stlGroup = group ?? new THREE.Group();
+      if (scene && autoAddToScene) scene.add(stlGroup);
+
+      let rootScale = null;
+      let rootOffset = null;
+
+      function ensurePlanarUVsFromBBox(geometry) {
+        if (geometry.attributes.uv) return;
+
+        geometry.computeBoundingBox();
+        const bb = geometry.boundingBox;
+        const size = new THREE.Vector3();
+        bb.getSize(size);
+
+        const pos = geometry.attributes.position;
+        const uv = new Float32Array(pos.count * 2);
+
+        // Pick projection plane by smallest extent
+        const ax = size.x, ay = size.y, az = size.z;
+        let mode = "XY";
+        if (ay <= ax && ay <= az) mode = "XZ";
+        else if (az <= ax && az <= ay) mode = "XY";
+        else mode = "YZ";
+
+        const inv = (a, b) => 1 / Math.max(1e-9, (b - a));
+        const invX = inv(bb.min.x, bb.max.x);
+        const invY = inv(bb.min.y, bb.max.y);
+        const invZ = inv(bb.min.z, bb.max.z);
+
+        for (let i = 0; i < pos.count; i++) {
+          const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+
+          let u = 0, v = 0;
+          if (mode === "XY") {
+            u = (x - bb.min.x) * invX;
+            v = (y - bb.min.y) * invY;
+          } else if (mode === "XZ") {
+            u = (x - bb.min.x) * invX;
+            v = (z - bb.min.z) * invZ;
+          } else { // YZ
+            u = (y - bb.min.y) * invY;
+            v = (z - bb.min.z) * invZ;
+          }
+
+          uv[i * 2 + 0] = u;
+          uv[i * 2 + 1] = v;
+        }
+
+        geometry.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
+      }
+
+      function setRootFromGeometry(geometry, { normalizeToUnit = true } = {}) {
+        geometry.computeBoundingBox();
+        const box = geometry.boundingBox;
+
+        const size = new THREE.Vector3();
+        box.getSize(size);
+
+        rootScale = normalizeToUnit ? 1 / Math.max(size.x, size.y, size.z) : 1.0;
+        rootOffset = new THREE.Vector3();
+        box.getCenter(rootOffset);
+      }
+
+      function applyRootTransform(mesh) {
+        if (rootScale == null || rootOffset == null) {
+          throw new Error("Root transform not set. Load a root STL with isRoot=true first.");
+        }
+        mesh.scale.setScalar(rootScale);
+        mesh.position.copy(rootOffset).multiplyScalar(-rootScale);
+      }
+
+      function addSTL(url, material, { isRoot = false, normalizeToUnit = true, name } = {}) {
+        return new Promise((resolve, reject) => {
+          stlLoader.load(
+            url,
+            (geometry) => {
+              geometry.computeVertexNormals();
+              if (computeUVs) ensurePlanarUVsFromBBox(geometry);
+
+              if (isRoot) setRootFromGeometry(geometry, { normalizeToUnit });
+
+              const mesh = new THREE.Mesh(geometry, material);
+              if (name) mesh.name = name;
+
+              if (rootScale != null && rootOffset != null) {
+                applyRootTransform(mesh);
+              } else if (!isRoot) {
+                throw new Error(
+                  `Tried to add non-root STL before setting a root: ${url}\n` +
+                  `Load a root first, or pass isRoot:true for the first mesh.`
+                );
+              }
+
+              stlGroup.add(mesh);
+              resolve(mesh);
+            },
+            undefined,
+            reject
+          );
+        });
+      }
+
+      return {
+        group: stlGroup,
+        addSTL,
+        getRootScale: () => rootScale,
+        getRootOffset: () => rootOffset?.clone() ?? null,
+      };
+    }
+
+    // =========================
+    // STL "PILLAR + ITEMS" GROUP
+    // =========================
+    const matPillar = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85, metalness: 0.05 });
+    const matGlass  = new THREE.MeshPhysicalMaterial({
+      color: 0xffffff,
+      roughness: 0.05,
+      metalness: 0.0,
+      transparent: true,
+      opacity: 0.95,
+      transmission: 1.0,
+      thickness: 0.08,
+      ior: 1.45
+    });
+    const matCan    = new THREE.MeshStandardMaterial({ color: 0xff0000, roughness: 0.35, metalness: 0.35 });
+
+    const pillarGroupLoader = createSTLGroupLoader({ scene });
+    pillarGroupLoader.group.position.set(
+      PILLAR_OFFSET_X,
+      GROUND_Y + PILLAR_HEIGHT / 2, // if your STLs already sit on ground, use GROUND_Y
+      -PILLAR_DISTANCE_Z
+    );
+    pillarGroupLoader.group.visible = false;
+
+    const STL_COLUMN    = "./column.stl";    // root
+    const STL_WINEGLASS = "./wineglass.stl"; // non-root
+    const STL_SODACAN   = "./sodacan.stl";   // non-root
+
+    async function loadPillarGroup() {
+      logEvent("loading pillar STLs...");
+      await pillarGroupLoader.addSTL(STL_COLUMN, matPillar, { isRoot: true,  name: "column_root" });
+      await pillarGroupLoader.addSTL(STL_WINEGLASS, matGlass, { isRoot: false, name: "wineglass" });
+      await pillarGroupLoader.addSTL(STL_SODACAN, matCan, { isRoot: false, name: "sodacan" });
+      logEvent("pillar STLs loaded");
+    }
+
+    try {
+      await loadPillarGroup();
+    } catch (err) {
+      console.error(err);
+      logEvent("ERROR loading pillar STLs (see console)");
+    }
+
+    // =========================
+    // WALK + STATE MACHINE
+    // =========================
+    const clock = new THREE.Clock();
+
+    const startZ = camera.position.z;
+    const targetZ = startZ - WALK_DISTANCE;
+
+    let state = "walking"; // "walking" -> "linger" -> "turn_to_pillar" -> "idle"
+    let lingerT = 0;
+    let didSpawn = false;
+    let didEndLog = false;
+
+    // Turn state (for smooth ease-in/out)
+    let turnT = 0;
+    let turnFromQuat = new THREE.Quaternion();
+    let turnToQuat = new THREE.Quaternion();
+    let turnTargetPos = new THREE.Vector3();
+
+    // Orbit controls created once, enabled only after idle
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enabled = false;          // off until idle
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.screenSpacePanning = true; // "typical" feel
+    controls.enablePan = true;
+    controls.enableZoom = true;
+    controls.enableRotate = true;
+
+    // Tweakables that feel "standard"
+    controls.rotateSpeed = 0.9;
+    controls.zoomSpeed = 1.0;
+    controls.panSpeed = 0.9;
+
+    // keep sensible distance bounds
+    controls.minDistance = 0.2;
+    controls.maxDistance = 50;
+
+    function spawnItemsOnce() {
+      if (didSpawn) return;
+      didSpawn = true;
+
+      pillarGroupLoader.group.visible = true;
+      logEvent("reaching pillar (end of walk)");
+      logEvent("revealing STL column");
+      logEvent("revealing STL wine glass");
+      logEvent("revealing STL soda can");
+    }
+
+    logEvent("beginning walk");
+
+    function updateWalk(dt, t) {
+      camera.position.z = camera.position.z - WALK_SPEED * dt;
+
+      if (Math.abs(camera.position.z - targetZ) <= TARGET_Z_EPSILON || camera.position.z <= targetZ) {
+        camera.position.z = targetZ;
+        state = "linger";
+      }
+
+      const bob = Math.sin(t * Math.PI * 2 * BOB_FREQUENCY_HZ) * BOB_AMPLITUDE_Y;
+      camera.position.y = HEAD_HEIGHT_Y + bob;
+
+      camera.lookAt(camera.position.x, HEAD_HEIGHT_Y, camera.position.z - 1);
+    }
+
+    function updateLinger(dt, t) {
+      lingerT += dt;
+
+      const settle = Math.exp(-lingerT * 2.2);
+      const bob = Math.sin(t * Math.PI * 2 * BOB_FREQUENCY_HZ) * (BOB_AMPLITUDE_Y * 0.35) * settle;
+      camera.position.y = HEAD_HEIGHT_Y + bob;
+
+      camera.lookAt(camera.position.x, HEAD_HEIGHT_Y, camera.position.z - 1);
+
+      if (!didEndLog && lingerT > STOP_LINGER_SECONDS) {
+        didEndLog = true;
+        logEvent("linger finished");
+        beginTurnToPillar();
+        state = "turn_to_pillar";
+      }
+    }
+
+    function beginTurnToPillar() {
+      // target: top-ish of pillar group (you can refine later by computing bbox)
+      turnTargetPos.set(
+        pillarGroupLoader.group.position.x,
+        GROUND_Y + PILLAR_HEIGHT,
+        pillarGroupLoader.group.position.z
+      );
+
+      // snapshot starting orientation
+      turnFromQuat.copy(camera.quaternion);
+
+      // compute target orientation
+      const m = new THREE.Matrix4();
+      m.lookAt(camera.position, turnTargetPos, camera.up);
+      turnToQuat.setFromRotationMatrix(m);
+
+      turnT = 0;
+      logEvent("turning to pillar");
+    }
+
+    // Smoothstep-like easing (accelerate then decelerate)
+    function easeInOutPow(x, p = 2) {
+      x = Math.min(1, Math.max(0, x));
+      const a = Math.pow(x, p);
+      const b = Math.pow(1 - x, p);
+      return a / (a + b);
+    }
+
+    function updateTurnToPillar(dt) {
+      turnT += dt;
+      const x = Math.min(1, turnT / TURN_DURATION_SECONDS);
+      const e = easeInOutPow(x, TURN_EASE_POWER);
+
+      // slerp using eased alpha, from fixed start quat to fixed target quat
+      camera.quaternion.copy(turnFromQuat).slerp(turnToQuat, e);
+
+      // finish either by time or by angle
+      const remainingAngle = camera.quaternion.angleTo(turnToQuat);
+      if (x >= 1 || remainingAngle < TURN_FINISH_ANGLE_EPS) {
+        camera.quaternion.copy(turnToQuat);
+
+        // IMPORTANT: set OrbitControls target to what we are looking at NOW,
+        // and DO NOT overwrite camera orientation/position (prevents snapping).
+        controls.target.copy(turnTargetPos);
+        controls.update();
+
+        controls.enabled = true;
+        logEvent("facing pillar");
+        logEvent("interactive camera controls enabled");
+        state = "idle";
+      }
+    }
+
+    // =========================
+    // Resize
+    // =========================
+    window.addEventListener("resize", () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // Reveal the STL pillar group on arrival (keeps Script A behavior)
+    spawnItemsOnce();
+
+    // =========================
+    // Render loop
+    // =========================
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = clock.getDelta();
+      const t = clock.elapsedTime;
+
+      switch (state) {
+        case "walking":
+          updateWalk(dt, t);
+          break;
+        case "linger":
+          updateLinger(dt, t);
+          break;
+        case "turn_to_pillar":
+          updateTurnToPillar(dt);
+          break;
+        case "idle":
+        default:
+          if (controls.enabled) controls.update();
+          break;
+      }
+
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
+</html>

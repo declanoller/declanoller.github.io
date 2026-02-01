@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Rigged Arms: Smooth Right-hand Pickup</title>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <style>
+    html, body { margin:0; height:100%; overflow:hidden; background:#0b0f14; }
+    #hud{
+      position:fixed; left:12px; top:12px; z-index:10;
+      color:rgba(255,255,255,0.88);
+      font: 12px ui-monospace, SFMono-Regular, Menlo, monospace;
+      background: rgba(0,0,0,0.35);
+      padding: 10px 12px;
+      border-radius: 12px;
+      line-height: 1.35;
+      white-space: pre-wrap;
+      max-width: 760px;
+    }
+  </style>
+</head>
+<body>
+<div id="hud">Loading…</div>
+
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+
+const hud = document.getElementById("hud");
+function setHUD(s){ hud.textContent = s; }
+
+function easeInOut(t){
+  t = THREE.MathUtils.clamp(t, 0, 1);
+  return t*t*(3 - 2*t);
+}
+
+// --------------------
+// CCD IK (stable settings, low jitter)
+// --------------------
+function makeCCDSolver(){
+  const effPos = new THREE.Vector3();
+  const bonePos = new THREE.Vector3();
+  const v1 = new THREE.Vector3();
+  const v2 = new THREE.Vector3();
+  const axis = new THREE.Vector3();
+
+  const parentWorldQ = new THREE.Quaternion();
+  const qWorld = new THREE.Quaternion();
+  const qLocal = new THREE.Quaternion();
+
+  return function solveCCD(chain, effector, targetWorld, {
+    iters = 18,
+    threshold = 0.006,
+    maxStep = Math.PI / 18
+  } = {}){
+    for (let iter = 0; iter < iters; iter++){
+      effector.updateWorldMatrix(true, false);
+      effector.getWorldPosition(effPos);
+      if (effPos.distanceTo(targetWorld) < threshold) break;
+
+      for (let i = 0; i < chain.length; i++){
+        const bone = chain[i];
+        bone.updateWorldMatrix(true, false);
+
+        bone.getWorldPosition(bonePos);
+        effector.getWorldPosition(effPos);
+
+        v1.copy(effPos).sub(bonePos).normalize();
+        v2.copy(targetWorld).sub(bonePos).normalize();
+
+        let dot = THREE.MathUtils.clamp(v1.dot(v2), -1, 1);
+        let ang = Math.acos(dot);
+        if (!isFinite(ang) || ang < 1e-6) continue;
+        ang = Math.min(ang, maxStep);
+
+        axis.copy(v1).cross(v2);
+        if (axis.lengthSq() < 1e-12) continue;
+        axis.normalize();
+
+        qWorld.setFromAxisAngle(axis, ang);
+
+        const parent = bone.parent;
+        if (parent) parent.getWorldQuaternion(parentWorldQ);
+        else parentWorldQ.identity();
+
+        qLocal.copy(parentWorldQ).invert().multiply(qWorld).multiply(parentWorldQ);
+        bone.quaternion.premultiply(qLocal);
+        bone.updateMatrixWorld(true);
+      }
+    }
+  };
+}
+const solveCCD = makeCCDSolver();
+
+// --------------------
+// Scene
+// --------------------
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0x0b0f14, 4, 25);
+
+const camera = new THREE.PerspectiveCamera(55, innerWidth/innerHeight, 0.01, 5000);
+camera.position.set(2.4, 1.35, 2.8);
+
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(devicePixelRatio);
+renderer.shadowMap.enabled = true;
+document.body.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+
+scene.add(new THREE.HemisphereLight(0xffffff, 0x223344, 1.15));
+const dir = new THREE.DirectionalLight(0xffffff, 2.0);
+dir.position.set(4, 6, 2);
+scene.add(dir);
+
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(50, 50),
+  new THREE.MeshStandardMaterial({ color: 0x141a22, roughness: 1 })
+);
+ground.rotation.x = -Math.PI/2;
+ground.receiveShadow = true;
+scene.add(ground);
+
+scene.add(new THREE.AxesHelper(1.0));
+
+// Stand + object
+const stand = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.08, 0.08, 0.7, 24),
+  new THREE.MeshStandardMaterial({ color: 0x2a3340, roughness: 0.9 })
+);
+stand.position.set(0.4, 0.35, -0.2);
+stand.castShadow = true;
+stand.receiveShadow = true;
+scene.add(stand);
+
+const pickObj = new THREE.Mesh(
+  new THREE.SphereGeometry(0.06, 32, 24),
+  new THREE.MeshStandardMaterial({ color: 0xd9b24c, roughness: 0.4, metalness: 0.2 })
+);
+pickObj.position.set(stand.position.x, 0.72, stand.position.z);
+pickObj.castShadow = true;
+scene.add(pickObj);
+
+// Target marker (magenta) shows the filtered target
+const magenta = 0xff00ff;
+const targetMarker = new THREE.Mesh(
+  new THREE.SphereGeometry(0.08, 16, 16),
+  new THREE.MeshBasicMaterial({ color: magenta })
+);
+scene.add(targetMarker);
+
+// --------------------
+// Rig
+// --------------------
+const loader = new GLTFLoader();
+
+let rigRoot = null;
+const rigWrap = new THREE.Group();
+rigWrap.name = "rigWrap";
+scene.add(rigWrap);
+
+// ✅ Bake in your chosen wrapper rotation:
+// x=180°, y=495° == 135°, z=0°
+rigWrap.rotation.set(
+  THREE.MathUtils.degToRad(180),
+  THREE.MathUtils.degToRad(135),
+  THREE.MathUtils.degToRad(0)
+);
+
+let skinned = null;
+let bones = new Map();
+let rightChain = null;
+let rightHand = null;
+
+function findByName(root, name){
+  let found = null;
+  root.traverse(o => { if (o.name === name) found = o; });
+  return found;
+}
+function findSkinnedMesh(root){
+  let s = null;
+  root.traverse(o => { if (o.isSkinnedMesh && !s) s = o; });
+  return s;
+}
+function cacheBones(skinnedMesh){
+  bones.clear();
+  for (const b of skinnedMesh.skeleton.bones) bones.set(b.name, b);
+}
+function getRightArmBones(){
+  return {
+    shoulder: bones.get("clavicle_r_019"),
+    upperarm: bones.get("upperarm_r_020"),
+    forearm : bones.get("lowerarm_r_021"),
+    hand    : bones.get("hand_r_022"),
+  };
+}
+function setSkinnedMaterialNice(root){
+  root.traverse(o => {
+    if (o.isSkinnedMesh){
+      const mat = new THREE.MeshStandardMaterial({ color: 0xdddddd, roughness: 0.75 });
+      mat.skinning = true;
+      o.material = mat;
+      o.material.needsUpdate = true;
+    }
+  });
+}
+
+// Fit + camera
+function fitToHeight(obj, desiredHeight=0.9){
+  obj.updateWorldMatrix(true, true);
+  const box0 = new THREE.Box3().setFromObject(obj);
+  const size0 = new THREE.Vector3(); box0.getSize(size0);
+
+  const scale = desiredHeight / Math.max(1e-9, size0.y);
+  obj.scale.setScalar(scale);
+
+  obj.updateWorldMatrix(true, true);
+  const box1 = new THREE.Box3().setFromObject(obj);
+  const center1 = new THREE.Vector3(); box1.getCenter(center1);
+
+  obj.position.x += -center1.x;
+  obj.position.z += -center1.z;
+  obj.position.y += -box1.min.y;
+
+  obj.updateWorldMatrix(true, true);
+  const box2 = new THREE.Box3().setFromObject(obj);
+  return { scale, box: box2 };
+}
+
+function frameCameraToBox(box){
+  const size = new THREE.Vector3(); box.getSize(size);
+  const center = new THREE.Vector3(); box.getCenter(center);
+  const radius = Math.max(size.x, size.y, size.z) * 0.5;
+  const dist = Math.max(0.9, radius * 2.8);
+
+  controls.target.copy(center);
+  camera.position.copy(center).add(new THREE.Vector3(dist * 0.25, dist * 0.35, dist));
+  controls.update();
+}
+
+// --------------------
+// Grab state
+// --------------------
+let grabbed = false;
+const grabLocalMatrix = new THREE.Matrix4();
+const tmpHandWorld = new THREE.Vector3();
+const tmpObjWorld = new THREE.Vector3();
+
+function grab(){
+  if (!rightHand || grabbed) return;
+  grabbed = true;
+
+  rightHand.updateWorldMatrix(true, false);
+  pickObj.updateWorldMatrix(true, false);
+
+  const invHand = new THREE.Matrix4().copy(rightHand.matrixWorld).invert();
+  grabLocalMatrix.copy(invHand).multiply(pickObj.matrixWorld);
+
+  rightHand.add(pickObj);
+  pickObj.matrix.copy(grabLocalMatrix);
+  pickObj.matrix.decompose(pickObj.position, pickObj.quaternion, pickObj.scale);
+  pickObj.updateMatrixWorld(true);
+}
+
+function release(){
+  if (!grabbed) return;
+  grabbed = false;
+
+  pickObj.updateWorldMatrix(true, true);
+  const world = new THREE.Matrix4().copy(pickObj.matrixWorld);
+
+  scene.add(pickObj);
+  pickObj.matrix.copy(world);
+  pickObj.matrix.decompose(pickObj.position, pickObj.quaternion, pickObj.scale);
+  pickObj.updateMatrixWorld(true);
+}
+
+addEventListener("keydown", (e) => {
+  if (e.key.toLowerCase() === "g") grabbed ? release() : grab();
+});
+
+// --------------------
+// Smooth target filtering (critical for jerkiness)
+// --------------------
+// We'll do a simple first-order low-pass filter:
+// filtered += (desired - filtered) * (1 - exp(-dt * cutoffHz*2π))
+// cutoffHz ~ 6-10 makes it smooth but responsive.
+const desiredTarget = new THREE.Vector3();
+const filteredTarget = new THREE.Vector3();
+const kTmp = new THREE.Vector3();
+
+const holdPos = new THREE.Vector3(1.2, 0.7, -0.4);
+
+function filterTarget(dt, cutoffHz=8.0){
+  const alpha = 1.0 - Math.exp(-dt * (cutoffHz * 2.0 * Math.PI));
+  filteredTarget.lerp(desiredTarget, alpha);
+}
+
+// --------------------
+// Pickup motion targets
+// --------------------
+function gripTarget(objW){
+  // approach offset (tweak if needed)
+  return kTmp.copy(objW).add(new THREE.Vector3(-0.10, 0.02, 0.06));
+}
+function liftTarget(objW){
+  return kTmp.copy(objW).add(new THREE.Vector3(-0.10, 0.28, 0.06));
+}
+function holdTarget(t){
+    // hovering motion
+    const holdWobble = new THREE.Vector3(
+      Math.sin(t*1.6)*0.25,
+      Math.sin(t*1.1)*0.1,
+      Math.cos(t*1.3)*0.15
+    );
+    desiredTarget.copy(holdPos).add(holdWobble);
+
+}
+
+// --------------------
+// Load rig
+// --------------------
+setHUD(
+  "Loading ./rigged_arms.glb …\n\n" +
+  "Mouse: orbit/zoom/pan\n" +
+  "G: grab/release\n"
+);
+
+loader.load("./rigged_arms.glb", (gltf) => {
+  rigRoot = gltf.scene;
+  rigWrap.add(rigRoot);
+
+  rigRoot.traverse(o => {
+    o.visible = true;
+    if (o.isMesh) o.frustumCulled = false;
+  });
+
+  // ✅ Proven fix
+  const basic = findByName(rigRoot, "Basiccharacter");
+  if (basic){
+    basic.scale.set(1,1,1);
+    basic.position.set(0,0,0);
+    basic.rotation.set(0,0,0);
+  }
+
+  skinned = findSkinnedMesh(rigRoot);
+  if (!skinned){
+    setHUD("No SkinnedMesh found.");
+    return;
+  }
+
+  setSkinnedMaterialNice(rigRoot);
+  cacheBones(skinned);
+
+  const { shoulder, upperarm, forearm, hand } = getRightArmBones();
+  if (!shoulder || !upperarm || !forearm || !hand){
+    console.log("Available bones:", [...bones.keys()]);
+    setHUD("Couldn't find right arm bones. See console.");
+    return;
+  }
+
+  rightHand = hand;
+  rightChain = [shoulder, upperarm, forearm];
+
+  const fit = fitToHeight(rigWrap, 0.9);
+  frameCameraToBox(fit.box);
+
+  // init targets at current hand position (prevents snapping)
+  // note: STORES rightHand pos into tmpHandWorld
+  rightHand.getWorldPosition(tmpHandWorld);
+  // note: COPIES tmpHandWorld into desiredTarget + filteredTarget
+  desiredTarget.copy(tmpHandWorld);
+  filteredTarget.copy(tmpHandWorld);
+  targetMarker.position.copy(tmpHandWorld);
+
+  setHUD(
+    "Loaded.\n" +
+    "Mouse: orbit/zoom/pan\n" +
+    "G: grab/release\n\n" +
+    "Wrapper rotation baked in: x=180°, y=135°, z=0°\n"
+  );
+}, undefined, (err) => {
+  console.error(err);
+  setHUD("Failed to load rigged_arms.glb");
+});
+
+// --------------------
+// Animate
+// --------------------
+const clock = new THREE.Clock();
+let startT = 0;
+let lastT = clock.getElapsedTime();
+
+function animate(){
+  requestAnimationFrame(animate);
+
+  const now = clock.getElapsedTime();
+  const dt = Math.min(0.05, now - lastT);
+  lastT = now;
+
+  controls.update();
+
+  if (rightChain && rightHand){
+    const cycle = ((now - startT) % 6.0);
+
+    pickObj.getWorldPosition(tmpObjWorld);
+
+    /*
+
+
+    if (cycle < 1.2){
+        // approach
+        gripTarget(tmpObjWorld); // writes into kTmp
+        desiredTarget.copy(kTmp);
+    } else if (cycle < 2.0){
+        // settle + auto-grab when close
+        gripTarget(tmpObjWorld);
+        desiredTarget.copy(kTmp);
+        
+        rightHand.getWorldPosition(tmpHandWorld);
+        if (!grabbed && tmpHandWorld.distanceTo(tmpObjWorld) < 0.11) grab();
+    } else if (cycle < 3.0){
+        // lift
+        const a = easeInOut((cycle - 2.0) / 1.0);
+        const g0 = new THREE.Vector3().copy(tmpObjWorld).add(new THREE.Vector3(-0.10, 0.02, 0.06));
+        const g1 = new THREE.Vector3().copy(tmpObjWorld).add(new THREE.Vector3(-0.10, 0.28, 0.06));
+        desiredTarget.copy(g0.lerp(g1, a));
+    } else {
+        // hold
+        holdTarget(now);
+    }
+    */
+
+    holdTarget(now);
+
+    // Smooth target
+    filterTarget(dt, 8.0);
+    targetMarker.position.copy(filteredTarget);
+
+    // IK
+    solveCCD(rightChain, rightHand, filteredTarget, {
+      iters: 20,
+      threshold: 0.001,
+    //   threshold: 0.006,
+      // maxStep: Math.PI / 18
+      maxStep: Math.PI / 6
+    });
+
+    // lock held object
+    if (grabbed){
+      pickObj.matrix.copy(grabLocalMatrix);
+      pickObj.matrix.decompose(pickObj.position, pickObj.quaternion, pickObj.scale);
+    }
+  }
+
+  renderer.render(scene, camera);
+}
+animate();
+
+addEventListener("resize", () => {
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+</script>
+</body>
+</html>

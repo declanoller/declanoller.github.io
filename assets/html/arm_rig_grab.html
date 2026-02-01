@@ -1,0 +1,1268 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Rigged Arms: Cylinder Grab + Skeleton Mode + Tooltips (fixed)</title>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <style>
+    html, body { margin:0; height:100%; overflow:hidden; background:#0b0f14; }
+
+    #hudLeft, #hudRight{
+      position:fixed; top:12px; z-index:10;
+      color:rgba(255,255,255,0.88);
+      font: 12px ui-monospace, SFMono-Regular, Menlo, monospace;
+      background: rgba(0,0,0,0.35);
+      padding: 10px 12px;
+      border-radius: 12px;
+      line-height: 1.35;
+      white-space: pre-wrap;
+      max-width: 520px;
+    }
+    #hudLeft{ left:12px; }
+    /* your thinner right HUD */
+    #hudRight{ right:12px; width: 400px; max-width: 45vw; }
+
+    #tooltip{
+      position:fixed;
+      z-index: 20;
+      pointer-events:none;
+      display:none;
+      transform: translate(10px, 10px);
+      color: rgba(255,255,255,0.95);
+      background: rgba(0,0,0,0.65);
+      font: 12px ui-monospace, SFMono-Regular, Menlo, monospace;
+      padding: 6px 8px;
+      border-radius: 10px;
+      max-width: 360px;
+      white-space: pre;
+    }
+  </style>
+</head>
+<body>
+<div id="hudLeft">Loading…</div>
+<div id="hudRight">Logs…</div>
+<div id="tooltip"></div>
+
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+
+const hudLeft = document.getElementById("hudLeft");
+const hudRight = document.getElementById("hudRight");
+const tooltip = document.getElementById("tooltip");
+
+// ====================
+// LOGGING
+// ====================
+const LOG_MAX = 30;
+const logLines = [];
+function ts(){
+  const d = new Date();
+  const ms = String(d.getMilliseconds()).padStart(3, "0");
+  return `${d.toLocaleTimeString()}.${ms}`;
+}
+function log(msg){
+  const line = `[${ts()}] ${msg}`;
+  console.log(line);
+  logLines.push(line);
+  if (logLines.length > LOG_MAX) logLines.shift();
+  hudRight.textContent = logLines.join("\n");
+}
+function setLeftHUD(s){ hudLeft.textContent = s; }
+
+function fmtV(v){
+  return `{ x:${v.x.toFixed(3)}, y:${v.y.toFixed(3)}, z:${v.z.toFixed(3)} }`;
+}
+function clampDt(dt){ return Math.min(0.05, Math.max(0, dt)); }
+
+// ====================
+// CCD IK
+// ====================
+function makeCCDSolver(){
+  const effPos = new THREE.Vector3();
+  const bonePos = new THREE.Vector3();
+  const v1 = new THREE.Vector3();
+  const v2 = new THREE.Vector3();
+  const axis = new THREE.Vector3();
+
+  const parentWorldQ = new THREE.Quaternion();
+  const qWorld = new THREE.Quaternion();
+  const qLocal = new THREE.Quaternion();
+
+  return function solveCCD(chain, effector, targetWorld, {
+    iters = 18,
+    threshold = 0.012,
+    maxStep = Math.PI / 18
+  } = {}){
+    let earlyExit = false;
+
+    for (let iter = 0; iter < iters; iter++){
+      effector.updateWorldMatrix(true, false);
+      effector.getWorldPosition(effPos);
+
+      const dist = effPos.distanceTo(targetWorld);
+      if (dist < threshold){
+        earlyExit = true;
+        break;
+      }
+
+      for (let i = 0; i < chain.length; i++){
+        const bone = chain[i];
+        bone.updateWorldMatrix(true, false);
+
+        bone.getWorldPosition(bonePos);
+        effector.getWorldPosition(effPos);
+
+        v1.copy(effPos).sub(bonePos).normalize();
+        v2.copy(targetWorld).sub(bonePos).normalize();
+
+        let dot = THREE.MathUtils.clamp(v1.dot(v2), -1, 1);
+        let ang = Math.acos(dot);
+        if (!isFinite(ang) || ang < 1e-6) continue;
+        ang = Math.min(ang, maxStep);
+
+        axis.copy(v1).cross(v2);
+        if (axis.lengthSq() < 1e-12) continue;
+        axis.normalize();
+
+        qWorld.setFromAxisAngle(axis, ang);
+
+        const parent = bone.parent;
+        if (parent) parent.getWorldQuaternion(parentWorldQ);
+        else parentWorldQ.identity();
+
+        qLocal.copy(parentWorldQ).invert().multiply(qWorld).multiply(parentWorldQ);
+        bone.quaternion.premultiply(qLocal);
+        bone.updateMatrixWorld(true);
+      }
+    }
+
+    effector.getWorldPosition(effPos);
+    return { effPos: effPos.clone(), earlyExit };
+  };
+}
+const solveCCD = makeCCDSolver();
+
+// ====================
+// Scene
+// ====================
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0x0b0f14, 4, 45);
+
+const camera = new THREE.PerspectiveCamera(55, innerWidth/innerHeight, 0.01, 5000);
+camera.position.set(2.4, 2.2, 3.2);
+
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(devicePixelRatio);
+renderer.shadowMap.enabled = true;
+document.body.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+
+scene.add(new THREE.HemisphereLight(0xffffff, 0x223344, 1.15));
+const dir = new THREE.DirectionalLight(0xffffff, 2.0);
+dir.position.set(4, 6, 2);
+scene.add(dir);
+
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(120, 120),
+  new THREE.MeshStandardMaterial({ color: 0x141a22, roughness: 1 })
+);
+ground.rotation.x = -Math.PI/2;
+ground.receiveShadow = true;
+scene.add(ground);
+
+scene.add(new THREE.AxesHelper(0.8));
+
+// ====================
+// Stand + object (your change)
+// ====================
+const standHeight = 1.6;
+const stand = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.08, 0.08, standHeight, 24),
+  new THREE.MeshStandardMaterial({ color: 0x2a3340, roughness: 0.9 })
+);
+stand.position.set(0.3, standHeight / 2, -1.2);
+stand.castShadow = true;
+stand.receiveShadow = true;
+scene.add(stand);
+
+const pickObjHeight = 0.2;
+const pickObj = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.02, 0.02, pickObjHeight, 24),
+  new THREE.MeshStandardMaterial({ color: 0xfc5203, roughness: 0.4, metalness: 0.2 })
+);
+pickObj.position.set(stand.position.x, standHeight + 0.02 + pickObjHeight / 2, stand.position.z);
+pickObj.castShadow = true;
+scene.add(pickObj);
+
+// ====================
+// Key state
+// ====================
+const keys = { ctrl:false, space:false, a:false, shift:false };
+addEventListener("keydown", (e) => {
+  if (e.key === "Control") keys.ctrl = true;
+  if (e.key === " ") { keys.space = true; e.preventDefault(); }
+  if (e.key.toLowerCase() === "a") keys.a = true;
+  if (e.key === "Shift") keys.shift = true;
+  if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(e.key)) e.preventDefault();
+});
+addEventListener("keyup", (e) => {
+  if (e.key === "Control") keys.ctrl = false;
+  if (e.key === " ") keys.space = false;
+  if (e.key.toLowerCase() === "a") keys.a = false;
+  if (e.key === "Shift") keys.shift = false;
+});
+
+// ====================
+// Wrist orientation vectors (your calibrated values)
+// ====================
+const JOINT_RADIUS = 0.01;
+
+let DEFAULT_FINGER_DIR_LOCAL = new THREE.Vector3(0, 1, 0);
+let DEFAULT_PALM_NORMAL_LOCAL = new THREE.Vector3(-1, 0, 1);
+
+const _qParentW = new THREE.Quaternion();
+const _qWorld = new THREE.Quaternion();
+const _qLocal = new THREE.Quaternion();
+
+function applyWorldAxisRotationToBone(bone, axisWorld, angleRad){
+  const parent = bone.parent;
+  if (parent) parent.getWorldQuaternion(_qParentW);
+  else _qParentW.identity();
+
+  _qWorld.setFromAxisAngle(axisWorld, angleRad);
+  _qLocal.copy(_qParentW).invert().multiply(_qWorld).multiply(_qParentW);
+
+  bone.quaternion.premultiply(_qLocal);
+  bone.updateMatrixWorld(true);
+}
+
+const _handWQ = new THREE.Quaternion();
+const _curFingerW = new THREE.Vector3();
+const _curPalmW = new THREE.Vector3();
+const _desFingerW = new THREE.Vector3();
+const _desPalmW = new THREE.Vector3();
+const _axisW = new THREE.Vector3();
+const _tmpA = new THREE.Vector3();
+const _tmpB = new THREE.Vector3();
+const _tmpC = new THREE.Vector3();
+
+function applyHandOrientationConstraint({
+  handBone,
+  forearmBone,
+  desiredFingerDirWorld,
+  desiredPalmNormalWorld,
+  dt,
+  strength = 12.0,
+}){
+  if (!handBone || !forearmBone) return;
+
+  const alpha = 1.0 - Math.exp(-dt * strength);
+
+  handBone.getWorldQuaternion(_handWQ);
+
+  const fingerLocal = _tmpA.copy(DEFAULT_FINGER_DIR_LOCAL).normalize();
+  const palmLocal = _tmpB.copy(DEFAULT_PALM_NORMAL_LOCAL).normalize();
+
+  _curFingerW.copy(fingerLocal).applyQuaternion(_handWQ).normalize();
+  _curPalmW.copy(palmLocal).applyQuaternion(_handWQ).normalize();
+
+  _desFingerW.copy(desiredFingerDirWorld).normalize();
+  _desPalmW.copy(desiredPalmNormalWorld).normalize();
+
+  // 1) align finger dir
+  _axisW.copy(_curFingerW).cross(_desFingerW);
+  if (_axisW.lengthSq() > 1e-10){
+    _axisW.normalize();
+    const dot = THREE.MathUtils.clamp(_curFingerW.dot(_desFingerW), -1, 1);
+    const fullAngle = Math.acos(dot);
+    applyWorldAxisRotationToBone(handBone, _axisW, fullAngle * alpha);
+  }
+
+  // 2) twist around finger axis to align palm normal
+  handBone.getWorldQuaternion(_handWQ);
+  _curPalmW.copy(palmLocal).applyQuaternion(_handWQ).normalize();
+
+  const twistAxisW = _desFingerW;
+
+  const curP = _tmpA.copy(_curPalmW).projectOnPlane(twistAxisW);
+  const desP = _tmpB.copy(_desPalmW).projectOnPlane(twistAxisW);
+
+  if (curP.lengthSq() > 1e-10 && desP.lengthSq() > 1e-10){
+    curP.normalize(); desP.normalize();
+    const cross = _tmpC.crossVectors(curP, desP);
+    const sign = Math.sign(cross.dot(twistAxisW)) || 1;
+    const dot = THREE.MathUtils.clamp(curP.dot(desP), -1, 1);
+    const fullTwist = sign * Math.acos(dot);
+    applyWorldAxisRotationToBone(handBone, twistAxisW, fullTwist * alpha);
+  }
+}
+
+// ====================
+// Fingers (curl direction fixed)
+// ====================
+function makeFingerRig(bonesByName){
+  const fingerNames = [
+    ["thumb_01", "thumb_02", "thumb_03"],
+    ["index_01", "index_02", "index_03"],
+    ["middle_01", "middle_02", "middle_03"],
+    ["ring_01", "ring_02", "ring_03"],
+    ["pinky_01", "pinky_02", "pinky_03"],
+  ];
+
+  const groups = [];
+  for (const trio of fingerNames){
+    const arr = [];
+    for (const base of trio){
+      const b = bonesByName.get(base) || null;
+      if (b) arr.push({ bone: b, rest: b.quaternion.clone() });
+    }
+    groups.push(arr);
+  }
+
+  const curlAxisLocal = new THREE.Vector3(1, 0, 0);
+
+  function applyCurl(amount01){
+    // ✅ your fix: curl direction
+    const a = 0.8 * THREE.MathUtils.clamp(amount01, 0, 1);
+
+    const baseAng =  1.1 * a;
+    const midAng  =  1.0 * a;
+    const tipAng  =  0.8 * a;
+
+    for (const finger of groups){
+      for (let i = 0; i < finger.length; i++){
+        const { bone, rest } = finger[i];
+        bone.quaternion.copy(rest);
+        const ang = (i === 0) ? baseAng : (i === 1) ? midAng : tipAng;
+        const q = new THREE.Quaternion().setFromAxisAngle(curlAxisLocal, ang);
+        bone.quaternion.multiply(q);
+      }
+    }
+  }
+  return { applyCurl };
+}
+
+// ====================
+// Cylinder helpers (world bbox + axis + radius)
+// ====================
+const _box = new THREE.Box3();
+const _size = new THREE.Vector3();
+const _center = new THREE.Vector3();
+const _worldQ = new THREE.Quaternion();
+const _worldS = new THREE.Vector3();
+const _worldP = new THREE.Vector3();
+
+function getCylinderWorldInfo(cylMesh){
+  cylMesh.updateWorldMatrix(true, true);
+
+  // Bounding box in WORLD
+  _box.setFromObject(cylMesh);
+  _box.getSize(_size);
+  _box.getCenter(_center);
+
+  // Axis direction in world: assume cylinder local axis is +Y
+  cylMesh.getWorldQuaternion(_worldQ);
+  const axisW = new THREE.Vector3(0,1,0).applyQuaternion(_worldQ).normalize();
+
+  // Radius estimation:
+  // - Prefer geometry.parameters if present
+  // - Otherwise use bbox XZ extents
+  let radiusW = Math.max(_size.x, _size.z) * 0.5;
+  const g = cylMesh.geometry;
+  if (g && g.parameters && (g.parameters.radiusTop != null || g.parameters.radiusBottom != null)){
+    const r = Math.max(g.parameters.radiusTop ?? 0, g.parameters.radiusBottom ?? 0);
+    cylMesh.getWorldScale(_worldS);
+    radiusW = r * Math.max(_worldS.x, _worldS.z);
+  }
+
+  // "Grasp center": slightly below the top so you don't overshoot the rim
+  const topW = new THREE.Vector3(_center.x, _box.max.y, _center.z);
+  const belowTopOffset = -0.05;
+  const graspCenterW = topW.clone().add(axisW.clone().multiplyScalar(belowTopOffset));
+
+  return {
+    bbox: _box.clone(),
+    centerW: _center.clone(),
+    axisW,
+    radiusW,
+    topW,
+    graspCenterW
+  };
+}
+
+// ====================
+// Arm + ArmsPerson
+// ====================
+class Arm {
+  constructor({
+    name,
+    chainBones,
+    endEffectorBone,
+    handBone,
+    forearmBone,
+    bonesByNameForFingers,
+    solveFn,
+    logFn,
+    scene,
+    targetColor,
+    effectorColor,
+    ownerPerson,
+  }){
+    this.name = name;
+    this.chain = chainBones;
+    this.endEffector = endEffectorBone;
+    this.handBone = handBone;
+    this.forearmBone = forearmBone;
+    this.owner = ownerPerson;
+
+    this.solveCCD = solveFn;
+    this.log = logFn;
+
+    this.reachedEps = 0.012;
+    this.maxItersPerStep = 22;
+    this.maxStep = Math.PI / 18;
+
+    this.targetWorld = new THREE.Vector3();
+    this._dirty = true;
+
+    this._tmpEff = new THREE.Vector3();
+
+    this.targetMarker = new THREE.Mesh(
+      new THREE.SphereGeometry(0.03, 16, 16),
+      new THREE.MeshBasicMaterial({ color: targetColor })
+    );
+    this.effectorMarker = new THREE.Mesh(
+      new THREE.SphereGeometry(0.03, 16, 16),
+      new THREE.MeshBasicMaterial({ color: effectorColor })
+    );
+    scene.add(this.targetMarker);
+    scene.add(this.effectorMarker);
+
+    this._hasOrientTarget = false;
+    this._desiredFingerDirW = new THREE.Vector3(0, 0, -1);
+    this._desiredPalmNormalW = new THREE.Vector3(-1, 0, 0);
+
+    this._fingerCurl = 0.0;
+    this._fingerCurlTarget = 0.0;
+    this._fingerRig = makeFingerRig(bonesByNameForFingers);
+
+    this._overrideTargetWorld = null;
+    this._everSet = false;
+  }
+
+  setEffectorTarget(worldPos){
+    const changed = this.targetWorld.distanceToSquared(worldPos) > 1e-10;
+    if (changed || !this._everSet){
+      this.targetWorld.copy(worldPos);
+      this.targetMarker.position.copy(this.targetWorld);
+      this._dirty = true;
+      this._everSet = true;
+    }
+  }
+
+  setOverrideTargetWorld(worldPosOrNull){
+    this._overrideTargetWorld = worldPosOrNull ? worldPosOrNull.clone() : null;
+    if (this._overrideTargetWorld){
+      this.setEffectorTarget(this._overrideTargetWorld);
+      this.log(`Arm(${this.name}): override target set -> ${fmtV(this._overrideTargetWorld)}`);
+    } else {
+      this.log(`Arm(${this.name}): override target cleared`);
+      this._hasOrientTarget = false;
+    }
+  }
+
+  step(dt){
+    if (!this.endEffector || !this.chain) return;
+
+    this.endEffector.getWorldPosition(this._tmpEff);
+    this.effectorMarker.position.copy(this._tmpEff);
+
+    this._fingerCurl += (this._fingerCurlTarget - this._fingerCurl) * (1 - Math.exp(-dt * 10));
+    this._fingerRig.applyCurl(this._fingerCurl);
+
+    if (!this._dirty){
+      if (this._hasOrientTarget){
+        applyHandOrientationConstraint({
+          handBone: this.handBone,
+          forearmBone: this.forearmBone,
+          desiredFingerDirWorld: this._desiredFingerDirW,
+          desiredPalmNormalWorld: this._desiredPalmNormalW,
+          dt
+        });
+      }
+      return;
+    }
+
+    const dist0 = this._tmpEff.distanceTo(this.targetWorld);
+    if (dist0 <= this.reachedEps){
+      this._dirty = false;
+      return;
+    }
+
+    this.solveCCD(this.chain, this.endEffector, this.targetWorld, {
+      iters: this.maxItersPerStep,
+      threshold: this.reachedEps,
+      maxStep: this.maxStep
+    });
+
+    if (this._hasOrientTarget){
+      applyHandOrientationConstraint({
+        handBone: this.handBone,
+        forearmBone: this.forearmBone,
+        desiredFingerDirWorld: this._desiredFingerDirW,
+        desiredPalmNormalWorld: this._desiredPalmNormalW,
+        dt
+      });
+    }
+
+    this.endEffector.getWorldPosition(this._tmpEff);
+    if (this._tmpEff.distanceTo(this.targetWorld) <= this.reachedEps){
+      this._dirty = false;
+    }
+  }
+
+  // ✅ now takes the CYLINDER OBJECT
+  // Goal: fingers point FORWARD (person forward), palm faces LEFT (person left).
+  // We place the hand slightly to the RIGHT of the cylinder by radius+clearance so the palm faces it.
+  moveHandToCylinder(cylMesh){
+    if (!this.owner || !cylMesh) return;
+
+    const info = getCylinderWorldInfo(cylMesh);
+
+    const forwardW = this.owner.getFacingDirWorldXZ(new THREE.Vector3());
+    const upW = new THREE.Vector3(0,1,0);
+    const rightW = new THREE.Vector3().crossVectors(forwardW, upW).normalize();
+    const leftW = rightW.clone().multiplyScalar(-1);
+
+    this._desiredFingerDirW.copy(forwardW);
+    this._desiredPalmNormalW.copy(leftW);
+    this._hasOrientTarget = true;
+
+    const clearance = 0.02; // tune
+    const handCenterW = info.graspCenterW
+      .clone()
+      .add(rightW.clone().multiplyScalar(info.radiusW + clearance));
+
+    this.setOverrideTargetWorld(handCenterW);
+
+    this.log(
+      `Arm.moveHandToCylinder(${this.name}):` +
+      ` cylRadius=${info.radiusW.toFixed(3)} grasp=${fmtV(info.graspCenterW)} target=${fmtV(handCenterW)}`
+    );
+  }
+
+  closeHandAroundCylinder(){
+    this._fingerCurlTarget = 1.0;
+    this.log(`Arm.closeHandAroundCylinder(${this.name})`);
+  }
+
+  openHand(){
+    this._fingerCurlTarget = 0.0;
+  }
+}
+
+class ArmsPerson {
+  constructor({ scene, logFn }){
+    this.log = logFn;
+
+    this.root = new THREE.Group();
+    scene.add(this.root);
+
+    // position where it was "good"
+    this.root.position.set(0.0, 2.0, -0.2);
+
+    this.rigWrap = new THREE.Group();
+    this.root.add(this.rigWrap);
+
+    // ✅ your new known-good wrapper rotation
+    this.rigWrap.rotation.set(
+      THREE.MathUtils.degToRad(0),
+      THREE.MathUtils.degToRad(180),
+      THREE.MathUtils.degToRad(0)
+    );
+
+    this.yaw = 0;
+    this.turnSpeed = THREE.MathUtils.degToRad(90);
+    this.walkSpeed = 0.9;
+
+    this.centerLocal = new THREE.Vector3(0,0,0);
+    this.forwardLocal = new THREE.Vector3(0,0,-1);
+
+    // hanging down
+    this.leftOffsetLocal  = new THREE.Vector3(-0.45, -1.15, 0.05);
+    this.rightOffsetLocal = new THREE.Vector3( 0.45, -1.15, 0.05);
+
+    this.leftArm = null;
+    this.rightArm = null;
+
+    this._leftTargetW = new THREE.Vector3();
+    this._rightTargetW = new THREE.Vector3();
+    this._tmpForward = new THREE.Vector3();
+
+    // recenter scratch
+    this._wl = new THREE.Vector3();
+    this._wr = new THREE.Vector3();
+    this._midW = new THREE.Vector3();
+    this._midLocal = new THREE.Vector3();
+  }
+
+  addRigScene(gltfScene){
+    this.rigRoot = gltfScene;
+    this.rigWrap.add(this.rigRoot);
+  }
+
+  recenterRigToShoulders(leftShoulderBone, rightShoulderBone){
+    leftShoulderBone.getWorldPosition(this._wl);
+    rightShoulderBone.getWorldPosition(this._wr);
+
+    this._midW.copy(this._wl).add(this._wr).multiplyScalar(0.5);
+    this._midLocal.copy(this._midW);
+    this.root.worldToLocal(this._midLocal);
+
+    this.rigWrap.position.sub(this._midLocal);
+    this.rigWrap.updateWorldMatrix(true, true);
+
+    log(`Recenter: rigWrap.pos=${fmtV(this.rigWrap.position)} (sub midLocal=${fmtV(this._midLocal)})`);
+  }
+
+  getFacingDirWorldXZ(out){
+    out.copy(this.forwardLocal);
+    out.applyQuaternion(this.root.quaternion);
+    out.y = 0;
+    out.normalize();
+    return out;
+  }
+
+  offsetLocalToWorld(offsetLocal, out){
+    out.copy(this.centerLocal).add(offsetLocal);
+    return this.root.localToWorld(out);
+  }
+
+  nudgeRightOffset(deltaLR, deltaFB, deltaY){
+    if (this.rightArm && this.rightArm._overrideTargetWorld){
+      log("Right arm override active; arrow nudges ignored");
+      return;
+    }
+    this.rightOffsetLocal.x += deltaLR;
+    this.rightOffsetLocal.z -= deltaFB;
+    this.rightOffsetLocal.y += deltaY;
+  }
+
+  update(dt, keys){
+    let turn = 0;
+    if (keys.ctrl)  turn += 1;
+    if (keys.space) turn -= 1;
+    if (turn !== 0){
+      this.yaw += turn * this.turnSpeed * dt;
+      this.root.rotation.y = this.yaw;
+    }
+
+    if (keys.a){
+      this.getFacingDirWorldXZ(this._tmpForward);
+      this._tmpForward.multiplyScalar(this.walkSpeed * dt);
+      this.root.position.add(this._tmpForward);
+    }
+
+    if (this.leftArm && this.rightArm){
+      this.offsetLocalToWorld(this.leftOffsetLocal, this._leftTargetW);
+      this.leftArm.setEffectorTarget(this._leftTargetW);
+
+      if (this.rightArm._overrideTargetWorld){
+        this.rightArm.setEffectorTarget(this.rightArm._overrideTargetWorld);
+      } else {
+        this.offsetLocalToWorld(this.rightOffsetLocal, this._rightTargetW);
+        this.rightArm.setEffectorTarget(this._rightTargetW);
+      }
+
+      this.leftArm.step(dt);
+      this.rightArm.step(dt);
+    }
+  }
+}
+
+// ====================
+// Skeleton mode (bones + joints + tooltips)
+//  - rootJoint marker is VISUALIZED at clavicle midpoint
+//  - skip long lines involving _rootJoint
+// ====================
+let skeletonMode = false;
+
+let rigRootRef = null;
+let skinnedMeshRef = null;
+let skeletonBones = [];
+let rightHandBoneRef = null;
+let leftClavRef = null;
+let rightClavRef = null;
+
+let jointPointsGroup = null;
+let jointSpheres = []; // {bone, mesh}
+let boneLinesGroup = null;
+let boneLines = []; // {bone, parentBone, line, positions}
+
+let defaultVecGroup = null;
+let defaultFingerArrow = null;
+let defaultPalmArrow = null;
+
+let raycastTargets = [];
+const raycaster = new THREE.Raycaster();
+raycaster.params.Line.threshold = 0.03;
+const mouseNDC = new THREE.Vector2();
+let lastMouseClient = { x: 0, y: 0 };
+
+function setMeshOpacity(root, opacity){
+  root.traverse(o => {
+    if (o.isSkinnedMesh){
+      const mats = Array.isArray(o.material) ? o.material : [o.material];
+      for (const m of mats){
+        if (!m) continue;
+        m.transparent = opacity < 1.0;
+        m.opacity = opacity;
+        m.depthWrite = opacity >= 1.0;
+        m.needsUpdate = true;
+      }
+    }
+  });
+}
+
+function buildJointPoints(bones){
+  const g = new THREE.Group();
+  g.name = "JointPoints";
+  const geom = new THREE.SphereGeometry(JOINT_RADIUS, 10, 10);
+  const mat = new THREE.MeshBasicMaterial({ color: 0xff9900 });
+
+  const arr = [];
+  for (const b of bones){
+    const s = new THREE.Mesh(geom, mat);
+    // tooltip text set below; special-cased in update when _rootJoint
+    s.userData.hoverText = `JOINT: ${b.name}`;
+    g.add(s);
+    arr.push({ bone: b, mesh: s });
+  }
+  return { group: g, joints: arr };
+}
+
+function buildBoneLines(bones){
+  const g = new THREE.Group();
+  g.name = "BoneLines";
+  const mat = new THREE.LineBasicMaterial({ color: 0x7fd3ff });
+
+  const lines = [];
+  for (const b of bones){
+    if (!b.parent || !b.parent.isBone) continue;
+
+    // ✅ skip lines involving _rootJoint to avoid the giant “behind the arms” segments
+    if (b.name === "_rootJoint" || b.parent.name === "_rootJoint") continue;
+
+    const positions = new Float32Array(6);
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+
+    const line = new THREE.Line(geo, mat);
+    line.frustumCulled = false;
+    line.userData.hoverText = `BONE: ${b.name}\nparent: ${b.parent.name}`;
+    g.add(line);
+
+    lines.push({ bone: b, parentBone: b.parent, line, positions });
+  }
+
+  return { group: g, lines };
+}
+
+function ensureDefaultVecGizmos(){
+  if (!rightHandBoneRef) return;
+
+  if (!defaultVecGroup){
+    defaultVecGroup = new THREE.Group();
+    scene.add(defaultVecGroup);
+
+    defaultFingerArrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(), 0.35, 0x00ff66);
+    defaultPalmArrow   = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(), 0.35, 0xff00ff);
+
+    defaultVecGroup.add(defaultFingerArrow);
+    defaultVecGroup.add(defaultPalmArrow);
+
+    const tipGeom = new THREE.SphereGeometry(0.02, 10, 10);
+    const tipMat = new THREE.MeshBasicMaterial({ transparent:true, opacity:0.0 });
+
+    const tip1 = new THREE.Mesh(tipGeom, tipMat);
+    tip1.userData.hoverText = `DEFAULT_FINGER_DIR_LOCAL = ${fmtV(DEFAULT_FINGER_DIR_LOCAL)} (hand local)\n(green arrow)`;
+
+    const tip2 = new THREE.Mesh(tipGeom, tipMat);
+    tip2.userData.hoverText = `DEFAULT_PALM_NORMAL_LOCAL = ${fmtV(DEFAULT_PALM_NORMAL_LOCAL)} (hand local)\n(magenta arrow)`;
+
+    defaultVecGroup.add(tip1);
+    defaultVecGroup.add(tip2);
+    defaultVecGroup.userData._fingerTip = tip1;
+    defaultVecGroup.userData._palmTip = tip2;
+  }
+}
+
+const _p = new THREE.Vector3();
+const _p0 = new THREE.Vector3();
+const _p1 = new THREE.Vector3();
+
+function updateSkeletonGizmos(){
+  if (!skeletonMode) return;
+
+  // joints
+  if (jointSpheres.length){
+    for (const js of jointSpheres){
+      // ✅ _rootJoint visual fix: draw it at clavicle midpoint (debug expectation)
+      if (js.bone.name === "_rootJoint" && leftClavRef && rightClavRef){
+        leftClavRef.getWorldPosition(_p0);
+        rightClavRef.getWorldPosition(_p1);
+        _p.copy(_p0).add(_p1).multiplyScalar(0.5);
+        js.mesh.position.copy(_p);
+        js.mesh.userData.hoverText =
+          `JOINT: _rootJoint\n` +
+          `(visualized at clavicle midpoint for debugging)\n` +
+          `actual bone position may be elsewhere in file`;
+      } else {
+        js.bone.getWorldPosition(_p);
+        js.mesh.position.copy(_p);
+        js.mesh.userData.hoverText = `JOINT: ${js.bone.name}`;
+      }
+    }
+  }
+
+  // bone lines
+  if (boneLines.length){
+    for (const bl of boneLines){
+      bl.parentBone.getWorldPosition(_p0);
+      bl.bone.getWorldPosition(_p1);
+      bl.positions[0]=_p0.x; bl.positions[1]=_p0.y; bl.positions[2]=_p0.z;
+      bl.positions[3]=_p1.x; bl.positions[4]=_p1.y; bl.positions[5]=_p1.z;
+      bl.line.geometry.attributes.position.needsUpdate = true;
+      bl.line.geometry.computeBoundingSphere();
+    }
+  }
+
+  // default vectors at hand
+  if (defaultVecGroup && rightHandBoneRef){
+    const handPos = new THREE.Vector3();
+    const handQ = new THREE.Quaternion();
+    rightHandBoneRef.getWorldPosition(handPos);
+    rightHandBoneRef.getWorldQuaternion(handQ);
+
+    const fingerW = DEFAULT_FINGER_DIR_LOCAL.clone().normalize().applyQuaternion(handQ).normalize();
+    const palmW   = DEFAULT_PALM_NORMAL_LOCAL.clone().normalize().applyQuaternion(handQ).normalize();
+
+    defaultFingerArrow.position.copy(handPos);
+    defaultFingerArrow.setDirection(fingerW);
+
+    defaultPalmArrow.position.copy(handPos);
+    defaultPalmArrow.setDirection(palmW);
+
+    const tip1 = defaultVecGroup.userData._fingerTip;
+    const tip2 = defaultVecGroup.userData._palmTip;
+    if (tip1 && tip2){
+      tip1.position.copy(handPos).add(fingerW.clone().multiplyScalar(0.35));
+      tip2.position.copy(handPos).add(palmW.clone().multiplyScalar(0.35));
+    }
+  }
+}
+
+function toggleSkeletonMode(){
+  if (!rigRootRef) return;
+
+  skeletonMode = !skeletonMode;
+  log(`SKELETON MODE: ${skeletonMode ? "ON" : "OFF"}`);
+
+  if (skeletonMode){
+    setMeshOpacity(rigRootRef, 0.10);
+
+    if (!jointPointsGroup){
+      const { group, joints } = buildJointPoints(skeletonBones);
+      jointPointsGroup = group;
+      jointSpheres = joints;
+      scene.add(jointPointsGroup);
+    }
+
+    if (!boneLinesGroup){
+      const { group, lines } = buildBoneLines(skeletonBones);
+      boneLinesGroup = group;
+      boneLines = lines;
+      scene.add(boneLinesGroup);
+    }
+
+    ensureDefaultVecGizmos();
+
+    // rebuild raycast targets
+    raycastTargets = [];
+    for (const js of jointSpheres) raycastTargets.push(js.mesh);
+    for (const bl of boneLines) raycastTargets.push(bl.line);
+    if (defaultVecGroup?.userData?._fingerTip) raycastTargets.push(defaultVecGroup.userData._fingerTip);
+    if (defaultVecGroup?.userData?._palmTip) raycastTargets.push(defaultVecGroup.userData._palmTip);
+  } else {
+    setMeshOpacity(rigRootRef, 1.0);
+
+    if (jointPointsGroup){
+      scene.remove(jointPointsGroup);
+      jointPointsGroup = null;
+      jointSpheres = [];
+    }
+    if (boneLinesGroup){
+      scene.remove(boneLinesGroup);
+      boneLinesGroup = null;
+      boneLines = [];
+    }
+    if (defaultVecGroup){
+      scene.remove(defaultVecGroup);
+      defaultVecGroup = null;
+      defaultFingerArrow = null;
+      defaultPalmArrow = null;
+    }
+    raycastTargets = [];
+    tooltip.style.display = "none";
+  }
+}
+
+// ====================
+// Tooltip / hover raycast (ONLY ONE COPY)
+// ====================
+addEventListener("mousemove", (e) => {
+  lastMouseClient.x = e.clientX;
+  lastMouseClient.y = e.clientY;
+});
+
+function setTooltipVisible(show, text, clientX, clientY){
+  if (!show){
+    tooltip.style.display = "none";
+    return;
+  }
+  tooltip.style.display = "block";
+  tooltip.textContent = text;
+  tooltip.style.left = `${clientX}px`;
+  tooltip.style.top = `${clientY}px`;
+}
+
+function performHoverRaycast(){
+  if (!skeletonMode || raycastTargets.length === 0){
+    setTooltipVisible(false);
+    return;
+  }
+
+  const rect = renderer.domElement.getBoundingClientRect();
+  mouseNDC.x = ((lastMouseClient.x - rect.left) / rect.width) * 2 - 1;
+  mouseNDC.y = -(((lastMouseClient.y - rect.top) / rect.height) * 2 - 1);
+
+  raycaster.setFromCamera(mouseNDC, camera);
+  const hits = raycaster.intersectObjects(raycastTargets, true);
+
+  if (hits.length === 0){
+    setTooltipVisible(false);
+    return;
+  }
+
+  for (const h of hits){
+    const o = h.object;
+    if (o?.userData?.hoverText){
+      setTooltipVisible(true, o.userData.hoverText, lastMouseClient.x, lastMouseClient.y);
+      return;
+    }
+  }
+  setTooltipVisible(false);
+}
+
+// ====================
+// Rig helpers
+// ====================
+function findByName(root, name){
+  let found = null;
+  root.traverse(o => { if (o.name === name) found = o; });
+  return found;
+}
+function findSkinnedMesh(root){
+  let s = null;
+  root.traverse(o => { if (o.isSkinnedMesh && !s) s = o; });
+  return s;
+}
+function setSkinnedMaterialNice(root){
+  root.traverse(o => {
+    if (o.isSkinnedMesh){
+      const mat = new THREE.MeshStandardMaterial({ color: 0xdddddd, roughness: 0.75 });
+      mat.skinning = true;
+      o.material = mat;
+      o.material.needsUpdate = true;
+    }
+  });
+}
+function fitToHeight(obj, desiredHeight=0.9){
+  obj.updateWorldMatrix(true, true);
+  const box0 = new THREE.Box3().setFromObject(obj);
+  const size0 = new THREE.Vector3(); box0.getSize(size0);
+
+  const scale = desiredHeight / Math.max(1e-9, size0.y);
+  obj.scale.setScalar(scale);
+
+  obj.updateWorldMatrix(true, true);
+  const box1 = new THREE.Box3().setFromObject(obj);
+  const center1 = new THREE.Vector3(); box1.getCenter(center1);
+
+  obj.position.x += -center1.x;
+  obj.position.z += -center1.z;
+  obj.position.y += -box1.min.y;
+
+  obj.updateWorldMatrix(true, true);
+  const box2 = new THREE.Box3().setFromObject(obj);
+  return { scale, box: box2 };
+}
+function frameCameraToBox(box){
+  const size = new THREE.Vector3(); box.getSize(size);
+  const center = new THREE.Vector3(); box.getCenter(center);
+  const radius = Math.max(size.x, size.y, size.z) * 0.5;
+  const dist = Math.max(0.9, radius * 2.8);
+
+  controls.target.copy(center);
+  camera.position.copy(center).add(new THREE.Vector3(dist * 0.25, dist * 0.55, dist));
+  controls.update();
+}
+
+let bones = new Map();
+function cacheBones(skinnedMesh){
+  bones.clear();
+  for (const b of skinnedMesh.skeleton.bones) bones.set(b.name, b);
+}
+function buildFingerMap(side, bonesMap){
+  const m = new Map();
+  const suffix = (side === "r") ? "_r" : "_l";
+  function pick(prefix){
+    for (const k of bonesMap.keys()){
+      if (k.startsWith(prefix + suffix)) return bonesMap.get(k);
+    }
+    return null;
+  }
+  m.set("thumb_01", pick("thumb_01")); m.set("thumb_02", pick("thumb_02")); m.set("thumb_03", pick("thumb_03"));
+  m.set("index_01", pick("index_01")); m.set("index_02", pick("index_02")); m.set("index_03", pick("index_03"));
+  m.set("middle_01", pick("middle_01")); m.set("middle_02", pick("middle_02")); m.set("middle_03", pick("middle_03"));
+  m.set("ring_01", pick("ring_01")); m.set("ring_02", pick("ring_02")); m.set("ring_03", pick("ring_03"));
+  m.set("pinky_01", pick("pinky_01")); m.set("pinky_02", pick("pinky_02")); m.set("pinky_03", pick("pinky_03"));
+  return m;
+}
+function getLeftArmBones(){
+  return {
+    shoulder: bones.get("clavicle_l_01"),
+    upperarm: bones.get("upperarm_l_02"),
+    forearm : bones.get("lowerarm_l_03"),
+    hand    : bones.get("hand_l_04"),
+    middle_eff: bones.get("middle_01_l_07"),
+  };
+}
+function getRightArmBones(){
+  return {
+    shoulder: bones.get("clavicle_r_019"),
+    upperarm: bones.get("upperarm_r_020"),
+    forearm : bones.get("lowerarm_r_021"),
+    hand    : bones.get("hand_r_022"),
+    middle_eff: bones.get("middle_01_r_026"),
+  };
+}
+
+// ====================
+// Controls
+// ====================
+const person = new ArmsPerson({ scene, logFn: log });
+const STEP = 0.03;
+
+addEventListener("keydown", (e) => {
+  const k = e.key.toLowerCase();
+
+  if (k === "g"){
+    toggleSkeletonMode();
+    return;
+  }
+
+  if (!person.rightArm) return;
+
+  if (e.key === "1"){
+    // ✅ now pass CYLINDER OBJECT itself
+    person.rightArm.moveHandToCylinder(pickObj);
+    return;
+  }
+  if (e.key === "2"){
+    person.rightArm.closeHandAroundCylinder();
+    return;
+  }
+  if (e.key === "0"){
+    person.rightArm.openHand();
+    person.rightArm.setOverrideTargetWorld(null);
+    return;
+  }
+
+  // arrow nudges only apply when not in override
+  const shift = e.shiftKey;
+  let dLR = 0, dFB = 0, dY = 0;
+
+  if (e.key === "ArrowLeft")  dLR -= STEP;
+  if (e.key === "ArrowRight") dLR += STEP;
+
+  if (e.key === "ArrowUp"){
+    if (shift) dY += STEP;
+    else dFB += STEP;
+  }
+  if (e.key === "ArrowDown"){
+    if (shift) dY -= STEP;
+    else dFB -= STEP;
+  }
+
+  if (dLR || dFB || dY){
+    person.nudgeRightOffset(dLR, dFB, dY);
+    e.preventDefault();
+  }
+});
+
+setLeftHUD(
+  "Loading ./rigged_arms.glb …\n\n" +
+  "g: skeleton mode (mesh 10% opacity + blue bones + orange joints + tooltips)\n" +
+  "1: move right hand to orange cylinder\n" +
+  "2: close fingers\n" +
+  "0: open + clear override\n\n" +
+  "Arrows: move right arm target (when not in override)\n" +
+  "Shift+Up/Down: move in Y\n" +
+  "A/CTRL/SPACE: person motion\n"
+);
+log("BOOT: starting");
+
+const loader = new GLTFLoader();
+
+loader.load("./rigged_arms.glb", (gltf) => {
+  log("LOAD: GLB loaded");
+  person.addRigScene(gltf.scene);
+
+  gltf.scene.traverse(o => {
+    o.visible = true;
+    if (o.isMesh) o.frustumCulled = false;
+  });
+
+  const basic = findByName(gltf.scene, "Basiccharacter");
+  if (basic){
+    basic.scale.set(1,1,1);
+    basic.position.set(0,0,0);
+    basic.rotation.set(0,0,0);
+    log('FIX: reset "Basiccharacter"');
+  }
+
+  const skinned = findSkinnedMesh(gltf.scene);
+  if (!skinned){
+    log("ERROR: no SkinnedMesh found");
+    return;
+  }
+
+  setSkinnedMaterialNice(gltf.scene);
+  cacheBones(skinned);
+
+  const L = getLeftArmBones();
+  const R = getRightArmBones();
+  if (!L.shoulder || !L.upperarm || !L.forearm || !L.hand || !L.middle_eff) { log("ERROR: missing left bones"); return; }
+  if (!R.shoulder || !R.upperarm || !R.forearm || !R.hand || !R.middle_eff) { log("ERROR: missing right bones"); return; }
+
+  // Fit + frame camera
+  const fit = fitToHeight(person.rigWrap, 0.9);
+  frameCameraToBox(fit.box);
+
+  // ✅ keep your “good” placement: recenter after fit so arms sit correctly around person center
+  person.recenterRigToShoulders(L.shoulder, R.shoulder);
+
+  // skeleton refs
+  rigRootRef = gltf.scene;
+  skinnedMeshRef = skinned;
+  skeletonBones = skinned.skeleton.bones;
+  rightHandBoneRef = R.hand;
+  leftClavRef = L.shoulder;
+  rightClavRef = R.shoulder;
+
+  // Build arms
+  const leftFingerMap = buildFingerMap("l", bones);
+  const rightFingerMap = buildFingerMap("r", bones);
+
+  person.leftArm = new Arm({
+    name: "left",
+    chainBones: [L.shoulder, L.upperarm, L.forearm],
+    endEffectorBone: L.middle_eff,
+    handBone: L.hand,
+    forearmBone: L.forearm,
+    bonesByNameForFingers: leftFingerMap,
+    solveFn: solveCCD,
+    logFn: log,
+    scene,
+    targetColor: 0x00b7ff,
+    effectorColor: 0xff00ff,
+    ownerPerson: person
+  });
+
+  person.rightArm = new Arm({
+    name: "right",
+    chainBones: [R.shoulder, R.upperarm, R.forearm],
+    endEffectorBone: R.middle_eff,
+    handBone: R.hand,
+    forearmBone: R.forearm,
+    bonesByNameForFingers: rightFingerMap,
+    solveFn: solveCCD,
+    logFn: log,
+    scene,
+    targetColor: 0x00ff66,
+    effectorColor: 0xff00ff,
+    ownerPerson: person
+  });
+
+  person.leftArm.openHand();
+  person.rightArm.openHand();
+
+  // Initial hanging targets
+  person.leftArm.setEffectorTarget(person.offsetLocalToWorld(person.leftOffsetLocal, new THREE.Vector3()));
+  person.rightArm.setEffectorTarget(person.offsetLocalToWorld(person.rightOffsetLocal, new THREE.Vector3()));
+
+  log("READY: press 1 to move right hand to pickObj; press g for skeleton mode + tooltips.");
+}, undefined, (err) => {
+  console.error(err);
+  log("ERROR: failed to load rigged_arms.glb");
+});
+
+// ====================
+// Animate loop
+// ====================
+const clock = new THREE.Clock();
+let lastT = clock.getElapsedTime();
+
+function animate(){
+  requestAnimationFrame(animate);
+
+  const now = clock.getElapsedTime();
+  const dt = clampDt(now - lastT);
+  lastT = now;
+
+  controls.update();
+  person.update(dt, keys);
+
+  updateSkeletonGizmos();
+  performHoverRaycast();
+
+  renderer.render(scene, camera);
+}
+animate();
+
+addEventListener("resize", () => {
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+  log("EVENT: resize");
+});
+</script>
+</body>
+</html>

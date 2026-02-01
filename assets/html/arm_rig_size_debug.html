@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Rigged Arms - Fix Basiccharacter Scale</title>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <style>
+    html, body { margin:0; height:100%; overflow:hidden; background:#0b0f14; }
+    #hud{
+      position:fixed; left:12px; top:12px; z-index:10;
+      color:rgba(255,255,255,0.86);
+      font: 12px ui-monospace, SFMono-Regular, Menlo, monospace;
+      background: rgba(0,0,0,0.35);
+      padding: 10px 12px;
+      border-radius: 12px;
+      max-width: 680px;
+      line-height: 1.35;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+<div id="hud">Loading…</div>
+
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+
+const hud = document.getElementById("hud");
+function setHUD(s){ hud.textContent = s; }
+function fmtV(v){ return `{ x:${v.x.toFixed(4)}, y:${v.y.toFixed(4)}, z:${v.z.toFixed(4)} }`; }
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0x0b0f14, 4, 25);
+
+const camera = new THREE.PerspectiveCamera(55, innerWidth/innerHeight, 0.01, 5000);
+camera.position.set(2.2, 1.4, 2.6);
+
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(devicePixelRatio);
+renderer.shadowMap.enabled = true;
+document.body.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+
+scene.add(new THREE.HemisphereLight(0xffffff, 0x223344, 1.1));
+const dir = new THREE.DirectionalLight(0xffffff, 2.0);
+dir.position.set(4, 6, 2);
+scene.add(dir);
+
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(50, 50),
+  new THREE.MeshStandardMaterial({ color: 0x141a22, roughness: 1 })
+);
+ground.rotation.x = -Math.PI/2;
+ground.receiveShadow = true;
+scene.add(ground);
+
+scene.add(new THREE.AxesHelper(0.5));
+
+function findByName(root, name){
+  let found = null;
+  root.traverse(o => { if (o.name === name) found = o; });
+  return found;
+}
+function findSkinnedMesh(root){
+  let skinned = null;
+  root.traverse(o => { if (o.isSkinnedMesh && !skinned) skinned = o; });
+  return skinned;
+}
+
+function worldPos(obj){ const p=new THREE.Vector3(); obj.getWorldPosition(p); return p; }
+function worldScale(obj){ const s=new THREE.Vector3(); obj.getWorldScale(s); return s; }
+
+function dumpNode(label, obj){
+  obj.updateWorldMatrix(true,true);
+  console.log(label,
+    `"${obj.name}"`,
+    "localPos", fmtV(obj.position),
+    "localScale", fmtV(obj.scale),
+    "worldPos", fmtV(worldPos(obj)),
+    "worldScale", fmtV(worldScale(obj))
+  );
+}
+
+function fitToHeight(obj, desiredHeight=1.0){
+  obj.updateWorldMatrix(true, true);
+  const box0 = new THREE.Box3().setFromObject(obj);
+  const size0 = new THREE.Vector3(); box0.getSize(size0);
+
+  const scale = desiredHeight / Math.max(1e-9, size0.y);
+  obj.scale.setScalar(scale);
+
+  obj.updateWorldMatrix(true, true);
+  const box1 = new THREE.Box3().setFromObject(obj);
+  const center1 = new THREE.Vector3(); box1.getCenter(center1);
+
+  obj.position.x += -center1.x;
+  obj.position.z += -center1.z;
+  obj.position.y += -box1.min.y;
+
+  obj.updateWorldMatrix(true, true);
+  const box2 = new THREE.Box3().setFromObject(obj);
+  const size2 = new THREE.Vector3(); box2.getSize(size2);
+  const center2 = new THREE.Vector3(); box2.getCenter(center2);
+
+  console.log("fit scale:", scale, "bbox size:", size2, "center:", center2);
+  return { scale, box: box2, size: size2, center: center2 };
+}
+
+function frameCameraToBox(box){
+  const size = new THREE.Vector3(); box.getSize(size);
+  const center = new THREE.Vector3(); box.getCenter(center);
+  const radius = Math.max(size.x, size.y, size.z) * 0.5;
+  const dist = Math.max(0.9, radius * 2.6);
+
+  controls.target.copy(center);
+  camera.position.copy(center).add(new THREE.Vector3(dist * 0.25, dist * 0.35, dist));
+  camera.near = 0.01;
+  camera.far = 5000;
+  camera.updateProjectionMatrix();
+  controls.update();
+}
+
+setHUD("Loading ./rigged_arms.glb …");
+
+const loader = new GLTFLoader();
+let skinned = null;
+
+loader.load("./rigged_arms.glb", (gltf) => {
+  console.log("✅ loaded", gltf);
+
+  const root = gltf.scene;
+  scene.add(root);
+
+  // visibility/culling
+  root.traverse(o => {
+    o.visible = true;
+    if (o.isMesh) {
+      o.frustumCulled = false;
+      if (o.isSkinnedMesh) {
+        const mat = new THREE.MeshStandardMaterial({ color: 0xdddddd, roughness: 0.7 });
+        mat.skinning = true;
+        o.material = mat;
+        o.material.needsUpdate = true;
+      }
+    }
+  });
+
+  skinned = findSkinnedMesh(root);
+  console.log("Skinned:", skinned?.name);
+  if (!skinned) {
+    setHUD("No SkinnedMesh found.");
+    return;
+  }
+
+  const basic = findByName(root, "Basiccharacter");
+  if (!basic) {
+    console.warn('Could not find node named "Basiccharacter".');
+  } else {
+    console.log("=== BEFORE FIX ===");
+    dumpNode("Basiccharacter", basic);
+    dumpNode("Skinned", skinned);
+
+    // ✅ The actual fix
+    basic.scale.set(1,1,1);
+    basic.position.set(0,0,0);
+    basic.rotation.set(0,0,0);
+
+    basic.updateMatrix();
+    basic.updateWorldMatrix(true,true);
+
+    console.log("=== AFTER FIX ===");
+    dumpNode("Basiccharacter", basic);
+    dumpNode("Skinned", skinned);
+  }
+
+  // Now bbox fit should NOT need the crazy 1.7e-5 scale
+  const fit = fitToHeight(root, 0.9);
+  frameCameraToBox(fit.box);
+
+  // helpers
+  scene.add(new THREE.BoxHelper(root, 0x00ff00));
+  const sh = new THREE.SkeletonHelper(skinned);
+  sh.frustumCulled = false;
+  scene.add(sh);
+
+  setHUD(
+    "Loaded.\n" +
+    "Applied fix: Basiccharacter scale/pos reset.\n" +
+    "Then fit root to height.\n\n" +
+    "You should see arms at normal size now."
+  );
+
+}, undefined, (err) => {
+  console.error(err);
+  setHUD("Failed to load GLB (check path/server).");
+});
+
+addEventListener("resize", () => {
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+function animate(){
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+}
+animate();
+</script>
+</body>
+</html>

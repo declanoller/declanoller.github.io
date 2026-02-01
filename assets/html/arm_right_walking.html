@@ -1,0 +1,816 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Rigged Arms: ArmsPerson + Debug Gizmos (fixed)</title>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <style>
+    html, body { margin:0; height:100%; overflow:hidden; background:#0b0f14; }
+
+    #hudLeft, #hudRight{
+      position:fixed; top:12px; z-index:10;
+      color:rgba(255,255,255,0.88);
+      font: 12px ui-monospace, SFMono-Regular, Menlo, monospace;
+      background: rgba(0,0,0,0.35);
+      padding: 10px 12px;
+      border-radius: 12px;
+      line-height: 1.35;
+      white-space: pre-wrap;
+      max-width: 640px;
+    }
+    #hudLeft{ left:12px; }
+    #hudRight{ right:12px; width: 400px; max-width: 45vw; }
+  </style>
+</head>
+<body>
+<div id="hudLeft">Loading…</div>
+<div id="hudRight">Logs…</div>
+
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+
+const hudLeft = document.getElementById("hudLeft");
+const hudRight = document.getElementById("hudRight");
+
+// ====================
+// LOGGING (console + right HUD ring buffer)
+// ====================
+const LOG_MAX = 30;
+const logLines = [];
+function ts(){
+  const d = new Date();
+  const ms = String(d.getMilliseconds()).padStart(3, "0");
+  return `${d.toLocaleTimeString()}.${ms}`;
+}
+function log(msg){
+  const line = `[${ts()}] ${msg}`;
+  console.log(line);
+  logLines.push(line);
+  if (logLines.length > LOG_MAX) logLines.shift();
+  hudRight.textContent = logLines.join("\n");
+}
+function setLeftHUD(s){ hudLeft.textContent = s; }
+
+function fmtV(v){
+  return `{ x:${v.x.toFixed(3)}, y:${v.y.toFixed(3)}, z:${v.z.toFixed(3)} }`;
+}
+function clampDt(dt){ return Math.min(0.05, Math.max(0, dt)); }
+
+// ====================
+// CCD IK (same stable solver)
+// ====================
+function makeCCDSolver(){
+  const effPos = new THREE.Vector3();
+  const bonePos = new THREE.Vector3();
+  const v1 = new THREE.Vector3();
+  const v2 = new THREE.Vector3();
+  const axis = new THREE.Vector3();
+
+  const parentWorldQ = new THREE.Quaternion();
+  const qWorld = new THREE.Quaternion();
+  const qLocal = new THREE.Quaternion();
+
+  return function solveCCD(chain, effector, targetWorld, {
+    iters = 18,
+    threshold = 0.010,
+    maxStep = Math.PI / 18
+  } = {}){
+    let earlyExit = false;
+
+    for (let iter = 0; iter < iters; iter++){
+      effector.updateWorldMatrix(true, false);
+      effector.getWorldPosition(effPos);
+
+      const dist = effPos.distanceTo(targetWorld);
+      if (dist < threshold){
+        earlyExit = true;
+        break;
+      }
+
+      for (let i = 0; i < chain.length; i++){
+        const bone = chain[i];
+        bone.updateWorldMatrix(true, false);
+
+        bone.getWorldPosition(bonePos);
+        effector.getWorldPosition(effPos);
+
+        v1.copy(effPos).sub(bonePos).normalize();
+        v2.copy(targetWorld).sub(bonePos).normalize();
+
+        let dot = THREE.MathUtils.clamp(v1.dot(v2), -1, 1);
+        let ang = Math.acos(dot);
+        if (!isFinite(ang) || ang < 1e-6) continue;
+        ang = Math.min(ang, maxStep);
+
+        axis.copy(v1).cross(v2);
+        if (axis.lengthSq() < 1e-12) continue;
+        axis.normalize();
+
+        qWorld.setFromAxisAngle(axis, ang);
+
+        const parent = bone.parent;
+        if (parent) parent.getWorldQuaternion(parentWorldQ);
+        else parentWorldQ.identity();
+
+        qLocal.copy(parentWorldQ).invert().multiply(qWorld).multiply(parentWorldQ);
+        bone.quaternion.premultiply(qLocal);
+        bone.updateMatrixWorld(true);
+      }
+    }
+
+    effector.getWorldPosition(effPos);
+    return { effPos: effPos.clone(), earlyExit };
+  };
+}
+const solveCCD = makeCCDSolver();
+
+// ====================
+// Scene
+// ====================
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0x0b0f14, 4, 45);
+
+const camera = new THREE.PerspectiveCamera(55, innerWidth/innerHeight, 0.01, 5000);
+camera.position.set(2.4, 2.2, 3.2);
+
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(devicePixelRatio);
+renderer.shadowMap.enabled = true;
+document.body.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+
+scene.add(new THREE.HemisphereLight(0xffffff, 0x223344, 1.15));
+const dir = new THREE.DirectionalLight(0xffffff, 2.0);
+dir.position.set(4, 6, 2);
+scene.add(dir);
+
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(120, 120),
+  new THREE.MeshStandardMaterial({ color: 0x141a22, roughness: 1 })
+);
+ground.rotation.x = -Math.PI/2;
+ground.receiveShadow = true;
+scene.add(ground);
+
+scene.add(new THREE.AxesHelper(0.8));
+
+// Stand + object (reference)
+const standHeight = 1.6;
+const stand = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.08, 0.08, standHeight, 24),
+  new THREE.MeshStandardMaterial({ color: 0x2a3340, roughness: 0.9 })
+);
+stand.position.set(0.3, standHeight / 2, -0.9);
+stand.castShadow = true;
+stand.receiveShadow = true;
+scene.add(stand);
+
+const pickObjHeight = 0.2;
+const pickObj = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.02, 0.02, pickObjHeight, 24),
+  new THREE.MeshStandardMaterial({ color: 0xfc5203, roughness: 0.4, metalness: 0.2 })
+);
+pickObj.position.set(stand.position.x, standHeight + 0.02 + pickObjHeight / 2, stand.position.z);
+pickObj.castShadow = true;
+scene.add(pickObj);
+
+// ====================
+// Key state
+// ====================
+const keys = { ctrl:false, space:false, a:false, shift:false };
+
+addEventListener("keydown", (e) => {
+  if (e.key === "Control") keys.ctrl = true;
+  if (e.key === " ") { keys.space = true; e.preventDefault(); }
+  if (e.key.toLowerCase() === "a") keys.a = true;
+  if (e.key === "Shift") keys.shift = true;
+
+  if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(e.key)) e.preventDefault();
+});
+addEventListener("keyup", (e) => {
+  if (e.key === "Control") keys.ctrl = false;
+  if (e.key === " ") keys.space = false;
+  if (e.key.toLowerCase() === "a") keys.a = false;
+  if (e.key === "Shift") keys.shift = false;
+});
+
+// ====================
+// Arm class
+// ====================
+class Arm {
+  constructor({
+    name,
+    chainBones,
+    endEffectorBone,
+    solveFn,
+    logFn,
+    scene,
+    targetColor,
+    effectorColor,
+  }){
+    this.name = name;
+    this.chain = chainBones;
+    this.endEffector = endEffectorBone;
+    this.solveCCD = solveFn;
+    this.log = logFn;
+
+    this.reachedEps = 0.012;
+    this.maxItersPerStep = 22;
+    this.maxStep = Math.PI / 18;
+
+    this.targetWorld = new THREE.Vector3();
+    this._dirty = true;
+
+    this._tmpEff = new THREE.Vector3();
+
+    this.targetMarker = new THREE.Mesh(
+      new THREE.SphereGeometry(0.05, 16, 16),
+      new THREE.MeshBasicMaterial({ color: targetColor })
+    );
+    this.effectorMarker = new THREE.Mesh(
+      new THREE.SphereGeometry(0.05, 16, 16),
+      new THREE.MeshBasicMaterial({ color: effectorColor })
+    );
+    scene.add(this.targetMarker);
+    scene.add(this.effectorMarker);
+
+    this._logAccum = 0;
+    this._logEvery = 0.25;
+    this._everSet = false;
+  }
+
+  setEffectorTarget(worldPos){
+    const changed = this.targetWorld.distanceToSquared(worldPos) > 1e-10;
+    if (changed || !this._everSet){
+      this.targetWorld.copy(worldPos);
+      this.targetMarker.position.copy(this.targetWorld);
+      this._dirty = true;
+      this._everSet = true;
+      this.log(`Arm.setEffectorTarget(${this.name}): target=${fmtV(this.targetWorld)} dirty=${this._dirty}`);
+    }
+  }
+
+  moveEffectorTowardsTarget(dt){
+    if (!this.endEffector || !this.chain) return;
+
+    this.endEffector.getWorldPosition(this._tmpEff);
+    this.effectorMarker.position.copy(this._tmpEff);
+
+    if (!this._dirty) return;
+
+    const dist0 = this._tmpEff.distanceTo(this.targetWorld);
+    if (dist0 <= this.reachedEps){
+      this._dirty = false;
+      this.log(`Arm.moveEffectorTowardsTarget(${this.name}): reached (dist=${dist0.toFixed(4)}).`);
+      return;
+    }
+
+    const result = this.solveCCD(this.chain, this.endEffector, this.targetWorld, {
+      iters: this.maxItersPerStep,
+      threshold: this.reachedEps,
+      maxStep: this.maxStep
+    });
+
+    this.endEffector.getWorldPosition(this._tmpEff);
+    const dist1 = this._tmpEff.distanceTo(this.targetWorld);
+
+    this._logAccum += dt;
+    if (this._logAccum >= this._logEvery){
+      this._logAccum = 0;
+      this.log(`Arm.moveEffectorTowardsTarget(${this.name}): eff=${fmtV(this._tmpEff)} target=${fmtV(this.targetWorld)} dist=${dist1.toFixed(4)} earlyExit=${result.earlyExit}`);
+    }
+
+    if (dist1 <= this.reachedEps){
+      this._dirty = false;
+      this.log(`Arm.moveEffectorTowardsTarget(${this.name}): reached after step (dist=${dist1.toFixed(4)}).`);
+    }
+  }
+}
+
+// ====================
+// Debug gizmos helpers
+// ====================
+function makeCube(size, color){
+  return new THREE.Mesh(
+    new THREE.BoxGeometry(size, size, size),
+    new THREE.MeshBasicMaterial({ color })
+  );
+}
+
+// ====================
+// ArmsPerson class (FIXED PIVOT + FIXED TARGET VECTORS)
+// ====================
+class ArmsPerson {
+  constructor({ scene, logFn }){
+    this.log = logFn;
+
+    // Root of whole person. This is the rotation/translation pivot.
+    this.root = new THREE.Group();
+    this.root.name = "ArmsPersonRoot";
+    scene.add(this.root);
+
+    // Person center Y in world should be 2
+    this.root.position.set(0, 2.0, 0);
+
+    // Child wrapper for imported rig
+    this.rigWrap = new THREE.Group();
+    this.rigWrap.name = "rigWrap";
+    this.root.add(this.rigWrap);
+
+    // known good wrapper rotation
+    this.rigWrap.rotation.set(
+      THREE.MathUtils.degToRad(0),
+      THREE.MathUtils.degToRad(180),
+      THREE.MathUtils.degToRad(0)
+    );
+
+    this.yaw = 0;
+    this.turnSpeed = THREE.MathUtils.degToRad(90);
+    this.walkSpeed = 0.9;
+
+    // IMPORTANT: person center is the ROOT ORIGIN (0,0,0) in root-local space
+    // This makes rotations happen about the center without translation.
+    this.centerLocal = new THREE.Vector3(0, 0, 0);
+
+    // local forward is -Z
+    this.forwardLocal = new THREE.Vector3(0, 0, -1);
+
+    // start hanging down by sides (more vertical)
+    const xOffset = 0.45;
+    const yOffset = -1.15;
+    const zOffset = 0.05;
+    this.leftOffsetLocal  = new THREE.Vector3(-xOffset, yOffset, zOffset);
+    this.rightOffsetLocal = new THREE.Vector3( xOffset, yOffset, zOffset);
+
+    this.leftArm = null;
+    this.rightArm = null;
+
+    // Separate scratch vectors so left & right targets cannot alias (BUG #1 fix)
+    this._leftTargetW  = new THREE.Vector3();
+    this._rightTargetW = new THREE.Vector3();
+
+    // scratch
+    this._tmpForward = new THREE.Vector3();
+    this._tmp = new THREE.Vector3();
+    this._wl = new THREE.Vector3();
+    this._wr = new THREE.Vector3();
+    this._midW = new THREE.Vector3();
+    this._midLocal = new THREE.Vector3();
+    this._lastPoseLog = 0;
+
+    // debug gizmos attached to root so they rotate/translate with person
+    this.debug = {
+      group: new THREE.Group(),
+      centerCube: makeCube(0.14, 0xff0000),
+      shoulderL: makeCube(0.12, 0xffff00),
+      shoulderR: makeCube(0.12, 0xffff00),
+      arrowX: new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(), 0.8, 0x00ffff),
+      arrowY: new THREE.ArrowHelper(new THREE.Vector3(0,1,0), new THREE.Vector3(), 0.8, 0xff00ff),
+      arrowZ: new THREE.ArrowHelper(new THREE.Vector3(0,0,-1), new THREE.Vector3(), 1.0, 0x00ff66),
+    };
+    this.debug.group.name = "PersonDebugGizmos";
+    this.root.add(this.debug.group);
+    this.debug.group.add(this.debug.centerCube);
+    this.debug.group.add(this.debug.shoulderL);
+    this.debug.group.add(this.debug.shoulderR);
+    this.debug.group.add(this.debug.arrowX);
+    this.debug.group.add(this.debug.arrowY);
+    this.debug.group.add(this.debug.arrowZ);
+
+    // Center cube at person origin (fixed)
+    this.debug.centerCube.position.set(0,0,0);
+    // Orient cube to face forward with root (faces spin, cube doesn't translate)
+    this.debug.centerCube.quaternion.copy(this.root.quaternion);
+
+    // Arrow origins also at origin; directions are local axes
+    this.debug.arrowX.position.set(0,0,0);
+    this.debug.arrowY.position.set(0,0,0);
+    this.debug.arrowZ.position.set(0,0,0);
+  }
+
+  addRigScene(gltfScene){
+    this.rigRoot = gltfScene;
+    this.rigWrap.add(this.rigRoot);
+  }
+
+  // After fitting, recenter rigWrap so "between shoulders" is exactly at root origin.
+  // This fixes rotation pivot (BUG #2).
+  recenterRigToShoulders(leftShoulderBone, rightShoulderBone){
+    leftShoulderBone.getWorldPosition(this._wl);
+    rightShoulderBone.getWorldPosition(this._wr);
+
+    this._midW.copy(this._wl).add(this._wr).multiplyScalar(0.5);
+
+    // Convert that midpoint into root-local coords
+    this._midLocal.copy(this._midW);
+    this.root.worldToLocal(this._midLocal);
+
+    // Move rigWrap so that midpoint becomes (0,0,0) in root-local
+    // i.e. subtract that local offset from rigWrap.position
+    this.rigWrap.position.sub(this._midLocal);
+
+    this.rigWrap.updateWorldMatrix(true, true);
+    this.log(`ArmsPerson: recentered rigWrap by -midLocal=${fmtV(this._midLocal)}. New rigWrap.pos=${fmtV(this.rigWrap.position)}`);
+  }
+
+  setArmsHanging(){
+    this.leftOffsetLocal.set(-0.45, -1.15, 0.05);
+    this.rightOffsetLocal.set( 0.45, -1.15, 0.05);
+    this.log(`ArmsPerson: hanging offsets L=${fmtV(this.leftOffsetLocal)} R=${fmtV(this.rightOffsetLocal)}`);
+  }
+
+  // Write world target into out vector to avoid aliasing.
+  offsetLocalToWorld(offsetLocal, out){
+    out.copy(this.centerLocal).add(offsetLocal); // centerLocal is 0,0,0 but keep it explicit
+    return this.root.localToWorld(out);
+  }
+
+  // Right-arm control in person-local axes (only right)
+  nudgeRightOffset(deltaLR, deltaFB, deltaY){
+    this.rightOffsetLocal.x += deltaLR;
+    this.rightOffsetLocal.z -= deltaFB; // away => z -=
+    this.rightOffsetLocal.y += deltaY;
+    this.log(`ArmsPerson: rightOffsetLocal -> ${fmtV(this.rightOffsetLocal)}`);
+  }
+
+  getFacingDirWorldXZ(out){
+    out.copy(this.forwardLocal);
+    out.applyQuaternion(this.root.quaternion);
+    out.y = 0;
+    out.normalize();
+    return out;
+  }
+
+  updateDebugGizmos(leftShoulderBone, rightShoulderBone){
+    // Center cube: fixed at origin; only rotates with root
+    this.debug.centerCube.position.set(0,0,0);
+    this.debug.centerCube.quaternion.copy(this.root.quaternion);
+
+    // Axes arrows fixed at origin; local directions
+    this.debug.arrowX.position.set(0,0,0);
+    this.debug.arrowY.position.set(0,0,0);
+    this.debug.arrowZ.position.set(0,0,0);
+
+    this.debug.arrowX.setDirection(new THREE.Vector3(1,0,0));
+    this.debug.arrowY.setDirection(new THREE.Vector3(0,1,0));
+    this.debug.arrowZ.setDirection(new THREE.Vector3(0,0,-1));
+
+    // Shoulder cubes: set in root-local coords from bones' world positions
+    if (leftShoulderBone){
+      leftShoulderBone.getWorldPosition(this._wl);
+      this.root.worldToLocal(this._wl);
+      this.debug.shoulderL.position.copy(this._wl);
+    }
+    if (rightShoulderBone){
+      rightShoulderBone.getWorldPosition(this._wr);
+      this.root.worldToLocal(this._wr);
+      this.debug.shoulderR.position.copy(this._wr);
+    }
+  }
+
+  update(dt, now, keys, shouldersForDebug){
+    // turning about root origin (center). No translation should occur now.
+    let turn = 0;
+    if (keys.ctrl)  turn += 1;
+    if (keys.space) turn -= 1;
+    if (turn !== 0){
+      this.yaw += turn * this.turnSpeed * dt;
+      this.root.rotation.y = this.yaw;
+      // NOTE: root.position unchanged => cube should not translate
+      this.log(`ArmsPerson: yaw=${THREE.MathUtils.radToDeg(this.yaw).toFixed(1)}° pos=${fmtV(this.root.position)}`);
+    }
+
+    // walking forward in XZ plane
+    if (keys.a){
+      this.getFacingDirWorldXZ(this._tmpForward);
+      this._tmpForward.multiplyScalar(this.walkSpeed * dt);
+      const prev = this.root.position.clone();
+      this.root.position.add(this._tmpForward);
+      this.log(`ArmsPerson: walk ${fmtV(prev)} -> ${fmtV(this.root.position)}`);
+    }
+
+    // debug gizmos
+    if (shouldersForDebug){
+      this.updateDebugGizmos(shouldersForDebug.left, shouldersForDebug.right);
+    } else {
+      this.updateDebugGizmos(null, null);
+    }
+
+    // arm targets (BUG #1 fix: left/right targets are independent vectors)
+    if (this.leftArm && this.rightArm){
+      this.offsetLocalToWorld(this.leftOffsetLocal, this._leftTargetW);
+      this.offsetLocalToWorld(this.rightOffsetLocal, this._rightTargetW);
+
+      this.leftArm.setEffectorTarget(this._leftTargetW);
+      this.rightArm.setEffectorTarget(this._rightTargetW);
+
+      this.leftArm.moveEffectorTowardsTarget(dt);
+      this.rightArm.moveEffectorTowardsTarget(dt);
+
+      this._lastPoseLog += dt;
+      if (this._lastPoseLog > 1.25){
+        this._lastPoseLog = 0;
+        const facing = new THREE.Vector3();
+        this.getFacingDirWorldXZ(facing);
+        this.log(`POSE: pos=${fmtV(this.root.position)} facingXZ=${fmtV(facing)} (center fixed @ origin local)`);
+      }
+    }
+  }
+}
+
+// ====================
+// Fit helpers
+// ====================
+function findByName(root, name){
+  let found = null;
+  root.traverse(o => { if (o.name === name) found = o; });
+  return found;
+}
+function findSkinnedMesh(root){
+  let s = null;
+  root.traverse(o => { if (o.isSkinnedMesh && !s) s = o; });
+  return s;
+}
+function setSkinnedMaterialNice(root){
+  root.traverse(o => {
+    if (o.isSkinnedMesh){
+      const mat = new THREE.MeshStandardMaterial({ color: 0xdddddd, roughness: 0.75 });
+      mat.skinning = true;
+      o.material = mat;
+      o.material.needsUpdate = true;
+    }
+  });
+}
+function fitToHeight(obj, desiredHeight=0.9){
+  obj.updateWorldMatrix(true, true);
+  const box0 = new THREE.Box3().setFromObject(obj);
+  const size0 = new THREE.Vector3(); box0.getSize(size0);
+
+  const scale = desiredHeight / Math.max(1e-9, size0.y);
+  obj.scale.setScalar(scale);
+
+  obj.updateWorldMatrix(true, true);
+  const box1 = new THREE.Box3().setFromObject(obj);
+  const center1 = new THREE.Vector3(); box1.getCenter(center1);
+
+  obj.position.x += -center1.x;
+  obj.position.z += -center1.z;
+  obj.position.y += -box1.min.y;
+
+  obj.updateWorldMatrix(true, true);
+  const box2 = new THREE.Box3().setFromObject(obj);
+  return { scale, box: box2 };
+}
+function frameCameraToBox(box){
+  const size = new THREE.Vector3(); box.getSize(size);
+  const center = new THREE.Vector3(); box.getCenter(center);
+  const radius = Math.max(size.x, size.y, size.z) * 0.5;
+  const dist = Math.max(0.9, radius * 2.8);
+
+  controls.target.copy(center);
+  camera.position.copy(center).add(new THREE.Vector3(dist * 0.25, dist * 0.55, dist));
+  controls.update();
+}
+
+// ====================
+// Instantiate person
+// ====================
+const person = new ArmsPerson({ scene, logFn: log });
+
+// Arrow keys control RIGHT ARM only, in person-local axes
+const STEP = 0.03;
+addEventListener("keydown", (e) => {
+  if (!person.rightArm) return;
+
+  const shift = e.shiftKey;
+  let dLR = 0, dFB = 0, dY = 0;
+
+  if (e.key === "ArrowLeft")  dLR -= STEP;
+  if (e.key === "ArrowRight") dLR += STEP;
+
+  if (e.key === "ArrowUp"){
+    if (shift) dY += STEP;
+    else dFB += STEP;
+  }
+  if (e.key === "ArrowDown"){
+    if (shift) dY -= STEP;
+    else dFB -= STEP;
+  }
+
+  if (dLR || dFB || dY){
+    person.nudgeRightOffset(dLR, dFB, dY);
+    e.preventDefault();
+  }
+});
+
+// ====================
+// HUD
+// ====================
+setLeftHUD(
+  "Loading ./rigged_arms.glb …\n\n" +
+  "Camera: mouse orbit/zoom/pan (independent)\n\n" +
+  "Person controls:\n" +
+  "  Hold A: walk forward (XZ)\n" +
+  "  Hold CTRL: turn left\n" +
+  "  Hold SPACE: turn right\n\n" +
+  "Right arm effector control (person-local):\n" +
+  "  Left/Right: left/right\n" +
+  "  Up/Down: away/toward center\n" +
+  "  Shift+Up/Down: up/down\n\n" +
+  "Debug:\n" +
+  "  Yellow cubes: shoulders\n" +
+  "  Red cube: person center (pivot), stays fixed on rotation\n" +
+  "  Arrows: local axes at center\n"
+);
+log("BOOT: starting");
+
+// ====================
+// Load GLB and build arms + shoulder refs
+// ====================
+const loader = new GLTFLoader();
+let bones = new Map();
+
+function cacheBones(skinnedMesh){
+  bones.clear();
+  for (const b of skinnedMesh.skeleton.bones) bones.set(b.name, b);
+}
+function getLeftArmBones(){
+  return {
+    shoulder: bones.get("clavicle_l_01"),
+    upperarm: bones.get("upperarm_l_02"),
+    forearm : bones.get("lowerarm_l_03"),
+    middle_finger: bones.get("middle_01_l_07"),
+  };
+}
+function getRightArmBones(){
+  return {
+    shoulder: bones.get("clavicle_r_019"),
+    upperarm: bones.get("upperarm_r_020"),
+    forearm : bones.get("lowerarm_r_021"),
+    middle_finger: bones.get("middle_01_r_026"),
+  };
+}
+
+let shoulderRefs = { left: null, right: null };
+
+loader.load("./rigged_arms.glb", (gltf) => {
+  log("LOAD: GLB loaded");
+  person.addRigScene(gltf.scene);
+
+  gltf.scene.traverse(o => {
+    o.visible = true;
+    if (o.isMesh) o.frustumCulled = false;
+  });
+
+  const basic = findByName(gltf.scene, "Basiccharacter");
+  if (basic){
+    basic.scale.set(1,1,1);
+    basic.position.set(0,0,0);
+    basic.rotation.set(0,0,0);
+    log('FIX: reset "Basiccharacter" transform');
+  } else {
+    log('WARN: could not find "Basiccharacter"');
+  }
+
+  const skinned = findSkinnedMesh(gltf.scene);
+  if (!skinned){
+    log("ERROR: no SkinnedMesh found");
+    setLeftHUD("No SkinnedMesh found in GLB.");
+    return;
+  }
+
+  setSkinnedMaterialNice(gltf.scene);
+  cacheBones(skinned);
+
+  const L = getLeftArmBones();
+  const R = getRightArmBones();
+
+  if (!L.shoulder || !L.upperarm || !L.forearm || !L.middle_finger){
+    log("ERROR: missing LEFT arm bones");
+    setLeftHUD("Missing LEFT arm bones. See console.");
+    return;
+  }
+  if (!R.shoulder || !R.upperarm || !R.forearm || !R.middle_finger){
+    log("ERROR: missing RIGHT arm bones");
+    setLeftHUD("Missing RIGHT arm bones. See console.");
+    return;
+  }
+
+  shoulderRefs.left = L.shoulder;
+  shoulderRefs.right = R.shoulder;
+
+  log(`RIG: LEFT effector=${L.middle_finger.name}`);
+  log(`RIG: RIGHT effector=${R.middle_finger.name}`);
+
+  // 1) Fit scale/rough placement (on rigWrap)
+  const fit = fitToHeight(person.rigWrap, 0.9);
+  frameCameraToBox(fit.box);
+  log(`FIT: scale=${fit.scale.toFixed(6)}`);
+
+  // 2) Recenter rigWrap so shoulder-midpoint becomes person origin (pivot fix)
+  person.rigWrap.updateWorldMatrix(true, true);
+  person.root.updateWorldMatrix(true, true);
+  person.recenterRigToShoulders(L.shoulder, R.shoulder);
+
+  // 3) Create arms
+  person.leftArm = new Arm({
+    name: "left",
+    chainBones: [L.shoulder, L.upperarm, L.forearm],
+    endEffectorBone: L.middle_finger,
+    solveFn: solveCCD,
+    logFn: log,
+    scene,
+    targetColor: 0x00b7ff,
+    effectorColor: 0xff00ff,
+  });
+
+  person.rightArm = new Arm({
+    name: "right",
+    chainBones: [R.shoulder, R.upperarm, R.forearm],
+    endEffectorBone: R.middle_finger,
+    solveFn: solveCCD,
+    logFn: log,
+    scene,
+    targetColor: 0x00ff66,
+    effectorColor: 0xff00ff,
+  });
+
+  // 4) Set initial hanging pose (BUG #3 + also helped by BUG #1 fix)
+  person.setArmsHanging();
+
+  // Kick initial targets (they’ll converge over a few frames)
+  person.leftArm.setEffectorTarget(person.offsetLocalToWorld(person.leftOffsetLocal, new THREE.Vector3()));
+  person.rightArm.setEffectorTarget(person.offsetLocalToWorld(person.rightOffsetLocal, new THREE.Vector3()));
+
+  // Initial debug update
+  person.updateDebugGizmos(L.shoulder, R.shoulder);
+
+  setLeftHUD(
+    "Loaded.\n\n" +
+    "Person controls:\n" +
+    "  Hold A: walk forward (XZ)\n" +
+    "  Hold CTRL: turn left\n" +
+    "  Hold SPACE: turn right\n\n" +
+    "Right arm effector control (person-local):\n" +
+    "  Left/Right: left/right\n" +
+    "  Up/Down: away/toward center\n" +
+    "  Shift+Up/Down: up/down\n\n" +
+    "Fixes applied:\n" +
+    "  ✅ Separate left/right target vectors\n" +
+    "  ✅ Recentered rig so rotation pivot is center cube\n" +
+    "  ✅ Arms start hanging down\n"
+  );
+  log("READY: fixes active (targets independent, pivot correct, hanging pose)");
+}, undefined, (err) => {
+  console.error(err);
+  log("ERROR: failed to load rigged_arms.glb");
+  setLeftHUD("Failed to load rigged_arms.glb");
+});
+
+// ====================
+// Animate loop
+// ====================
+const clock = new THREE.Clock();
+let lastT = clock.getElapsedTime();
+
+function animate(){
+  requestAnimationFrame(animate);
+
+  const now = clock.getElapsedTime();
+  const dt = clampDt(now - lastT);
+  lastT = now;
+
+  controls.update();
+
+  // Person update (rotation about center, walking, gizmos, IK)
+  person.update(dt, now, keys, shoulderRefs);
+
+  renderer.render(scene, camera);
+}
+animate();
+
+addEventListener("resize", () => {
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+  log("EVENT: resize");
+});
+</script>
+</body>
+</html>

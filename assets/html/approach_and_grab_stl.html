@@ -1,0 +1,1048 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Approach + Grab STL (ArmsPerson POV)</title>
+
+	<script type="importmap">
+	{
+		"imports": {
+			"three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+			"three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+		}
+	}
+	</script>
+
+	<style>
+		html, body { margin: 0; height: 100%; background: #0b0f14; overflow: hidden; }
+		canvas { display: block; }
+		#hud, #hudRight {
+			position: fixed; left: 12px; top: 12px;
+			color: rgba(255,255,255,0.90);
+			font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+			user-select: none; pointer-events: none;
+			padding: 10px 10px;
+			background: rgba(0,0,0,0.28);
+			border: 1px solid rgba(255,255,255,0.12);
+			border-radius: 8px;
+			max-width: min(700px, calc(100vw - 24px));
+			max-height: min(55vh, calc(100vh - 24px));
+			overflow: hidden;
+			white-space: pre;
+		}
+		#hudRight {
+			left: auto;
+			right: 12px;
+			max-width: min(420px, calc(100vw - 24px));
+		}
+		#tooltip{
+			position:fixed;
+			z-index: 20;
+			pointer-events:none;
+			display:none;
+			transform: translate(10px, 10px);
+			color: rgba(255,255,255,0.95);
+			background: rgba(0,0,0,0.65);
+			font: 12px ui-monospace, SFMono-Regular, Menlo, monospace;
+			padding: 6px 8px;
+			border-radius: 10px;
+			max-width: 420px;
+			white-space: pre;
+		}
+	</style>
+</head>
+<body>
+	<div id="hud">Loading…</div>
+	<div id="hudRight">Status…</div>
+	<div id="tooltip"></div>
+
+	<script type="module">
+		import * as THREE from "three";
+		import { STLLoader } from "three/addons/loaders/STLLoader.js";
+		import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+		import {
+			clampDt,
+			makeCCDSolver,
+			reparentPreserveWorld,
+			createHandOrientationConstraintApplier,
+			createSkeletonModeController,
+			loadRiggedArmsPerson,
+			GrabbableObject,
+            fmtV,
+		} from "./arm_utils.js";
+
+		// =========================
+		// HUD LOG
+		// =========================
+		const hudEl = document.getElementById("hud");
+		const hudRightEl = document.getElementById("hudRight");
+		const tooltipEl = document.getElementById("tooltip");
+		const t0 = performance.now();
+		const events = [];
+		function logEvent(msg) {
+			const ts = ((performance.now() - t0) / 1000).toFixed(2);
+			const line = `[${ts}s] ${msg}`;
+			events.push(line);
+			const tail = events.slice(-40);
+			hudEl.textContent = tail.join("\n");
+			console.log(line);
+		}
+
+		function setStatusHUD(text) {
+			if (!hudRightEl) return;
+			hudRightEl.textContent = text;
+		}
+
+		// =========================
+		// SCENE CONSTANTS
+		// =========================
+		const GROUND_Y = 0;
+        const PERSON_RIG_CENTER_POS_Y = 2.0;
+        const HEAD_ABOVE_RIG_CENTER_DIST = 0.2;
+		const HEAD_HEIGHT_Y = PERSON_RIG_CENTER_POS_Y + HEAD_ABOVE_RIG_CENTER_DIST;
+        const RIG_SIZE_Y = 0.4;
+
+		// Keep approach_with_stl-ish framing
+		const RECT_DISTANCE_Z = 6;
+		const RECT_WIDTH = 2.4;
+		const RECT_HEIGHT = 1.4;
+		const RECT_CENTER_Y = HEAD_HEIGHT_Y;
+
+        // Use the rig size to determine this distance because it
+        // reflects how far the arms can reach
+		const PILLAR_OFFSET_X = 1.1 * RIG_SIZE_Y;
+		const PILLAR_DISTANCE_Z = 4.0;
+		const PILLAR_HEIGHT = 1.25;
+
+        // Same for this distance
+		const WALK_DISTANCE = PILLAR_DISTANCE_Z - RIG_SIZE_Y;
+		const WALK_SPEED = 1.0;
+		const BOB_FREQUENCY_HZ = 1.7;
+		const BOB_AMPLITUDE_Y = 0.02;
+
+		const STOP_LINGER_SECONDS = 0.2;
+		const TURN_DURATION_SECONDS = 1.25;
+		const TURN_EASE_POWER = 2.0;
+		const TURN_FINISH_ANGLE_EPS = 0.0002;
+
+		const LOOKDOWN_DURATION_SECONDS = 0.8;
+
+		// Grabbing sequence timings (after look-down state begins)
+		const WAIT_BEFORE_REACH_SECONDS = 2.0;
+		const WAIT_BEFORE_CLOSE_SECONDS = 1.0;
+		const WAIT_BEFORE_RAISE_SECONDS = 1.0;
+		const REACH_ARM_TO_GLASS_DURATION_SECONDS = 1.0;
+		const RAISE_GLASS_DURATION_SECONDS = 1.0;
+		const RAISE_GLASS_DELTA_Y = 0.3;
+		const GRAB_DEBUG_ARROW_LENGTH = 0.35 * RIG_SIZE_Y;
+		const GRAB_DEBUG_ARROW_HEAD_LENGTH = 0.12 * RIG_SIZE_Y;
+		const GRAB_DEBUG_ARROW_HEAD_WIDTH = 0.08 * RIG_SIZE_Y;
+
+		// =========================
+		// THREE.JS BOILERPLATE
+		// =========================
+		const scene = new THREE.Scene();
+		scene.background = new THREE.Color(0x0b0f14);
+		scene.fog = new THREE.Fog(0x0b0f14, 4, 45);
+
+		// Two cameras:
+		// - rigCamera: attached to the ArmsPerson ("head"), always in POV.
+		// - freeCamera: detached, controlled by OrbitControls.
+		const rigCamera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.01, 5000);
+		const freeCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 5000);
+		let activeCamera = rigCamera;
+		let cameraMode = "rig"; // "rig" | "free"
+
+		// Debug: show the rig camera pose while in free mode.
+		const rigCamAxes = new THREE.AxesHelper(0.25);
+		rigCamAxes.visible = false;
+		scene.add(rigCamAxes);
+
+		const renderer = new THREE.WebGLRenderer({ antialias: true });
+		renderer.setSize(window.innerWidth, window.innerHeight);
+		renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+		renderer.outputColorSpace = THREE.SRGBColorSpace;
+		renderer.shadowMap.enabled = true;
+		document.body.appendChild(renderer.domElement);
+
+		const freeControls = new OrbitControls(freeCamera, renderer.domElement);
+		freeControls.enabled = false;
+		freeControls.enableDamping = true;
+		freeControls.dampingFactor = 0.08;
+		freeControls.screenSpacePanning = true;
+		freeControls.enablePan = true;
+		freeControls.enableZoom = true;
+		freeControls.enableRotate = true;
+		freeControls.rotateSpeed = 0.9;
+		freeControls.zoomSpeed = 1.0;
+		freeControls.panSpeed = 0.9;
+		freeControls.minDistance = 0.2;
+		freeControls.maxDistance = 80;
+
+		scene.add(new THREE.HemisphereLight(0xffffff, 0x202830, 0.9));
+		const dir = new THREE.DirectionalLight(0xffffff, 1.2);
+		dir.position.set(2.5, 5.0, 1.5);
+		scene.add(dir);
+
+		const ground = new THREE.Mesh(
+			new THREE.PlaneGeometry(4000, 4000),
+			new THREE.MeshStandardMaterial({
+				color: 0xfab798,
+				roughness: 1.0,
+				metalness: 0.0,
+				transparent: true,
+				opacity: 0.5,
+				depthWrite: false,
+			})
+		);
+		ground.rotation.x = -Math.PI / 2;
+		ground.position.y = GROUND_Y;
+		ground.receiveShadow = true;
+		scene.add(ground);
+
+		// Red rectangle (keeps approach_with_stl vibe)
+		const redRect = new THREE.Mesh(
+			new THREE.PlaneGeometry(RECT_WIDTH, RECT_HEIGHT),
+			new THREE.MeshStandardMaterial({ color: 0xff2a2a, roughness: 0.6, metalness: 0.0 })
+		);
+		redRect.position.set(0, RECT_CENTER_Y, -RECT_DISTANCE_Z);
+		scene.add(redRect);
+
+		// =========================
+		// STL GROUP LOADER (self-contained)
+		// =========================
+		function createSTLGroupLoader({ scene = null, group = null, autoAddToScene = true, computeUVs = true } = {}) {
+			const stlLoader = new STLLoader();
+			const stlGroup = group ?? new THREE.Group();
+			if (scene && autoAddToScene) scene.add(stlGroup);
+
+			let rootScale = null;
+			let rootOffset = null;
+
+			function ensurePlanarUVsFromBBox(geometry) {
+				if (geometry.attributes.uv) return;
+
+				geometry.computeBoundingBox();
+				const bb = geometry.boundingBox;
+				const size = new THREE.Vector3();
+				bb.getSize(size);
+
+				const pos = geometry.attributes.position;
+				const uv = new Float32Array(pos.count * 2);
+
+				// Project onto the two largest axes (avoid the smallest extent)
+				const ax = size.x, ay = size.y, az = size.z;
+				let mode = "XZ";
+				if (ay <= ax && ay <= az) mode = "XZ";
+				else if (az <= ax && az <= ay) mode = "XY";
+				else mode = "YZ";
+
+				const tmp = new THREE.Vector3();
+				for (let i = 0; i < pos.count; i++) {
+					tmp.fromBufferAttribute(pos, i);
+					let u = 0, v = 0;
+					if (mode === "XZ") {
+						u = (tmp.x - bb.min.x) / Math.max(1e-9, size.x);
+						v = (tmp.z - bb.min.z) / Math.max(1e-9, size.z);
+					} else if (mode === "XY") {
+						u = (tmp.x - bb.min.x) / Math.max(1e-9, size.x);
+						v = (tmp.y - bb.min.y) / Math.max(1e-9, size.y);
+					} else {
+						u = (tmp.y - bb.min.y) / Math.max(1e-9, size.y);
+						v = (tmp.z - bb.min.z) / Math.max(1e-9, size.z);
+					}
+					uv[i * 2 + 0] = u;
+					uv[i * 2 + 1] = v;
+				}
+
+				geometry.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
+			}
+
+			function setRootFromGeometry(geometry, { normalizeToUnit = true } = {}) {
+				geometry.computeBoundingBox();
+				const bb = geometry.boundingBox;
+				const size = new THREE.Vector3();
+				bb.getSize(size);
+				const center = new THREE.Vector3();
+				bb.getCenter(center);
+
+				const maxDim = Math.max(size.x, size.y, size.z);
+				rootScale = normalizeToUnit ? (1 / Math.max(1e-9, maxDim)) : 1;
+
+				// Offset so it sits on ground (y-min to 0), and centered in x/z.
+				rootOffset = new THREE.Vector3(-center.x, -bb.min.y, -center.z);
+			}
+
+			function applyRootTransform(mesh) {
+				if (rootScale == null || !rootOffset) return;
+				mesh.scale.setScalar(rootScale);
+				mesh.position.copy(rootOffset).multiplyScalar(rootScale);
+			}
+
+			function addSTL(url, material, { isRoot = false, normalizeToUnit = true, name } = {}) {
+				return new Promise((resolve, reject) => {
+					stlLoader.load(url,
+						(geometry) => {
+							geometry.computeVertexNormals();
+							if (computeUVs) ensurePlanarUVsFromBBox(geometry);
+
+							if (isRoot) setRootFromGeometry(geometry, { normalizeToUnit });
+
+							const mesh = new THREE.Mesh(geometry, material);
+							mesh.name = name ?? url;
+							mesh.castShadow = true;
+							mesh.receiveShadow = true;
+							applyRootTransform(mesh);
+							stlGroup.add(mesh);
+							resolve(mesh);
+						},
+						undefined,
+						(err) => reject(err)
+					);
+				});
+			}
+
+			return { group: stlGroup, addSTL };
+		}
+
+		// =========================
+		// STL "PILLAR + ITEMS" GROUP
+		// =========================
+		const matPillar = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85, metalness: 0.05 });
+		const matGlass  = new THREE.MeshPhysicalMaterial({
+			color: 0xffffff,
+			roughness: 0.05,
+			metalness: 0.0,
+			transparent: true,
+			opacity: 0.95,
+			transmission: 1.0,
+			thickness: 0.08,
+			ior: 1.45
+		});
+		const matCan    = new THREE.MeshStandardMaterial({ color: 0xff0000, roughness: 0.35, metalness: 0.35 });
+
+		const pillarGroupLoader = createSTLGroupLoader({ scene });
+		pillarGroupLoader.group.position.set(
+			PILLAR_OFFSET_X,
+			GROUND_Y + PILLAR_HEIGHT / 2,
+			-PILLAR_DISTANCE_Z
+		);
+		pillarGroupLoader.group.visible = false;
+
+		const STL_COLUMN    = "./column.stl";
+		const STL_WINEGLASS = "./wineglass.stl";
+		const STL_SODACAN   = "./sodacan.stl";
+
+		let wineglassMesh = null;
+		let wineglassGrabbable = null;
+		let wineglassAttachedToHand = false;
+
+		// Skeleton-mode debug: bbox + grasp target arrow.
+		const _wineglassBoxW = new THREE.Box3();
+		const wineglassBoxHelper = new THREE.Box3Helper(_wineglassBoxW, 0xffffff);
+		wineglassBoxHelper.visible = false;
+		scene.add(wineglassBoxHelper);
+
+		const _graspArrowDirW = new THREE.Vector3(0, 0, -1);
+		const _graspArrowPosW = new THREE.Vector3();
+		const grabTargetArrow = new THREE.ArrowHelper(
+			_graspArrowDirW,
+			_graspArrowPosW,
+			GRAB_DEBUG_ARROW_LENGTH,
+			0xff0000,
+			GRAB_DEBUG_ARROW_HEAD_LENGTH,
+			GRAB_DEBUG_ARROW_HEAD_WIDTH
+		);
+		grabTargetArrow.visible = false;
+		scene.add(grabTargetArrow);
+
+		// Skeleton-mode debug: show the wineglass grasp/attach target point.
+		const wineglassAttachSphere = new THREE.Mesh(
+			new THREE.SphereGeometry(0.02 * RIG_SIZE_Y, 14, 14),
+			new THREE.MeshBasicMaterial({ color: 0xaa33ff })
+		);
+		wineglassAttachSphere.visible = false;
+		scene.add(wineglassAttachSphere);
+
+		async function loadPillarGroup() {
+			logEvent("loading pillar STLs...");
+			await pillarGroupLoader.addSTL(STL_COLUMN, matPillar, { isRoot: true,  name: "column_root" });
+			wineglassMesh = await pillarGroupLoader.addSTL(STL_WINEGLASS, matGlass, { isRoot: false, name: "wineglass" });
+			await pillarGroupLoader.addSTL(STL_SODACAN, matCan, { isRoot: false, name: "sodacan" });
+			logEvent("pillar STLs loaded");
+		}
+
+		// =========================
+		// ARMS RIG + FIRST-PERSON CAMERA RIG
+		// =========================
+		const solveCCD = makeCCDSolver();
+
+		const handOrient = createHandOrientationConstraintApplier({
+			defaultFingerDirLocal: new THREE.Vector3(0, 1, 0),
+			defaultPalmNormalLocal: new THREE.Vector3(-1, 0, 1),
+		});
+
+		const skeleton = createSkeletonModeController({
+			scene,
+			camera: rigCamera,
+			renderer,
+			tooltipEl,
+			logFn: (s) => logEvent(s),
+			jointRadius: 0.005,
+			defaultFingerDirLocal: handOrient.defaultFingerDirLocal,
+			defaultPalmNormalLocal: handOrient.defaultPalmNormalLocal,
+		});
+
+		// Listen on the canvas so hover coords map to the renderer rect.
+		renderer.domElement.addEventListener("mousemove", (e) => skeleton.onMouseMove(e));
+		renderer.domElement.addEventListener("mouseleave", () => {
+			if (tooltipEl) tooltipEl.style.display = "none";
+		});
+
+		let rigReady = false;
+		let rigReadyResolve = null;
+		const rigReadyPromise = new Promise((resolve) => { rigReadyResolve = resolve; });
+
+		const person = loadRiggedArmsPerson({
+			scene,
+			solveCCD,
+			logFn: (s) => logEvent(s),
+			skeletonController: skeleton,
+			applyHandOrientationConstraint: handOrient.applyHandOrientationConstraint,
+			rigUrl: "./rigged_arms.glb",
+			desiredHeight: RIG_SIZE_Y,
+            rigRootY: PERSON_RIG_CENTER_POS_Y,
+			onReady: () => {
+				rigReady = true;
+				logEvent("arms rig ready");
+				rigReadyResolve?.();
+			},
+		});
+
+		// Put the person at the origin on the ground.
+		// person.root.position.set(0, 0, 0);
+		person.root.updateWorldMatrix(true, true);
+
+		// First-person camera: yaw follows person.root, pitch is on a child group.
+		const headYawGroup = new THREE.Group();
+		headYawGroup.name = "HeadYaw";
+        // Note: this is with respect to the root of the rig
+		headYawGroup.position.set(0, HEAD_ABOVE_RIG_CENTER_DIST, -0.1);
+		person.root.add(headYawGroup);
+
+		const headPitchGroup = new THREE.Group();
+		headPitchGroup.name = "HeadPitch";
+		headYawGroup.add(headPitchGroup);
+
+		headPitchGroup.add(rigCamera);
+		rigCamera.position.set(0, 0, 0);
+		rigCamera.rotation.set(0, 0, 0);
+
+		function setHeadBob(t, amount) {
+			headYawGroup.position.y = HEAD_ABOVE_RIG_CENTER_DIST + amount;
+		}
+
+		function setCameraMode(nextMode) {
+			if (nextMode === cameraMode) return;
+
+			if (nextMode === "free") {
+				// Snap free cam to current rig POV
+				rigCamera.updateWorldMatrix(true, false);
+				freeCamera.position.copy(rigCamera.getWorldPosition(new THREE.Vector3()));
+				freeCamera.quaternion.copy(rigCamera.getWorldQuaternion(new THREE.Quaternion()));
+
+				// Put orbit target ~1m in front of the camera
+				const fwd = new THREE.Vector3(0, 0, -1).applyQuaternion(freeCamera.quaternion).normalize();
+				freeControls.target.copy(freeCamera.position).addScaledVector(fwd, 1.0);
+				freeControls.update();
+
+				freeControls.enabled = true;
+				activeCamera = freeCamera;
+				cameraMode = "free";
+				rigCamAxes.visible = true;
+				skeleton?.setCamera?.(activeCamera);
+				logEvent("camera: FREE (OrbitControls)");
+				return;
+			}
+
+			// nextMode === "rig"
+			freeControls.enabled = false;
+			activeCamera = rigCamera;
+			cameraMode = "rig";
+			rigCamAxes.visible = false;
+			skeleton?.setCamera?.(activeCamera);
+			logEvent("camera: RIG POV");
+		}
+
+		// Keep skeleton raycasting aligned with the current camera.
+		skeleton?.setCamera?.(activeCamera);
+
+		addEventListener("keydown", (e) => {
+			const k = e.key.toLowerCase();
+			if (k === "p") {
+				paused = !paused;
+				logEvent(paused ? "PAUSE" : "UNPAUSE");
+				return;
+			}
+			if (k === "s") {
+				setCameraMode(cameraMode === "rig" ? "free" : "rig");
+				return;
+			}
+			if (k === "g") {
+				skeleton.toggle();
+				return;
+			}
+		});
+
+		// =========================
+		// GRABBABLE: wineglass via bbox cylinder assumption
+		// =========================
+		const _bb = new THREE.Box3();
+		const _bbSize = new THREE.Vector3();
+		const _bbCenter = new THREE.Vector3();
+		const _tmpScaleW = new THREE.Vector3();
+		const _tmpQW = new THREE.Quaternion();
+		const _tmpForwardW = new THREE.Vector3();
+		const _tmpRightW = new THREE.Vector3();
+		const _tmpUpW = new THREE.Vector3(0, 1, 0);
+		const _tmpOffsetDirW = new THREE.Vector3();
+		const _tmpPalmNormalW = new THREE.Vector3();
+		const _tmpFingerDirW = new THREE.Vector3();
+		const _tmpTargetW = new THREE.Vector3();
+		const _tmpGraspCenterW = new THREE.Vector3();
+		const _tmpLookTargetW = new THREE.Vector3();
+		const _tmpAxisW = new THREE.Vector3();
+		const _stemBoxLocal = new THREE.Box3();
+		const _stemCenterLocal = new THREE.Vector3();
+		const _stemCenterW = new THREE.Vector3();
+		const _rigCamPosW = new THREE.Vector3();
+		const _rigCamLookW = new THREE.Vector3();
+		const _freeCamPosW = new THREE.Vector3();
+		const _rigCamQW = new THREE.Quaternion();
+		const _rigCamDirW = new THREE.Vector3();
+
+		function makeBBoxCylinderGrabbable(object3d, { name = "wineglass", clearance = 0.0 } = {}) {
+			return new GrabbableObject({
+				name,
+				object3d,
+				getGraspPose: ({ person, arm, object3d }) => {
+					// Fraction up the object's local Y-range where we consider the "attach" height.
+					// 0 = bottom of bbox, 1 = top of bbox.
+					const attachYFrac = 0.28;
+					const attachSliceHalfThickFrac = 0.02;
+
+					object3d.updateWorldMatrix(true, true);
+
+					// Find a mesh we can sample geometry from (the STL loader produces meshes).
+					let mesh = null;
+					if (object3d?.isMesh) mesh = object3d;
+					else mesh = object3d?.getObjectByProperty?.("isMesh", true) ?? null;
+
+					// Fallback: whole-object bbox (works but can be dominated by the bowl).
+					_bb.setFromObject(object3d);
+					_bb.getSize(_bbSize);
+					_bb.getCenter(_bbCenter);
+
+					// Estimate the stem radius by taking a bbox of vertices in a thin Y-slice around the
+					// chosen attach height.
+					let graspCenterW = _tmpGraspCenterW.copy(_bbCenter);
+					graspCenterW.y = _bb.min.y + attachYFrac * _bbSize.y;
+					let radiusW = Math.max(_bbSize.x, _bbSize.z) * 0.05;
+                    // logEvent("Using bbox center as grasp center: " + fmtV(graspCenterW));
+                    // logEvent("Estimated radiusW (bbox fallback): " + radiusW.toFixed(4));
+					if (mesh?.geometry?.attributes?.position) {
+						const geom = mesh.geometry;
+						if (!geom.boundingBox) geom.computeBoundingBox();
+						const gbb = geom.boundingBox;
+						const heightL = Math.max(1e-9, gbb.max.y - gbb.min.y);
+						const yAttach = gbb.min.y + attachYFrac * heightL;
+						const halfThick = attachSliceHalfThickFrac * heightL;
+						const y0 = Math.max(gbb.min.y, yAttach - halfThick);
+						const y1 = Math.min(gbb.max.y, yAttach + halfThick);
+
+						// Build a bbox from positions within [y0,y1].
+						_stemBoxLocal.makeEmpty();
+						const arr = geom.attributes.position.array;
+						let count = 0;
+						for (let i = 0; i < arr.length; i += 3) {
+							const x = arr[i + 0];
+							const y = arr[i + 1];
+							const z = arr[i + 2];
+							if (y < y0 || y > y1) continue;
+							_stemBoxLocal.expandByPoint(_stemCenterLocal.set(x, y, z));
+							count++;
+						}
+                        // logEvent("Stem slice vertex count: " + count);
+						// If the slice is usable, use it to position the grasp and estimate the radius.
+						if (count > 50 && !_stemBoxLocal.isEmpty()) {
+							_stemBoxLocal.getCenter(_stemCenterLocal);
+							_stemCenterLocal.y = yAttach;
+							_stemCenterW.copy(_stemCenterLocal);
+							mesh.localToWorld(_stemCenterW);
+							graspCenterW = _stemCenterW;
+
+							const stemSizeL = _stemBoxLocal.getSize(new THREE.Vector3());
+							mesh.getWorldScale(_tmpScaleW);
+							const stemSizeWX = stemSizeL.x * Math.abs(_tmpScaleW.x);
+							const stemSizeWZ = stemSizeL.z * Math.abs(_tmpScaleW.z);
+							radiusW = 0.5 * Math.max(stemSizeWX, stemSizeWZ);
+                            // logEvent("Estimated radiusW (stem slice): " + radiusW.toFixed(4));
+						}
+					}
+
+					// Stem axis: local +Y transformed to world.
+					_tmpAxisW.copy(_tmpUpW);
+					if (mesh) {
+						mesh.getWorldQuaternion(_tmpQW);
+						_tmpAxisW.applyQuaternion(_tmpQW).normalize();
+					}
+
+					person.getFacingDirWorldXZ(_tmpForwardW);
+					_tmpRightW.crossVectors(_tmpForwardW, _tmpAxisW);
+					if (_tmpRightW.lengthSq() < 1e-12) _tmpRightW.set(1, 0, 0);
+					_tmpRightW.normalize();
+
+					const sideSign = (arm.name === "left") ? -1 : 1;
+					_tmpOffsetDirW.copy(_tmpRightW).multiplyScalar(sideSign);
+					_tmpPalmNormalW.copy(_tmpOffsetDirW).multiplyScalar(-1).normalize();
+					_tmpFingerDirW.copy(_tmpForwardW).normalize();
+
+					_tmpTargetW.copy(graspCenterW);
+					_tmpTargetW.addScaledVector(_tmpOffsetDirW, radiusW + clearance);
+
+					return {
+						targetWorld: _tmpTargetW.clone(),
+						desiredFingerDirWorld: _tmpFingerDirW.clone(),
+						desiredPalmNormalWorld: _tmpPalmNormalW.clone(),
+					};
+				}
+			});
+		}
+
+		function getWineglassLookTargetWorld() {
+			if (!wineglassMesh) return null;
+			wineglassMesh.updateWorldMatrix(true, true);
+			_bb.setFromObject(wineglassMesh);
+			_bb.getSize(_bbSize);
+			_bb.getCenter(_bbCenter);
+
+			// Slightly above bbox center reads like "look at bowl/stem".
+			_tmpLookTargetW.copy(_bbCenter).addScaledVector(_tmpUpW, 0.10 * _bbSize.y);
+			return _tmpLookTargetW.clone();
+		}
+
+		// =========================
+		// WALK + TURN + LOOKDOWN + GRAB SEQUENCE
+		// =========================
+		function easeInOutPow(x, p = 2) {
+			x = Math.min(1, Math.max(0, x));
+			const a = Math.pow(x, p);
+			const b = Math.pow(1 - x, p);
+			return a / (a + b);
+		}
+
+		function yawToFaceTargetXZ(fromPos, targetPos) {
+			const d = new THREE.Vector3().subVectors(targetPos, fromPos);
+			d.y = 0;
+			if (d.lengthSq() < 1e-12) return 0;
+			d.normalize();
+			// forward (yaw=0) is world -Z. Solve: (dx,dz) = (-sin(yaw), -cos(yaw))
+			return Math.atan2(-d.x, -d.z);
+		}
+
+		let state = "boot";
+		let lingerT = 0;
+
+		let walkStartZ = 0;
+		let walkTargetZ = 0;
+
+		let turnT = 0;
+		const turnFromQ = new THREE.Quaternion();
+		const turnToQ = new THREE.Quaternion();
+
+		let lookDownT = 0;
+		let desiredHeadPitch = 0;
+
+		let seqT = 0;
+		let didReach = false;
+		let didClose = false;
+		let didRaise = false;
+		let reachStarted = false;
+		let raiseStarted = false;
+
+		const _reachStartW = new THREE.Vector3();
+		const _reachEndW = new THREE.Vector3();
+		const _reachCurW = new THREE.Vector3();
+		const _raiseStartW = new THREE.Vector3();
+		const _raiseEndW = new THREE.Vector3();
+		const _raiseCurW = new THREE.Vector3();
+
+		// One-time async init
+		let stlReady = false;
+		let stlReadyResolve = null;
+		const stlReadyPromise = new Promise((resolve) => { stlReadyResolve = resolve; });
+
+		(async () => {
+			try {
+				await loadPillarGroup();
+				pillarGroupLoader.group.visible = true;
+				stlReady = true;
+				wineglassGrabbable = makeBBoxCylinderGrabbable(wineglassMesh, { name: "wineglass" });
+				logEvent("wineglass grabbable ready");
+				stlReadyResolve?.();
+			} catch (err) {
+				console.error(err);
+				logEvent("ERROR loading pillar STLs (see console)");
+			}
+		})();
+
+		// Start the approach as soon as the person exists (camera attaches immediately).
+		walkStartZ = person.root.position.z;
+		walkTargetZ = walkStartZ - WALK_DISTANCE;
+		state = "walking";
+		logEvent("beginning walk");
+
+		function updateWalking(dt, t) {
+			// Move the person forward along world -Z (yaw assumed near 0 at start)
+			person.root.position.z -= WALK_SPEED * dt;
+			if (person.root.position.z <= walkTargetZ) {
+				person.root.position.z = walkTargetZ;
+				state = "linger";
+				lingerT = 0;
+				logEvent("reaching pillar (end of walk)");
+				return;
+			}
+
+			const bob = Math.sin(t * Math.PI * 2 * BOB_FREQUENCY_HZ) * BOB_AMPLITUDE_Y;
+			setHeadBob(t, bob);
+		}
+
+		function updateLinger(dt, t) {
+			lingerT += dt;
+			const settle = Math.exp(-lingerT * 2.2);
+			const bob = Math.sin(t * Math.PI * 2 * BOB_FREQUENCY_HZ) * (BOB_AMPLITUDE_Y * 0.35) * settle;
+			setHeadBob(t, bob);
+
+			if (lingerT > STOP_LINGER_SECONDS) {
+				if (!stlReady) {
+					logEvent("waiting for STLs...");
+					return;
+				}
+
+				state = "turn_to_pillar";
+				turnT = 0;
+				turnFromQ.copy(person.root.quaternion);
+
+				const targetPos = pillarGroupLoader.group.getWorldPosition(new THREE.Vector3());
+				const yaw = yawToFaceTargetXZ(person.root.getWorldPosition(new THREE.Vector3()), targetPos);
+				turnToQ.setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
+				logEvent("turning to pillar");
+			}
+		}
+
+		function updateTurnToPillar(dt) {
+			turnT += dt;
+			const x = Math.min(1, turnT / TURN_DURATION_SECONDS);
+			const e = easeInOutPow(x, TURN_EASE_POWER);
+			person.root.quaternion.copy(turnFromQ).slerp(turnToQ, e);
+
+			const remainingAngle = person.root.quaternion.angleTo(turnToQ);
+			if (x >= 1 || remainingAngle < TURN_FINISH_ANGLE_EPS) {
+				person.root.quaternion.copy(turnToQ);
+				state = "look_down";
+				lookDownT = 0;
+				seqT = 0;
+				didReach = didClose = didRaise = false;
+				reachStarted = false;
+				raiseStarted = false;
+				logEvent("turn complete; tilting head down");
+			}
+		}
+
+		function setArmOverrideTargetWorldNoLog(arm, worldPos) {
+			if (!arm || !worldPos) return;
+			if (!arm._overrideTargetWorld) arm._overrideTargetWorld = worldPos.clone();
+			else arm._overrideTargetWorld.copy(worldPos);
+			arm.setEffectorTarget(arm._overrideTargetWorld);
+		}
+
+		function attachWineglassToRightHandIfPossible() {
+			if (wineglassAttachedToHand) return true;
+			if (!wineglassMesh) return false;
+			const attachRef = person?.rightHandAttachRef || person?.rightHandBoneRef;
+			if (!attachRef) return false;
+			reparentPreserveWorld(wineglassMesh, attachRef);
+			wineglassMesh.frustumCulled = false;
+			wineglassAttachedToHand = true;
+			return true;
+		}
+
+		function computeDesiredPitchToLookAt(targetWorld) {
+			if (!targetWorld) return 0;
+			headYawGroup.updateWorldMatrix(true, false);
+			// Convert target into the head yaw frame.
+			const targetLocal = headYawGroup.worldToLocal(targetWorld.clone());
+			// In Three.js, positive rotation.x pitches the camera UP.
+			// So for a target below (targetLocal.y < 0), we want a negative pitch.
+			const zForward = -targetLocal.z; // forward is -Z
+			return Math.atan2(targetLocal.y, Math.max(1e-9, zForward));
+		}
+
+		function updateLookDown(dt, t) {
+			lookDownT += dt;
+			setHeadBob(t, 0);
+
+			const lookTargetW = getWineglassLookTargetWorld() || pillarGroupLoader.group.getWorldPosition(new THREE.Vector3());
+			desiredHeadPitch = computeDesiredPitchToLookAt(lookTargetW);
+
+			const a = easeInOutPow(Math.min(1, lookDownT / LOOKDOWN_DURATION_SECONDS), 2);
+			headPitchGroup.rotation.x = THREE.MathUtils.lerp(headPitchGroup.rotation.x, desiredHeadPitch, a);
+
+			// Once we start looking down, begin the timed grab sequence.
+			state = "grab_sequence";
+			logEvent("starting grab sequence timer");
+		}
+
+		function updateGrabSequence(dt, t) {
+			setHeadBob(t, 0);
+
+			// Keep head aimed at the wineglass.
+			const lookTargetW = getWineglassLookTargetWorld();
+			if (lookTargetW) {
+				desiredHeadPitch = computeDesiredPitchToLookAt(lookTargetW);
+				headPitchGroup.rotation.x += (desiredHeadPitch - headPitchGroup.rotation.x) * (1 - Math.exp(-dt * 6));
+			}
+
+			seqT += dt;
+
+			const tReachStart = WAIT_BEFORE_REACH_SECONDS;
+			const tReachEnd = tReachStart + REACH_ARM_TO_GLASS_DURATION_SECONDS;
+			const tClose = tReachEnd + WAIT_BEFORE_CLOSE_SECONDS;
+			const tRaiseStart = tClose + WAIT_BEFORE_RAISE_SECONDS;
+			// const tRaiseEnd = tRaiseStart + RAISE_GLASS_DURATION_SECONDS;
+
+			// Reach: animate the effector target toward the wineglass.
+			if (!reachStarted && seqT >= tReachStart) {
+				if (rigReady && wineglassGrabbable && person?.rightArm) {
+					let pose = null;
+					try {
+						pose = wineglassGrabbable.getGraspPose({ person, arm: person.rightArm });
+					} catch (e) {
+						logEvent(`ERROR computing grasp pose: ${e?.message || e}`);
+						pose = null;
+					}
+					if (pose?.targetWorld && pose?.desiredFingerDirWorld && pose?.desiredPalmNormalWorld) {
+						const arm = person.rightArm;
+						arm._desiredFingerDirW.copy(pose.desiredFingerDirWorld);
+						arm._desiredPalmNormalW.copy(pose.desiredPalmNormalWorld);
+						arm._hasOrientTarget = true;
+
+						_reachStartW.copy(arm._overrideTargetWorld || arm.targetWorld);
+						_reachEndW.copy(pose.targetWorld);
+						setArmOverrideTargetWorldNoLog(arm, _reachStartW);
+						reachStarted = true;
+						logEvent("reach: start (animated)");
+					}
+				}
+			}
+
+			if (reachStarted && !didReach) {
+				const x = THREE.MathUtils.clamp(
+					(seqT - tReachStart) / Math.max(1e-9, REACH_ARM_TO_GLASS_DURATION_SECONDS),
+					0,
+					1
+				);
+				const e = easeInOutPow(x, 2);
+				_reachCurW.copy(_reachStartW).lerp(_reachEndW, e);
+				setArmOverrideTargetWorldNoLog(person.rightArm, _reachCurW);
+				if (x >= 1) {
+					setArmOverrideTargetWorldNoLog(person.rightArm, _reachEndW);
+					didReach = true;
+					logEvent("reach: complete");
+				}
+			}
+
+			// Close after reach completes + wait; attach wineglass to the hand.
+			if (!didClose && didReach && seqT >= tClose) {
+				if (person?.rightArm) {
+					person.rightArm.closeHandAroundCylinder();
+					didClose = true;
+					const attached = attachWineglassToRightHandIfPossible();
+					logEvent(`grab: closeHandAroundCylinder() + attach=${attached}`);
+				}
+			}
+
+			// Raise after close + wait; animate upward over time.
+			if (didClose && !raiseStarted && seqT >= tRaiseStart) {
+				if (person?.rightArm) {
+					_raiseStartW.copy(person.rightArm._overrideTargetWorld || person.rightArm.targetWorld);
+					_raiseEndW.copy(_raiseStartW).add(new THREE.Vector3(0, RAISE_GLASS_DELTA_Y, 0));
+					raiseStarted = true;
+					logEvent("raise: start (animated)");
+				}
+			}
+
+			if (raiseStarted && !didRaise) {
+				const x = THREE.MathUtils.clamp(
+					(seqT - tRaiseStart) / Math.max(1e-9, RAISE_GLASS_DURATION_SECONDS),
+					0,
+					1
+				);
+				const e = easeInOutPow(x, 2);
+				_raiseCurW.copy(_raiseStartW).lerp(_raiseEndW, e);
+				setArmOverrideTargetWorldNoLog(person.rightArm, _raiseCurW);
+				if (x >= 1) {
+					setArmOverrideTargetWorldNoLog(person.rightArm, _raiseEndW);
+					didRaise = true;
+					logEvent("raise: complete");
+				}
+			}
+
+			// Transition to idle once sequence finishes.
+			if (didRaise) {
+				state = "idle";
+				logEvent("sequence complete (idle)");
+			}
+		}
+
+		// =========================
+		// RENDER LOOP
+		// =========================
+		const clock = new THREE.Clock();
+		let lastT = clock.getElapsedTime();
+		let simT = 0;
+		let paused = false;
+
+		function animate() {
+			requestAnimationFrame(animate);
+
+			const now = clock.getElapsedTime();
+			const dt = paused ? 0 : clampDt(now - lastT);
+			lastT = now;
+			if (!paused) simT += dt;
+
+			// Keep the arms IK running (but don't use its movement keys here).
+			// When paused, freeze the rig exactly where it is.
+			if (!paused) {
+				person?.update(dt, { ctrl: false, space: false, a: false, shift: false });
+			}
+
+			if (freeControls.enabled) freeControls.update();
+			skeleton.update();
+
+			if (!paused) {
+				if (state === "walking") updateWalking(dt, simT);
+				else if (state === "linger") updateLinger(dt, simT);
+				else if (state === "turn_to_pillar") updateTurnToPillar(dt);
+				else if (state === "look_down") updateLookDown(dt, simT);
+				else if (state === "grab_sequence") updateGrabSequence(dt, simT);
+			}
+
+			// Skeleton-mode debug gizmos for grasping.
+			const showGrabDebug = !!skeleton?.enabled;
+			if (showGrabDebug && wineglassMesh) {
+				_wineglassBoxW.setFromObject(wineglassMesh);
+				wineglassBoxHelper.visible = true;
+				wineglassBoxHelper.updateMatrixWorld(true);
+			} else {
+				wineglassBoxHelper.visible = false;
+			}
+
+			if (showGrabDebug && wineglassGrabbable && person?.rightArm) {
+				let pose = null;
+				try {
+					pose = wineglassGrabbable.getGraspPose({ person, arm: person.rightArm });
+				} catch (e) {
+					pose = null;
+				}
+
+				if (pose?.targetWorld && pose?.desiredFingerDirWorld && pose?.desiredPalmNormalWorld) {
+					_graspArrowPosW.copy(pose.targetWorld);
+					// Visualize the "cylinder axis" implied by the grasp orientation.
+					// For the existing cylinder grabbable, this yields a vertical axis (up/down).
+					_graspArrowDirW.crossVectors(pose.desiredPalmNormalWorld, pose.desiredFingerDirWorld);
+					if (_graspArrowDirW.lengthSq() < 1e-12) _graspArrowDirW.set(0, 1, 0);
+					// Keep it pointing mostly upward for readability.
+					if (_graspArrowDirW.dot(_tmpUpW) < 0) _graspArrowDirW.multiplyScalar(-1);
+					_graspArrowDirW.normalize();
+					grabTargetArrow.position.copy(_graspArrowPosW);
+					grabTargetArrow.setDirection(_graspArrowDirW);
+					grabTargetArrow.setLength(
+						GRAB_DEBUG_ARROW_LENGTH,
+						GRAB_DEBUG_ARROW_HEAD_LENGTH,
+						GRAB_DEBUG_ARROW_HEAD_WIDTH
+					);
+					grabTargetArrow.visible = true;
+
+					wineglassAttachSphere.position.copy(pose.targetWorld);
+					wineglassAttachSphere.visible = true;
+				} else {
+					grabTargetArrow.visible = false;
+					wineglassAttachSphere.visible = false;
+				}
+			} else {
+				grabTargetArrow.visible = false;
+				wineglassAttachSphere.visible = false;
+			}
+
+			// Right-side HUD (status)
+			const p = person?.root?.position;
+			const posStr = p ? `x=${p.x.toFixed(3)} y=${p.y.toFixed(3)} z=${p.z.toFixed(3)}` : "(none)";
+
+			// Rig camera world position + derived look-at point
+			rigCamera.updateWorldMatrix(true, false);
+			rigCamera.getWorldPosition(_rigCamPosW);
+			rigCamera.getWorldQuaternion(_rigCamQW);
+			_rigCamDirW.set(0, 0, -1).applyQuaternion(_rigCamQW).normalize();
+			_rigCamLookW.copy(_rigCamPosW).addScaledVector(_rigCamDirW, 1.0);
+
+			// Keep the axes helper exactly aligned to the rig camera (only visible in free mode)
+			if (cameraMode === "free") {
+				rigCamAxes.visible = true;
+				rigCamAxes.position.copy(_rigCamPosW);
+				rigCamAxes.quaternion.copy(_rigCamQW);
+			} else {
+				rigCamAxes.visible = false;
+			}
+
+			// Free camera world position + OrbitControls target
+			freeCamera.updateWorldMatrix(true, false);
+			freeCamera.getWorldPosition(_freeCamPosW);
+			const freeLook = freeControls.target;
+
+			setStatusHUD(
+				`cameraMode: ${cameraMode}\n` +
+				`paused: ${paused ? "yes" : "no"}\n` +
+				`state: ${state}\n` +
+				`rigRootPos: ${posStr}\n\n` +
+				`rigCamPos: ${fmtV(_rigCamPosW)}\n` +
+				`rigCamLook: ${fmtV(_rigCamLookW)}\n\n` +
+				`freeCamPos: ${fmtV(_freeCamPosW)}\n` +
+				`freeCamLook: ${fmtV(freeLook)}`
+			);
+
+			renderer.render(scene, activeCamera);
+		}
+
+		// Ensure both async loads complete eventually (for better logging).
+		(async () => {
+			await Promise.allSettled([rigReadyPromise, stlReadyPromise]);
+			logEvent("async init complete");
+		})();
+
+		animate();
+
+		window.addEventListener("resize", () => {
+			rigCamera.aspect = window.innerWidth / window.innerHeight;
+			rigCamera.updateProjectionMatrix();
+			freeCamera.aspect = window.innerWidth / window.innerHeight;
+			freeCamera.updateProjectionMatrix();
+			renderer.setSize(window.innerWidth, window.innerHeight);
+			logEvent("EVENT: resize");
+		});
+	</script>
+</body>
+</html>
+

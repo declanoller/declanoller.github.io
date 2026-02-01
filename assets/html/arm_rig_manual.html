@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Rigged Arms: Manual IK Target + Debug HUD</title>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <style>
+    html, body { margin:0; height:100%; overflow:hidden; background:#0b0f14; }
+    #hudLeft, #hudRight{
+      position:fixed; top:12px; z-index:10;
+      color:rgba(255,255,255,0.88);
+      font: 12px ui-monospace, SFMono-Regular, Menlo, monospace;
+      background: rgba(0,0,0,0.35);
+      padding: 10px 12px;
+      border-radius: 12px;
+      line-height: 1.35;
+      white-space: pre-wrap;
+      max-width: 520px;
+    }
+    #hudLeft{ left:12px; }
+    #hudRight{ right:12px; width: 520px; max-width: 45vw; }
+  </style>
+</head>
+<body>
+<div id="hudLeft">Loading…</div>
+<div id="hudRight">Logs…</div>
+
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+
+const hudLeft = document.getElementById("hudLeft");
+const hudRight = document.getElementById("hudRight");
+
+// --------------------
+// Logging (console + right HUD ring buffer)
+// --------------------
+const LOG_MAX = 30;
+const logLines = [];
+function ts(){
+  const d = new Date();
+  const ms = String(d.getMilliseconds()).padStart(3, "0");
+  return `${d.toLocaleTimeString()}.${ms}`;
+}
+function log(msg){
+  const line = `[${ts()}] ${msg}`;
+  console.log(line);
+  logLines.push(line);
+  if (logLines.length > LOG_MAX) logLines.shift();
+  hudRight.textContent = logLines.join("\n");
+}
+function setLeftHUD(s){ hudLeft.textContent = s; }
+
+// --------------------
+// Helpers
+// --------------------
+function fmtV(v){
+  return `{ x:${v.x.toFixed(3)}, y:${v.y.toFixed(3)}, z:${v.z.toFixed(3)} }`;
+}
+function clampDt(dt){ return Math.min(0.05, Math.max(0, dt)); }
+
+// --------------------
+// CCD IK (stable settings)
+// --------------------
+function makeCCDSolver(){
+  const effPos = new THREE.Vector3();
+  const bonePos = new THREE.Vector3();
+  const v1 = new THREE.Vector3();
+  const v2 = new THREE.Vector3();
+  const axis = new THREE.Vector3();
+
+  const parentWorldQ = new THREE.Quaternion();
+  const qWorld = new THREE.Quaternion();
+  const qLocal = new THREE.Quaternion();
+
+  return function solveCCD(chain, effector, targetWorld, {
+    iters = 18,
+    threshold = 0.008,
+    maxStep = Math.PI / 18
+  } = {}){
+    let earlyExit = false;
+
+    for (let iter = 0; iter < iters; iter++){
+      effector.updateWorldMatrix(true, false);
+      effector.getWorldPosition(effPos);
+
+      const dist = effPos.distanceTo(targetWorld);
+      if (dist < threshold){
+        earlyExit = true;
+        break;
+      }
+
+      for (let i = 0; i < chain.length; i++){
+        const bone = chain[i];
+        bone.updateWorldMatrix(true, false);
+
+        bone.getWorldPosition(bonePos);
+        effector.getWorldPosition(effPos);
+
+        v1.copy(effPos).sub(bonePos).normalize();
+        v2.copy(targetWorld).sub(bonePos).normalize();
+
+        let dot = THREE.MathUtils.clamp(v1.dot(v2), -1, 1);
+        let ang = Math.acos(dot);
+        if (!isFinite(ang) || ang < 1e-6) continue;
+        ang = Math.min(ang, maxStep);
+
+        axis.copy(v1).cross(v2);
+        if (axis.lengthSq() < 1e-12) continue;
+        axis.normalize();
+
+        qWorld.setFromAxisAngle(axis, ang);
+
+        const parent = bone.parent;
+        if (parent) parent.getWorldQuaternion(parentWorldQ);
+        else parentWorldQ.identity();
+
+        qLocal.copy(parentWorldQ).invert().multiply(qWorld).multiply(parentWorldQ);
+        bone.quaternion.premultiply(qLocal);
+        bone.updateMatrixWorld(true);
+      }
+    }
+
+    // return useful diagnostics
+    effector.getWorldPosition(effPos);
+    return { effPos: effPos.clone(), earlyExit };
+  };
+}
+const solveCCD = makeCCDSolver();
+
+// --------------------
+// Scene
+// --------------------
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0x0b0f14, 4, 25);
+
+const camera = new THREE.PerspectiveCamera(55, innerWidth/innerHeight, 0.01, 5000);
+camera.position.set(2.4, 1.35, 2.8);
+
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(devicePixelRatio);
+renderer.shadowMap.enabled = true;
+document.body.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+
+scene.add(new THREE.HemisphereLight(0xffffff, 0x223344, 1.15));
+const dir = new THREE.DirectionalLight(0xffffff, 2.0);
+dir.position.set(4, 6, 2);
+scene.add(dir);
+
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(50, 50),
+  new THREE.MeshStandardMaterial({ color: 0x141a22, roughness: 1 })
+);
+ground.rotation.x = -Math.PI/2;
+ground.receiveShadow = true;
+scene.add(ground);
+
+scene.add(new THREE.AxesHelper(0.4));
+
+// Stand + object (just to keep a reference in scene)
+const stand = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.08, 0.08, 0.7, 24),
+  new THREE.MeshStandardMaterial({ color: 0x2a3340, roughness: 0.9 })
+);
+stand.position.set(0.4, 0.35, -0.2);
+stand.castShadow = true;
+stand.receiveShadow = true;
+scene.add(stand);
+
+const pickObj = new THREE.Mesh(
+  new THREE.SphereGeometry(0.06, 32, 24),
+  new THREE.MeshStandardMaterial({ color: 0xd9b24c, roughness: 0.4, metalness: 0.2 })
+);
+pickObj.position.set(stand.position.x, 0.72, stand.position.z);
+pickObj.castShadow = true;
+scene.add(pickObj);
+
+// --------------------
+// Manual IK target sphere (GREEN)
+// --------------------
+const targetSphere = new THREE.Mesh(
+  new THREE.SphereGeometry(0.08, 16, 16),
+  new THREE.MeshBasicMaterial({ color: 0x00ff66 })
+);
+scene.add(targetSphere);
+
+// Start target near the object by default
+targetSphere.position.set(stand.position.x - 0.12, 0.75, stand.position.z + 0.06);
+
+
+// --------------------
+// End effector sphere (MAGENTA)
+// --------------------
+const endEffectorSphere = new THREE.Mesh(
+  new THREE.SphereGeometry(0.08, 16, 16),
+  new THREE.MeshBasicMaterial({ color: 0xff00ff })
+);
+scene.add(endEffectorSphere);
+
+
+// Move increments
+const STEP = 0.03;
+
+// We'll treat "target changed" as a state flag; IK runs only while not converged
+let targetDirty = true;
+
+// Keep track of last target we tried to hit
+const lastTargetPos = new THREE.Vector3().copy(targetSphere.position);
+
+// Arrow keys to move target sphere
+addEventListener("keydown", (e) => {
+  const before = targetSphere.position.clone();
+
+  // Arrow keys: X/Z plane by default
+  //   Left/Right: x-
+  //   Up/Down:    z-
+  //
+  // Hold Shift to move in Y instead of Z for Up/Down.
+  const shift = e.shiftKey;
+
+  if (e.key === "ArrowLeft")  targetSphere.position.x -= STEP;
+  if (e.key === "ArrowRight") targetSphere.position.x += STEP;
+
+  if (e.key === "ArrowUp"){
+    if (shift) targetSphere.position.y += STEP;
+    else targetSphere.position.z -= STEP;
+  }
+  if (e.key === "ArrowDown"){
+    if (shift) targetSphere.position.y -= STEP;
+    else targetSphere.position.z += STEP;
+  }
+
+  if (!before.equals(targetSphere.position)){
+    targetDirty = true;
+    lastTargetPos.copy(targetSphere.position);
+    log(`INPUT: moved target -> ${fmtV(targetSphere.position)} (shift=${shift})`);
+  }
+});
+
+// --------------------
+// Rig loading
+// --------------------
+const loader = new GLTFLoader();
+
+let rigRoot = null;
+const rigWrap = new THREE.Group();
+rigWrap.name = "rigWrap";
+scene.add(rigWrap);
+
+// ✅ Bake in your chosen wrapper rotation:
+// x=180°, y=495° == 135°, z=0°
+rigWrap.rotation.set(
+  THREE.MathUtils.degToRad(180),
+  THREE.MathUtils.degToRad(135),
+  THREE.MathUtils.degToRad(0)
+);
+
+let skinned = null;
+let bones = new Map();
+let rightChain = null;
+let rightHand = null;
+let endEffector = null;
+
+function findByName(root, name){
+  let found = null;
+  root.traverse(o => { if (o.name === name) found = o; });
+  return found;
+}
+function findSkinnedMesh(root){
+  let s = null;
+  root.traverse(o => { if (o.isSkinnedMesh && !s) s = o; });
+  return s;
+}
+function cacheBones(skinnedMesh){
+  bones.clear();
+  for (const b of skinnedMesh.skeleton.bones) bones.set(b.name, b);
+}
+function getRightArmBones(){
+  return {
+    shoulder: bones.get("clavicle_r_019"),
+    upperarm: bones.get("upperarm_r_020"),
+    forearm : bones.get("lowerarm_r_021"),
+    hand    : bones.get("hand_r_022"),
+    middle_finger    : bones.get("middle_01_r_026"),
+  };
+}
+function setSkinnedMaterialNice(root){
+  root.traverse(o => {
+    if (o.isSkinnedMesh){
+      const mat = new THREE.MeshStandardMaterial({ color: 0xdddddd, roughness: 0.75 });
+      mat.skinning = true;
+      o.material = mat;
+      o.material.needsUpdate = true;
+    }
+  });
+}
+
+// Fit + camera
+function fitToHeight(obj, desiredHeight=0.9){
+  obj.updateWorldMatrix(true, true);
+  const box0 = new THREE.Box3().setFromObject(obj);
+  const size0 = new THREE.Vector3(); box0.getSize(size0);
+
+  const scale = desiredHeight / Math.max(1e-9, size0.y);
+  obj.scale.setScalar(scale);
+
+  obj.updateWorldMatrix(true, true);
+  const box1 = new THREE.Box3().setFromObject(obj);
+  const center1 = new THREE.Vector3(); box1.getCenter(center1);
+
+  obj.position.x += -center1.x;
+  obj.position.z += -center1.z;
+  obj.position.y += -box1.min.y;
+
+  obj.updateWorldMatrix(true, true);
+  const box2 = new THREE.Box3().setFromObject(obj);
+  return { scale, box: box2 };
+}
+
+function frameCameraToBox(box){
+  const size = new THREE.Vector3(); box.getSize(size);
+  const center = new THREE.Vector3(); box.getCenter(center);
+  const radius = Math.max(size.x, size.y, size.z) * 0.5;
+  const dist = Math.max(0.9, radius * 2.8);
+
+  controls.target.copy(center);
+  camera.position.copy(center).add(new THREE.Vector3(dist * 0.25, dist * 0.35, dist));
+  controls.update();
+}
+
+setLeftHUD(
+  "Loading ./rigged_arms.glb …\n\n" +
+  "Controls:\n" +
+  "  Arrow keys: move GREEN target sphere (X/Z)\n" +
+  "  Shift+Up/Down: move target in Y\n\n" +
+  "IK follows target only when target is moved.\n"
+);
+log("BOOT: starting script");
+
+loader.load("./rigged_arms.glb", (gltf) => {
+  log("LOAD: GLB loaded");
+
+  rigRoot = gltf.scene;
+  rigWrap.add(rigRoot);
+
+  rigRoot.traverse(o => {
+    o.visible = true;
+    if (o.isMesh) o.frustumCulled = false;
+  });
+
+  // ✅ Proven fix
+  const basic = findByName(rigRoot, "Basiccharacter");
+  if (basic){
+    basic.scale.set(1,1,1);
+    basic.position.set(0,0,0);
+    basic.rotation.set(0,0,0);
+    log('FIX: reset "Basiccharacter" transform');
+  } else {
+    log('WARN: could not find "Basiccharacter"');
+  }
+
+  skinned = findSkinnedMesh(rigRoot);
+  if (!skinned){
+    log("ERROR: no SkinnedMesh found");
+    setLeftHUD("No SkinnedMesh found in GLB.");
+    return;
+  }
+
+  setSkinnedMaterialNice(rigRoot);
+  cacheBones(skinned);
+
+  // Dump all bone names to console
+  console.log("BONES: count =", bones.size);
+  console.log("BONES: names =", [...bones.keys()]);
+  console.log(
+    "BONES: indexed =\n" +
+    [...bones.keys()].map((n, i) => `${String(i).padStart(3, "0")}: ${n}`).join("\n")
+  );
+  log(`BONES: printed ${bones.size} bone names to console`);
+
+  const { shoulder, upperarm, forearm, hand, middle_finger } = getRightArmBones();
+  if (!shoulder || !upperarm || !forearm || !hand){
+    log("ERROR: missing right arm bones; check names in console");
+    console.log("Available bones:", [...bones.keys()]);
+    setLeftHUD("Couldn't find right arm bones. See console.");
+    return;
+  }
+
+  rightHand = hand;
+  endEffector = middle_finger;
+  rightChain = [shoulder, upperarm, forearm];
+  log(`RIG: right bones ok (shoulder=${shoulder.name}, upper=${upperarm.name}, forearm=${forearm.name}, hand=${hand.name})`);
+  log(`RIG: ${endEffector} is end effector; ${endEffector.name}`);
+
+
+  const fit = fitToHeight(rigWrap, 0.9);
+  frameCameraToBox(fit.box);
+  log(`FIT: rig fit scale=${fit.scale.toFixed(6)}`);
+
+  // Initialize lastTargetPos & dirty
+  lastTargetPos.copy(targetSphere.position);
+  targetDirty = true;
+
+  setLeftHUD(
+    "Loaded.\n\n" +
+    "Controls:\n" +
+    "  Arrow keys: move GREEN target (X/Z)\n" +
+    "  Shift+Up/Down: move target in Y\n\n" +
+    "IK runs only while reaching the target.\n" +
+    "Watch the right HUD for logs.\n"
+  );
+}, undefined, (err) => {
+  console.error(err);
+  log("ERROR: failed to load rigged_arms.glb");
+  setLeftHUD("Failed to load rigged_arms.glb");
+});
+
+// --------------------
+// Manual IK loop:
+// - If targetDirty, keep running CCD until close enough.
+// - When close enough, stop doing CCD until target moves again.
+// --------------------
+const clock = new THREE.Clock();
+let lastT = clock.getElapsedTime();
+
+// We'll log periodic updates (not every frame) to avoid spam
+let accumLog = 0;
+
+// scratch vectors
+const effectorWorldPos = new THREE.Vector3();
+const targetWorld = new THREE.Vector3();
+
+
+const REACHED_EPS = 0.012; // when within this distance, we stop IK
+const MAX_ITERS_PER_FRAME = 22;
+
+const idleLogInterval = 2.0; // seconds
+
+function animate(){
+  requestAnimationFrame(animate);
+  
+  const now = clock.getElapsedTime();
+  const dt = clampDt(now - lastT);
+  lastT = now;
+  
+  controls.update();
+  
+  // Always keep targetWorld updated
+  targetWorld.copy(targetSphere.position);
+  
+  if (endEffector && rightChain){
+    endEffector.getWorldPosition(effectorWorldPos);
+    endEffectorSphere.position.copy(effectorWorldPos);
+    const dist = effectorWorldPos.distanceTo(targetWorld);
+
+    // If target moved, we enter "tracking" mode until reached.
+    if (targetDirty){
+      // Run CCD this frame
+      const result = solveCCD(rightChain, endEffector, targetWorld, {
+        iters: MAX_ITERS_PER_FRAME,
+        threshold: REACHED_EPS,
+        maxStep: Math.PI / 18
+      });
+
+      // Recompute hand pos after IK
+      endEffector.getWorldPosition(effectorWorldPos);
+      const dist2 = effectorWorldPos.distanceTo(targetWorld);
+
+      // Periodic debug logs ~6 times/sec
+      accumLog += dt;
+      if (accumLog > 0.16){
+        accumLog = 0;
+        log(`IK: running | target=${fmtV(targetWorld)} hand=${fmtV(effectorWorldPos)} dist=${dist2.toFixed(4)} earlyExit=${result.earlyExit}`);
+      }
+
+      if (dist2 <= REACHED_EPS){
+        targetDirty = false;
+        log(`IK: reached target (dist=${dist2.toFixed(4)}). Pausing IK until target moves.`);
+      }
+    } else {
+      // Not tracking; log occasionally so you know we're idle
+      accumLog += dt;
+      if (accumLog > idleLogInterval){
+        accumLog = 0;
+        log(`IDLE: holding pose | target=${fmtV(targetWorld)} hand=${fmtV(effectorWorldPos)} dist=${dist.toFixed(4)}`);
+      }
+    }
+  }
+
+  renderer.render(scene, camera);
+}
+animate();
+
+addEventListener("resize", () => {
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+  log("EVENT: resize");
+});
+</script>
+</body>
+</html>

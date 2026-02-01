@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Rigged Arms: Cylinder Grab + Skeleton Mode + Tooltips (fixed)</title>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <style>
+    html, body { margin:0; height:100%; overflow:hidden; background:#0b0f14; }
+
+    #hudLeft, #hudRight{
+      position:fixed; top:12px; z-index:10;
+      color:rgba(255,255,255,0.88);
+      font: 12px ui-monospace, SFMono-Regular, Menlo, monospace;
+      background: rgba(0,0,0,0.35);
+      padding: 10px 12px;
+      border-radius: 12px;
+      line-height: 1.35;
+      white-space: pre-wrap;
+      max-width: 520px;
+    }
+    #hudLeft{ left:12px; }
+    /* your thinner right HUD */
+    #hudRight{ right:12px; width: 400px; max-width: 45vw; }
+
+    #tooltip{
+      position:fixed;
+      z-index: 20;
+      pointer-events:none;
+      display:none;
+      transform: translate(10px, 10px);
+      color: rgba(255,255,255,0.95);
+      background: rgba(0,0,0,0.65);
+      font: 12px ui-monospace, SFMono-Regular, Menlo, monospace;
+      padding: 6px 8px;
+      border-radius: 10px;
+      max-width: 360px;
+      white-space: pre;
+    }
+  </style>
+</head>
+<body>
+<div id="hudLeft">Loading…</div>
+<div id="hudRight">Logs…</div>
+<div id="tooltip"></div>
+
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+import {
+  createLogger,
+  setText,
+  clampDt,
+  makeCCDSolver,
+  reparentPreserveWorld,
+  createHandOrientationConstraintApplier,
+  createSkeletonModeController,
+  loadRiggedArmsPerson,
+  makeCylinderGrabbable,
+} from "./arm_utils.js";
+
+const hudLeft = document.getElementById("hudLeft");
+const hudRight = document.getElementById("hudRight");
+const tooltip = document.getElementById("tooltip");
+
+// ====================
+// LOGGING
+// ====================
+const { log } = createLogger({ hudRight, maxLines: 30 });
+const setLeftHUD = (s) => setText(hudLeft, s);
+
+// ====================
+// CCD IK
+// ====================
+const solveCCD = makeCCDSolver();
+
+// ====================
+// Scene
+// ====================
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0x0b0f14, 4, 45);
+
+const camera = new THREE.PerspectiveCamera(55, innerWidth/innerHeight, 0.01, 5000);
+camera.position.set(2.4, 2.2, 3.2);
+
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(devicePixelRatio);
+renderer.shadowMap.enabled = true;
+document.body.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+
+scene.add(new THREE.HemisphereLight(0xffffff, 0x223344, 1.15));
+const dir = new THREE.DirectionalLight(0xffffff, 2.0);
+dir.position.set(4, 6, 2);
+scene.add(dir);
+
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(120, 120),
+  new THREE.MeshStandardMaterial({ color: 0x141a22, roughness: 1 })
+);
+ground.rotation.x = -Math.PI/2;
+ground.receiveShadow = true;
+scene.add(ground);
+
+scene.add(new THREE.AxesHelper(0.8));
+
+// ====================
+// Stand + object (your change)
+// ====================
+const standHeight = 1.6;
+const stand = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.08, 0.08, standHeight, 24),
+  new THREE.MeshStandardMaterial({ color: 0x2a3340, roughness: 0.9 })
+);
+stand.position.set(0.3, standHeight / 2, -1.2);
+stand.castShadow = true;
+stand.receiveShadow = true;
+scene.add(stand);
+
+const pickObjHeight = 0.2;
+const pickObj = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.02, 0.02, pickObjHeight, 24),
+  new THREE.MeshStandardMaterial({ color: 0xfc5203, roughness: 0.4, metalness: 0.2 })
+);
+pickObj.position.set(stand.position.x, standHeight + 0.02 + pickObjHeight / 2, stand.position.z);
+pickObj.castShadow = true;
+scene.add(pickObj);
+
+// Example GrabbableObject instance for the current cylinder pick object.
+const pickObjGrabbable = makeCylinderGrabbable(pickObj, { name: "pickObj" });
+
+// ====================
+// Grab state: attach cylinder to hand after 1->2->g
+// ====================
+let didMoveHandToCylinder = false;
+let didCloseHand = false;
+let cylinderAttachedToHand = false;
+
+// ====================
+// Key state
+// ====================
+const keys = { ctrl:false, space:false, a:false, shift:false };
+addEventListener("keydown", (e) => {
+  if (e.key === "Control") keys.ctrl = true;
+  if (e.key === " ") { keys.space = true; e.preventDefault(); }
+  if (e.key.toLowerCase() === "a") keys.a = true;
+  if (e.key === "Shift") keys.shift = true;
+  if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(e.key)) e.preventDefault();
+});
+addEventListener("keyup", (e) => {
+  if (e.key === "Control") keys.ctrl = false;
+  if (e.key === " ") keys.space = false;
+  if (e.key.toLowerCase() === "a") keys.a = false;
+  if (e.key === "Shift") keys.shift = false;
+});
+
+// ====================
+// Wrist orientation vectors (your calibrated values)
+// ====================
+
+const handOrient = createHandOrientationConstraintApplier({
+  defaultFingerDirLocal: new THREE.Vector3(0, 1, 0),
+  defaultPalmNormalLocal: new THREE.Vector3(-1, 0, 1),
+});
+
+const skeleton = createSkeletonModeController({
+  scene,
+  camera,
+  renderer,
+  tooltipEl: tooltip,
+  logFn: log,
+  jointRadius: 0.01,
+  defaultFingerDirLocal: handOrient.defaultFingerDirLocal,
+  defaultPalmNormalLocal: handOrient.defaultPalmNormalLocal,
+});
+
+addEventListener("mousemove", (e) => skeleton.onMouseMove(e));
+
+// ====================
+// Controls
+// ====================
+const STEP = 0.03;
+
+let person = null;
+
+addEventListener("keydown", (e) => {
+  const k = e.key.toLowerCase();
+
+  if (k === "g"){
+    skeleton.toggle();
+    return;
+  }
+
+  if (k === "h"){
+
+    // If you've done 1 (move-to-cylinder) and 2 (close hand), then pressing h will
+    // "attach" the cylinder to the right hand so it follows the rig.
+    if (!cylinderAttachedToHand && didMoveHandToCylinder && didCloseHand){
+      const attachRef = person?.rightHandAttachRef || person?.rightHandBoneRef;
+      if (!attachRef){
+        log("GRAB: can't attach cylinder yet (rig not loaded)");
+      } else {
+        reparentPreserveWorld(pickObj, attachRef);
+        cylinderAttachedToHand = true;
+        // ✅ restore arrow-key control after grabbing:
+        // convert the current (override) hand target from world -> person's local offset,
+        // then clear override so nudges apply again.
+        if (person?.root && person?.rightArm){
+          const w = (person.rightArm._overrideTargetWorld || person.rightArm.targetWorld).clone();
+          person.root.updateWorldMatrix(true, false);
+          person.root.worldToLocal(w);
+          person.rightOffsetLocal.copy(w.sub(person.centerLocal));
+          person.rightArm.setOverrideTargetWorld(null);
+        }
+        log("GRAB: cylinder attached to right hand");
+      }
+    }
+    return;
+  }
+
+  if (!person?.rightArm) return;
+
+  if (e.key === "1"){
+    // Use the general grasp API (should behave the same as the old cylinder-specific call)
+    person.rightArm.moveHandToGrabbable(pickObjGrabbable);
+    didMoveHandToCylinder = true;
+    return;
+  }
+  if (e.key === "2"){
+    person.rightArm.closeHandAroundCylinder();
+    didCloseHand = true;
+    return;
+  }
+  if (e.key === "0"){
+    person.rightArm.openHand();
+    person.rightArm.setOverrideTargetWorld(null);
+    return;
+  }
+
+  // arrow nudges only apply when not in override
+  const shift = e.shiftKey;
+  let dLR = 0, dFB = 0, dY = 0;
+
+  if (e.key === "ArrowLeft")  dLR -= STEP;
+  if (e.key === "ArrowRight") dLR += STEP;
+
+  if (e.key === "ArrowUp"){
+    if (shift) dY += STEP;
+    else dFB += STEP;
+  }
+  if (e.key === "ArrowDown"){
+    if (shift) dY -= STEP;
+    else dFB -= STEP;
+  }
+
+  if (dLR || dFB || dY){
+    person?.nudgeRightOffset(dLR, dFB, dY);
+    e.preventDefault();
+  }
+});
+
+setLeftHUD(
+  "Loading ./rigged_arms.glb …\n\n" +
+  "g: skeleton mode (mesh 10% opacity + blue bones + orange joints + tooltips)\n" +
+  "1: move right hand to orange cylinder\n" +
+  "2: close fingers\n" +
+  "0: open + clear override\n\n" +
+  "Arrows: move right arm target (when not in override)\n" +
+  "Shift+Up/Down: move in Y\n" +
+  "A/CTRL/SPACE: person motion\n"
+);
+log("BOOT: starting");
+
+person = loadRiggedArmsPerson({
+  scene,
+  camera,
+  controls,
+  solveCCD,
+  logFn: log,
+  skeletonController: skeleton,
+  applyHandOrientationConstraint: handOrient.applyHandOrientationConstraint,
+  rigUrl: "./rigged_arms.glb",
+  desiredHeight: 0.9,
+});
+
+// ====================
+// Animate loop
+// ====================
+const clock = new THREE.Clock();
+let lastT = clock.getElapsedTime();
+
+function animate(){
+  requestAnimationFrame(animate);
+
+  const now = clock.getElapsedTime();
+  const dt = clampDt(now - lastT);
+  lastT = now;
+
+  controls.update();
+  person?.update(dt, keys);
+
+  skeleton.update();
+
+  renderer.render(scene, camera);
+}
+animate();
+
+addEventListener("resize", () => {
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+  log("EVENT: resize");
+});
+</script>
+</body>
+</html>
