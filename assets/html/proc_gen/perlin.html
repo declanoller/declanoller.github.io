@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Procedural Landscape Playground</title>
+		<script type="importmap">
+			{
+				"imports": {
+					"three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+					"three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+				}
+			}
+		</script>
+		<style>
+			@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600&display=swap");
+
+			:root {
+				--hud-bg: rgba(6, 9, 15, 0.82);
+				--hud-border: rgba(157, 255, 231, 0.35);
+				--hud-text: #f1f4ff;
+				--hud-subtle: rgba(241, 244, 255, 0.65);
+				--accent: #7fffd4;
+			}
+
+			* {
+				box-sizing: border-box;
+			}
+
+			body {
+				margin: 0;
+				min-height: 100vh;
+				overflow: hidden;
+				font-family: "Space Grotesk", "Fira Sans", sans-serif;
+				background: radial-gradient(circle at 25% 20%, #132136, #05070d 65%);
+				color: var(--hud-text);
+			}
+
+			#terrain-canvas {
+				position: fixed;
+				inset: 0;
+				width: 100vw;
+				height: 100vh;
+				display: block;
+				z-index: 0;
+			}
+
+			.hud {
+				position: fixed;
+				width: 20vw;
+				height: 30vh;
+				padding: 1rem 1.25rem;
+				background: var(--hud-bg);
+				border: 1px solid var(--hud-border);
+				border-radius: 0.6rem;
+				box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.45);
+				z-index: 2;
+				pointer-events: none;
+				overflow: auto;
+			}
+
+			.hud-left {
+				top: 2vh;
+				left: 2vw;
+			}
+
+			.hud-right {
+				top: 2vh;
+				right: 2vw;
+			}
+
+			.hud h2 {
+				margin: 0 0 0.35rem;
+				font-size: 1.05rem;
+				letter-spacing: 0.05em;
+				text-transform: uppercase;
+			}
+
+			.hud p {
+				margin: 0 0 0.5rem;
+				font-size: 0.85rem;
+				color: var(--hud-subtle);
+			}
+
+			.hud ul {
+				list-style: none;
+				margin: 0;
+				padding: 0;
+				display: grid;
+				gap: 0.35rem;
+				font-size: 0.82rem;
+				color: var(--hud-subtle);
+			}
+
+			.key {
+				display: inline-block;
+				padding: 0.05rem 0.35rem;
+				margin-right: 0.15rem;
+				border: 1px solid var(--hud-border);
+				border-radius: 0.35rem;
+				font-size: 0.75rem;
+				color: var(--hud-text);
+			}
+
+			.stat-row {
+				display: flex;
+				justify-content: space-between;
+				font-size: 0.82rem;
+				color: var(--hud-subtle);
+				margin-bottom: 0.3rem;
+			}
+
+			.stat-row span:last-child {
+				color: var(--hud-text);
+				font-weight: 600;
+			}
+
+			.log-title {
+				margin: 0.2rem 0 0.15rem;
+				font-size: 0.78rem;
+				letter-spacing: 0.07em;
+				text-transform: uppercase;
+				color: var(--accent);
+			}
+
+			.log-list {
+				list-style: none;
+				margin: 0;
+				padding: 0;
+				font-size: 0.75rem;
+				color: var(--hud-subtle);
+				display: grid;
+				gap: 0.15rem;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="hud hud-left" id="hud-left">
+			<h2>Control Map</h2>
+			<p>Roam a 100 x 100 unit terrain starting in its northwest corner.</p>
+			<ul>
+				<li><span class="key">Mouse</span> Drag to orbit &amp; wheel to zoom</li>
+				<li><span class="key">Shift + Mouse</span> Drag to pan</li>
+				<li><span class="key">W A S D</span> Move camera across the plane</li>
+				<li><span class="key">1-9</span> Set active noise components</li>
+				<li><span class="key">R</span> Regenerate heightmap with a fresh seed</li>
+				<li><span class="key">F</span> Toggle smoothstep vs smootherstep shaping</li>
+				<li><span class="key">P</span> Show or hide the ground grid helper</li>
+				<li><span class="key">Arrows</span> Shift the sun along the X/Z axes</li>
+			</ul>
+		</div>
+		<div class="hud hud-right" id="hud-right"></div>
+		<script type="module">
+			import * as THREE from "three";
+			import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+			import { ImprovedNoise } from "three/addons/math/ImprovedNoise.js";
+
+			const TERRAIN_SIZE = 100;
+
+			const BASE_SEGMENTS = 8;
+			const MAX_DETAIL_LEVEL = 6; // total number of available noise components (octaves)
+			const BASE_COMPONENT_AMPLITUDE = 1;
+
+			const TERRAIN_SEGMENTS = BASE_SEGMENTS * (2 ** MAX_DETAIL_LEVEL);
+			const HALF_TERRAIN = TERRAIN_SIZE / 2;
+			const CAMERA_HEIGHT = 30;
+			const MOVEMENT_SPEED = 22;
+			const NOISE_SCALE = 0.07;
+			const HEIGHT_AMPLITUDE = 24;
+			const HEIGHT_OFFSET = -6;
+			const SUN_MOVE_STEP = 5;
+			const SUN_RANGE = 160;
+			const SMOOTHING_MODES = ["smoothstep", "smootherstep"];
+			const HUD_LOG_LIMIT = 6;
+			const TOGGLE_SMOOTHING_KEY = "KeyF";
+			const GRID_TOGGLE_KEY = "KeyP";
+			const REGENERATE_KEY = "KeyR";
+			const DEFAULT_ACTIVE_COMPONENTS = 1;
+
+			const dynamicHud = document.getElementById("hud-right");
+			const logEntries = [];
+			const movementKeys = new Set(["KeyW", "KeyA", "KeyS", "KeyD"]);
+			const movementState = {
+				KeyW: false,
+				KeyA: false,
+				KeyS: false,
+				KeyD: false,
+			};
+
+			const scene = new THREE.Scene();
+			scene.background = new THREE.Color(0x05070d);
+			scene.fog = new THREE.Fog(scene.background, 80, 260);
+
+			const camera = new THREE.PerspectiveCamera(
+				60,
+				window.innerWidth / window.innerHeight,
+				0.1,
+				500
+			);
+			camera.position.set(-HALF_TERRAIN, CAMERA_HEIGHT, HALF_TERRAIN);
+
+			const renderer = new THREE.WebGLRenderer({ antialias: true });
+			renderer.outputColorSpace = THREE.SRGBColorSpace;
+			renderer.setPixelRatio(window.devicePixelRatio);
+			renderer.setSize(window.innerWidth, window.innerHeight);
+			renderer.shadowMap.enabled = true;
+			renderer.domElement.id = "terrain-canvas";
+			document.body.appendChild(renderer.domElement);
+
+			const controls = new OrbitControls(camera, renderer.domElement);
+			controls.enableDamping = true;
+			controls.enablePan = true;
+			controls.enableKeys = false;
+			controls.maxPolarAngle = Math.PI / 2.05;
+			controls.target.set(0, 0, 0);
+			controls.mouseButtons = {
+				LEFT: THREE.MOUSE.ROTATE,
+				MIDDLE: THREE.MOUSE.DOLLY,
+				RIGHT: THREE.MOUSE.PAN,
+			};
+			controls.update();
+
+			const orbitLeftButtonDefault = controls.mouseButtons.LEFT;
+			function setShiftPanMode(enabled) {
+				controls.mouseButtons.LEFT = enabled
+					? THREE.MOUSE.PAN
+					: orbitLeftButtonDefault;
+			}
+
+			// Make Shift+drag pan reliable even when Shift is already held
+			// before the page/canvas receives focus (keydown won't fire in that case).
+			renderer.domElement.addEventListener("pointerdown", (event) => {
+				if (event.button !== 0) return;
+				if (event.shiftKey) setShiftPanMode(true);
+			});
+
+			function clearShiftPanMode() {
+				setShiftPanMode(false);
+			}
+
+			renderer.domElement.addEventListener("pointerup", clearShiftPanMode);
+			renderer.domElement.addEventListener("pointercancel", clearShiftPanMode);
+			renderer.domElement.addEventListener("pointerleave", clearShiftPanMode);
+			window.addEventListener("blur", clearShiftPanMode);
+
+			const hemisphereLight = new THREE.HemisphereLight(0xd8ecff, 0x0a1a27, 0.35);
+			scene.add(hemisphereLight);
+
+			const sunLight = new THREE.DirectionalLight(0xfff1c0, 1.25);
+			sunLight.castShadow = true;
+			sunLight.shadow.mapSize.set(2048, 2048);
+			sunLight.shadow.camera.near = 10;
+			sunLight.shadow.camera.far = 300;
+			sunLight.shadow.camera.left = -120;
+			sunLight.shadow.camera.right = 120;
+			sunLight.shadow.camera.top = 120;
+			sunLight.shadow.camera.bottom = -120;
+			sunLight.shadow.bias = -0.0005;
+			scene.add(sunLight);
+			scene.add(sunLight.target);
+
+			const sunPosition = new THREE.Vector3(HALF_TERRAIN, 80, -HALF_TERRAIN / 2);
+
+			const gridHelper = new THREE.GridHelper(TERRAIN_SIZE, TERRAIN_SIZE / 2, 0x2a9d8f, 0x0b3a3a);
+			gridHelper.material.opacity = 0.35;
+			gridHelper.material.transparent = true;
+			gridHelper.position.y = 0;
+			scene.add(gridHelper);
+
+			const terrainGeometry = new THREE.PlaneGeometry(
+				TERRAIN_SIZE,
+				TERRAIN_SIZE,
+				TERRAIN_SEGMENTS,
+				TERRAIN_SEGMENTS
+			);
+			terrainGeometry.rotateX(-Math.PI / 2);
+
+			const terrainColors = new THREE.Float32BufferAttribute(
+				new Float32Array(terrainGeometry.attributes.position.count * 3),
+				3
+			);
+			terrainGeometry.setAttribute("color", terrainColors);
+
+			const terrainMaterial = new THREE.MeshStandardMaterial({
+				vertexColors: true,
+				roughness: 0.95,
+				metalness: 0.08,
+			});
+
+			const terrainMesh = new THREE.Mesh(terrainGeometry, terrainMaterial);
+			terrainMesh.receiveShadow = true;
+			scene.add(terrainMesh);
+
+			const noise = new ImprovedNoise();
+			let noiseSeed = Math.random() * 1000;
+			let smoothingIndex = 0;
+			let activeNoiseComponents = DEFAULT_ACTIVE_COMPONENTS;
+			let noiseComponents = [];
+			let componentAmplitudeSums = [];
+
+			const tempColor = new THREE.Color();
+			const MIN_HEIGHT = HEIGHT_OFFSET;
+			const MAX_HEIGHT = HEIGHT_OFFSET + HEIGHT_AMPLITUDE;
+
+			function buildNoiseComponentsForSeed() {
+				const positions = terrainGeometry.attributes.position;
+				const vertexCount = positions.count;
+				noiseComponents = new Array(MAX_DETAIL_LEVEL);
+				componentAmplitudeSums = new Array(MAX_DETAIL_LEVEL + 1);
+				componentAmplitudeSums[0] = 0;
+
+				for (let octave = 0; octave < MAX_DETAIL_LEVEL; octave += 1) {
+					const amplitude = BASE_COMPONENT_AMPLITUDE / 2 ** octave;
+					componentAmplitudeSums[octave + 1] =
+						componentAmplitudeSums[octave] + amplitude;
+					const frequency = 2 ** octave;
+					const octaveScale = NOISE_SCALE * frequency;
+					const seedOffset = noiseSeed + octave * 101.3;
+					const component = new Float32Array(vertexCount);
+					for (let i = 0; i < vertexCount; i += 1) {
+						const x = positions.getX(i);
+						const z = positions.getZ(i);
+						const value = noise.noise(
+							(x + seedOffset) * octaveScale,
+							seedOffset * 0.37,
+							(z + seedOffset) * octaveScale
+						);
+						component[i] = value * amplitude;
+					}
+					noiseComponents[octave] = component;
+				}
+			}
+
+			function sampleHeightAtVertexIndex(vertexIndex) {
+				const componentsToSum = THREE.MathUtils.clamp(
+					activeNoiseComponents,
+					1,
+					MAX_DETAIL_LEVEL
+				);
+				let sum = 0;
+				for (let octave = 0; octave < componentsToSum; octave += 1) {
+					sum += noiseComponents[octave][vertexIndex];
+				}
+				const amplitudeSum = componentAmplitudeSums[componentsToSum] || 1;
+				const normalized = THREE.MathUtils.clamp(
+					(sum + amplitudeSum) / (2 * amplitudeSum),
+					0,
+					1
+				);
+				const curved =
+					SMOOTHING_MODES[smoothingIndex] === "smoothstep"
+						? smoothstep(0, 1, normalized)
+						: smootherstep(0, 1, normalized);
+				return HEIGHT_OFFSET + curved * HEIGHT_AMPLITUDE;
+			}
+
+			function heightToColor(height) {
+				const t = THREE.MathUtils.clamp(
+					(height - MIN_HEIGHT) / (MAX_HEIGHT - MIN_HEIGHT),
+					0,
+					1
+				);
+				if (t < 0.2) return "#163a6b"; // water
+				if (t < 0.34) return "#d8c08c"; // sand
+				if (t < 0.6) return "#4f8b3d"; // grass
+				if (t < 0.82) return "#7a6f63"; // rock
+				return "#f7f8fb"; // snow
+			}
+
+			function rebuildTerrain() {
+				const positions = terrainGeometry.attributes.position;
+				const colors = terrainGeometry.attributes.color;
+				const vertexCount = positions.count;
+				for (let i = 0; i < vertexCount; i += 1) {
+					const height = sampleHeightAtVertexIndex(i);
+					positions.setY(i, height);
+					tempColor.set(heightToColor(height));
+					colors.setXYZ(i, tempColor.r, tempColor.g, tempColor.b);
+				}
+				positions.needsUpdate = true;
+				colors.needsUpdate = true;
+				terrainGeometry.computeVertexNormals();
+			}
+
+			function smoothstep(edge0, edge1, x) {
+				const t = THREE.MathUtils.clamp((x - edge0) / (edge1 - edge0), 0, 1);
+				return t * t * (3 - 2 * t);
+			}
+
+			function smootherstep(edge0, edge1, x) {
+				const t = THREE.MathUtils.clamp((x - edge0) / (edge1 - edge0), 0, 1);
+				return t * t * t * (t * (t * 6 - 15) + 10);
+			}
+
+			function regenerateTerrain() {
+				noiseSeed = Math.random() * 1000;
+				activeNoiseComponents = DEFAULT_ACTIVE_COMPONENTS;
+				buildNoiseComponentsForSeed();
+				rebuildTerrain();
+				pushLog("Terrain regenerated with seed " + noiseSeed.toFixed(1));
+			}
+
+			function toggleSmoothingMode() {
+				smoothingIndex = (smoothingIndex + 1) % SMOOTHING_MODES.length;
+				rebuildTerrain();
+				pushLog("Smoothing set to " + SMOOTHING_MODES[smoothingIndex]);
+			}
+
+			function setActiveNoiseComponents(count) {
+				const clamped = THREE.MathUtils.clamp(count, 1, MAX_DETAIL_LEVEL);
+				if (clamped === activeNoiseComponents) return;
+				activeNoiseComponents = clamped;
+				rebuildTerrain();
+				pushLog("Active noise components set to " + activeNoiseComponents);
+			}
+
+			function toggleGridHelper() {
+				gridHelper.visible = !gridHelper.visible;
+				pushLog("Grid helper " + (gridHelper.visible ? "enabled" : "hidden"));
+			}
+
+			function applySunPosition() {
+				sunLight.position.set(sunPosition.x, sunPosition.y, sunPosition.z);
+				sunLight.target.position.set(0, 0, 0);
+			}
+
+			function updateSunPosition(deltaX, deltaZ) {
+				sunPosition.x = THREE.MathUtils.clamp(
+					sunPosition.x + deltaX,
+					-SUN_RANGE,
+					SUN_RANGE
+				);
+				sunPosition.z = THREE.MathUtils.clamp(
+					sunPosition.z + deltaZ,
+					-SUN_RANGE,
+					SUN_RANGE
+				);
+				applySunPosition();
+			}
+
+			function pushLog(message) {
+				const timestamp = new Date().toLocaleTimeString();
+				logEntries.unshift(`${timestamp} - ${message}`);
+				if (logEntries.length > HUD_LOG_LIMIT) {
+					logEntries.pop();
+				}
+			}
+
+			function updateDynamicHud() {
+				const cameraPos = camera.position;
+				const logMarkup = logEntries.length
+					? logEntries.map((entry) => `<li>${entry}</li>`).join("")
+					: "<li>Awaiting activity...</li>";
+				dynamicHud.innerHTML = `
+					<h2>Status</h2>
+					<div class="stat-row"><span>Camera</span><span>${cameraPos
+						.x.toFixed(1)}, ${cameraPos.y.toFixed(1)}, ${cameraPos.z.toFixed(1)}</span></div>
+					<div class="stat-row"><span>Sun</span><span>${sunPosition
+						.x.toFixed(1)}, ${sunPosition.y.toFixed(1)}, ${sunPosition.z.toFixed(1)}</span></div>
+					<div class="stat-row"><span>Components</span><span>${activeNoiseComponents}/${MAX_DETAIL_LEVEL}</span></div>
+					<div class="stat-row"><span>Smoothing</span><span>${
+						SMOOTHING_MODES[smoothingIndex]
+					}</span></div>
+					<div class="stat-row"><span>Grid</span><span>${
+						gridHelper.visible ? "visible" : "hidden"
+					}</span></div>
+					<div class="stat-row"><span>Seed</span><span>${noiseSeed.toFixed(
+						1
+					)}</span></div>
+					<div class="log-title">Recent events</div>
+					<ul class="log-list">${logMarkup}</ul>
+				`;
+			}
+
+			const forwardVector = new THREE.Vector3();
+			const rightVector = new THREE.Vector3();
+			const movementVector = new THREE.Vector3();
+
+			function handleMovement(deltaTime) {
+				movementVector.set(0, 0, 0);
+				const azimuth = controls.getAzimuthalAngle();
+				forwardVector.set(Math.sin(azimuth), 0, Math.cos(azimuth)).normalize();
+				rightVector.set(forwardVector.z, 0, -forwardVector.x).normalize();
+
+				// OrbitControls' azimuth reference means this forward vector points toward
+				// what feels like "backwards" in our camera movement, so W/S are inverted.
+				if (movementState.KeyW) movementVector.sub(forwardVector);
+				if (movementState.KeyS) movementVector.add(forwardVector);
+				if (movementState.KeyA) movementVector.sub(rightVector);
+				if (movementState.KeyD) movementVector.add(rightVector);
+
+				if (movementVector.lengthSq() > 0) {
+					movementVector.normalize().multiplyScalar(MOVEMENT_SPEED * deltaTime);
+					camera.position.add(movementVector);
+					controls.target.add(movementVector);
+				}
+			}
+
+			function handleKeyDown(event) {
+				if (event.code === "ShiftLeft" || event.code === "ShiftRight") {
+					setShiftPanMode(true);
+					return;
+				}
+
+				if (event.code.startsWith("Digit") || event.code.startsWith("Numpad")) {
+					const digit = Number(event.key);
+					if (Number.isInteger(digit) && digit >= 1 && digit <= 9) {
+						setActiveNoiseComponents(digit);
+						event.preventDefault();
+						return;
+					}
+				}
+
+				if (movementKeys.has(event.code)) {
+					movementState[event.code] = true;
+					event.preventDefault();
+					return;
+				}
+
+				switch (event.code) {
+					case REGENERATE_KEY:
+						if (!event.repeat) {
+							regenerateTerrain();
+						}
+						event.preventDefault();
+						break;
+					case GRID_TOGGLE_KEY:
+						if (!event.repeat) {
+							toggleGridHelper();
+						}
+						event.preventDefault();
+						break;
+					case TOGGLE_SMOOTHING_KEY:
+						if (!event.repeat) {
+							toggleSmoothingMode();
+						}
+						event.preventDefault();
+						break;
+					case "ArrowUp":
+						updateSunPosition(0, -SUN_MOVE_STEP);
+						event.preventDefault();
+						break;
+					case "ArrowDown":
+						updateSunPosition(0, SUN_MOVE_STEP);
+						event.preventDefault();
+						break;
+					case "ArrowLeft":
+						updateSunPosition(-SUN_MOVE_STEP, 0);
+						event.preventDefault();
+						break;
+					case "ArrowRight":
+						updateSunPosition(SUN_MOVE_STEP, 0);
+						event.preventDefault();
+						break;
+					default:
+						break;
+				}
+			}
+
+			function handleKeyUp(event) {
+				if (event.code === "ShiftLeft" || event.code === "ShiftRight") {
+					setShiftPanMode(false);
+					return;
+				}
+
+				if (movementKeys.has(event.code)) {
+					movementState[event.code] = false;
+					event.preventDefault();
+				}
+			}
+
+			window.addEventListener("keydown", handleKeyDown);
+			window.addEventListener("keyup", handleKeyUp);
+
+			function onWindowResize() {
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+				renderer.setSize(window.innerWidth, window.innerHeight);
+			}
+
+			window.addEventListener("resize", onWindowResize);
+
+			function init() {
+				applySunPosition();
+				buildNoiseComponentsForSeed();
+				rebuildTerrain();
+				pushLog("Scene initialized");
+				updateDynamicHud();
+			}
+
+			const clock = new THREE.Clock();
+
+			function animate() {
+				requestAnimationFrame(animate);
+				const delta = clock.getDelta();
+				handleMovement(delta);
+				controls.update();
+				renderer.render(scene, camera);
+				updateDynamicHud();
+			}
+
+			init();
+			animate();
+		</script>
+	</body>
+</html>

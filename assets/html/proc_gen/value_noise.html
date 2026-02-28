@@ -1,0 +1,643 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Procedural Landscape (Interpolated Lattice Noise)</title>
+
+		<script type="importmap">
+			{
+				"imports": {
+					"three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+					"three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+				}
+			}
+		</script>
+
+		<style>
+			:root {
+				color-scheme: dark;
+			}
+			html,
+			body {
+				margin: 0;
+				padding: 0;
+				overflow: hidden;
+				height: 100%;
+				background: #0b0e14;
+				font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+					"Courier New", monospace;
+			}
+			#app {
+				position: fixed;
+				inset: 0;
+			}
+			canvas {
+				display: block;
+				width: 100%;
+				height: 100%;
+			}
+
+			.hud {
+				position: fixed;
+				z-index: 10;
+				background: rgba(0, 0, 0, 0.6);
+				border: 1px solid rgba(255, 255, 255, 0.15);
+				backdrop-filter: blur(3px);
+				color: rgba(255, 255, 255, 0.92);
+				padding: 10px 12px;
+				box-sizing: border-box;
+				font-size: 12px;
+				line-height: 1.35;
+				overflow: auto;
+			}
+			#hudLeft {
+				top: 10px;
+				left: 10px;
+				width: 20vw;
+				height: 30vh;
+			}
+			#hudRight {
+				top: 10px;
+				right: 10px;
+				width: 20vw;
+				height: 30vh;
+			}
+			#hudTop {
+				top: 10px;
+				left: 50%;
+				transform: translateX(-50%);
+				width: min(520px, 60vw);
+				max-height: 30vh;
+			}
+			.hudTitle {
+				font-weight: 600;
+				margin-bottom: 8px;
+				opacity: 0.95;
+			}
+			.hudLine {
+				white-space: pre-wrap;
+			}
+			.kbd {
+				display: inline-block;
+				padding: 0 6px;
+				border-radius: 4px;
+				border: 1px solid rgba(255, 255, 255, 0.18);
+				background: rgba(255, 255, 255, 0.06);
+				font-size: 11px;
+			}
+			#hudTop .row {
+				display: flex;
+				align-items: center;
+				gap: 10px;
+				flex-wrap: wrap;
+			}
+			#octaveSlider {
+				width: 260px;
+			}
+			.radioGroup {
+				display: flex;
+				gap: 10px;
+				flex-wrap: wrap;
+			}
+			label {
+				cursor: pointer;
+			}
+			#logArea {
+				margin-top: 8px;
+				padding-top: 8px;
+				border-top: 1px solid rgba(255, 255, 255, 0.12);
+				font-size: 11px;
+				opacity: 0.9;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="app"></div>
+
+		<div id="hudLeft" class="hud">
+			<div class="hudTitle">Controls</div>
+			<div class="hudLine"><span class="kbd">Click + Drag</span> rotate camera</div>
+			<div class="hudLine"><span class="kbd">Scroll</span> zoom</div>
+			<div class="hudLine"><span class="kbd">Shift</span> + <span class="kbd">Click + Drag</span> pan camera</div>
+			<div class="hudLine"><span class="kbd">W</span>/<span class="kbd">A</span>/<span class="kbd">S</span>/<span class="kbd">D</span> move camera (and target)</div>
+			<div class="hudLine"><span class="kbd">Arrow Keys</span> move sun (x/z)</div>
+			<div class="hudLine"><span class="kbd">G</span> toggle helpers (grid)</div>
+			<div class="hudLine"><span class="kbd">R</span> regenerate landscape (new seed)</div>
+			<div class="hudLine"><span class="kbd">H</span> toggle HUD</div>
+			<div class="hudLine">Slider: number of octaves to sum</div>
+			<div class="hudLine">Radio: interpolation (linear / cubic / quintic)</div>
+		</div>
+
+		<div id="hudRight" class="hud">
+			<div class="hudTitle">Status</div>
+			<div id="statusLines"></div>
+			<div id="logArea"></div>
+		</div>
+
+		<div id="hudTop" class="hud">
+			<div class="hudTitle">Noise Settings</div>
+			<div class="row">
+				<div>
+					<div class="hudLine">Octaves used: <span id="octaveValue">9</span></div>
+					<input id="octaveSlider" type="range" min="1" max="9" value="9" step="1" />
+				</div>
+				<div>
+					<div class="hudLine">Interpolation</div>
+					<div class="radioGroup">
+						<label><input type="radio" name="interp" value="linear" checked /> linear</label>
+						<label><input type="radio" name="interp" value="cubic" /> cubic</label>
+						<label><input type="radio" name="interp" value="quintic" /> quintic</label>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<script type="module">
+			import * as THREE from 'three';
+			import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+			// -----------------------------
+			// Scene / render constants
+			// -----------------------------
+			const WORLD_SIZE = 100; // world spans x,z in [0, WORLD_SIZE]
+			const TERRAIN_SEGMENTS = 200; // plane subdivisions (higher = smoother, slower)
+			const CAMERA_START_HEIGHT = 22;
+			const CAMERA_MOVE_SPEED = 25; // units/sec
+			const CAMERA_NEAR = 0.1;
+			const CAMERA_FAR = 500;
+
+			const SUN_HEIGHT = 90;
+			const SUN_MOVE_STEP = 4;
+
+			// -----------------------------
+			// Noise / terrain constants
+			// -----------------------------
+			const MAX_OCTAVES = 9;
+			const BASE_LATTICE_CELLS = 2; // octave 0 lattice cells per axis; octave i doubles this
+			const PERSISTENCE = 0.5; // amplitude multiplier per octave
+			const HEIGHT_AMPLITUDE = 22; // final height scale
+
+			// Height thresholds (in world Y units) for 5 discrete colors
+			const HEIGHT_WATER_MAX = -3;
+			const HEIGHT_SAND_MAX = 0;
+			const HEIGHT_GRASS_MAX = 8;
+			const HEIGHT_ROCK_MAX = 15;
+
+			// "Plasma" colormap approximation (matplotlib-like) via a few anchor stops.
+			// We keep it lightweight (no giant lookup table) and interpolate between stops.
+			const PLASMA_STOPS = [
+				{ t: 0.0, c: new THREE.Color(0x0d0887) },
+				{ t: 0.13, c: new THREE.Color(0x5b02a3) },
+				{ t: 0.25, c: new THREE.Color(0x9a179b) },
+				{ t: 0.38, c: new THREE.Color(0xcb4679) },
+				{ t: 0.5, c: new THREE.Color(0xed7953) },
+				{ t: 0.63, c: new THREE.Color(0xfb9f3a) },
+				{ t: 0.75, c: new THREE.Color(0xfccd25) },
+				{ t: 1.0, c: new THREE.Color(0xf0f921) },
+			];
+
+			function plasmaColor(t) {
+				const clamped = THREE.MathUtils.clamp(t, 0, 1);
+				for (let i = 0; i < PLASMA_STOPS.length - 1; i++) {
+					const a = PLASMA_STOPS[i];
+					const b = PLASMA_STOPS[i + 1];
+					if (clamped >= a.t && clamped <= b.t) {
+						const u = (clamped - a.t) / (b.t - a.t);
+						return a.c.clone().lerp(b.c, u);
+					}
+				}
+				return PLASMA_STOPS[PLASMA_STOPS.length - 1].c.clone();
+			}
+
+			const BIOME_COLORS = {
+				water: plasmaColor(0.10),
+				sand: plasmaColor(0.35),
+				grass: plasmaColor(0.55),
+				rock: plasmaColor(0.75),
+				snow: plasmaColor(0.95),
+			};
+
+			function heightToColor(heightY) {
+				if (heightY <= HEIGHT_WATER_MAX) return BIOME_COLORS.water;
+				if (heightY <= HEIGHT_SAND_MAX) return BIOME_COLORS.sand;
+				if (heightY <= HEIGHT_GRASS_MAX) return BIOME_COLORS.grass;
+				if (heightY <= HEIGHT_ROCK_MAX) return BIOME_COLORS.rock;
+				return BIOME_COLORS.snow;
+			}
+
+			// -----------------------------
+			// RNG (seeded)
+			// -----------------------------
+			function mulberry32(seed) {
+				let a = seed >>> 0;
+				return function () {
+					a |= 0;
+					a = (a + 0x6d2b79f5) | 0;
+					let t = Math.imul(a ^ (a >>> 15), 1 | a);
+					t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+					return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+				};
+			}
+
+			// -----------------------------
+			// Interpolation options
+			// -----------------------------
+			const InterpType = Object.freeze({
+				linear: 'linear',
+				cubic: 'cubic',
+				quintic: 'quintic',
+			});
+
+			function interp(t, type) {
+				const u = THREE.MathUtils.clamp(t, 0, 1);
+				switch (type) {
+					case InterpType.linear:
+						return u;
+					case InterpType.cubic:
+						return 3 * u * u - 2 * u * u * u; // 3t^2 - 2t^3
+					case InterpType.quintic:
+						return 6 * u ** 5 - 15 * u ** 4 + 10 * u ** 3;
+					default:
+						return u;
+				}
+			}
+
+			function lerp(a, b, t) {
+				return a + (b - a) * t;
+			}
+
+			// -----------------------------
+			// Lattice noise (2D interpolated value noise)
+			// -----------------------------
+			function createLatticeValues(cellsPerAxis, rng) {
+				const pointsPerAxis = cellsPerAxis + 1;
+				const values = new Float32Array(pointsPerAxis * pointsPerAxis);
+				for (let z = 0; z < pointsPerAxis; z++) {
+					for (let x = 0; x < pointsPerAxis; x++) {
+						// value noise uses random scalar at lattice points; map to [-1, 1]
+						values[z * pointsPerAxis + x] = rng() * 2 - 1;
+					}
+				}
+				return { values, pointsPerAxis, cellsPerAxis };
+			}
+
+			function sampleLattice2D(lattice, nx, nz, interpType) {
+				// nx,nz expected in [0,1]
+				const x = THREE.MathUtils.clamp(nx, 0, 1) * lattice.cellsPerAxis;
+				const z = THREE.MathUtils.clamp(nz, 0, 1) * lattice.cellsPerAxis;
+
+				const x0 = Math.floor(x);
+				const z0 = Math.floor(z);
+				const x1 = Math.min(x0 + 1, lattice.cellsPerAxis);
+				const z1 = Math.min(z0 + 1, lattice.cellsPerAxis);
+
+				const tx = interp(x - x0, interpType);
+				const tz = interp(z - z0, interpType);
+
+				const stride = lattice.pointsPerAxis;
+				const v00 = lattice.values[z0 * stride + x0];
+				const v10 = lattice.values[z0 * stride + x1];
+				const v01 = lattice.values[z1 * stride + x0];
+				const v11 = lattice.values[z1 * stride + x1];
+
+				const vx0 = lerp(v00, v10, tx);
+				const vx1 = lerp(v01, v11, tx);
+				return lerp(vx0, vx1, tz);
+			}
+
+			// -----------------------------
+			// Three.js setup
+			// -----------------------------
+			const app = document.getElementById('app');
+			const renderer = new THREE.WebGLRenderer({ antialias: true });
+			renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+			renderer.setSize(window.innerWidth, window.innerHeight);
+			renderer.setClearColor(0x0b0e14, 1);
+			app.appendChild(renderer.domElement);
+
+			const scene = new THREE.Scene();
+			const camera = new THREE.PerspectiveCamera(
+				55,
+				window.innerWidth / window.innerHeight,
+				CAMERA_NEAR,
+				CAMERA_FAR,
+			);
+
+			// Start at the corner of the 100x100 region
+			camera.position.set(0, CAMERA_START_HEIGHT, 0);
+			camera.lookAt(WORLD_SIZE * 0.5, 0, WORLD_SIZE * 0.5);
+
+			const controls = new OrbitControls(camera, renderer.domElement);
+			controls.enableDamping = true;
+			controls.dampingFactor = 0.08;
+			controls.enablePan = true;
+			controls.screenSpacePanning = true;
+			controls.target.set(WORLD_SIZE * 0.5, 0, WORLD_SIZE * 0.5);
+			controls.update();
+
+			controls.mouseButtons = {
+				LEFT: THREE.MOUSE.ROTATE,
+				MIDDLE: THREE.MOUSE.DOLLY,
+				RIGHT: THREE.MOUSE.PAN,
+			};
+			const defaultLeftMouse = controls.mouseButtons.LEFT;
+
+			const ambient = new THREE.AmbientLight(0xffffff, 0.45);
+			scene.add(ambient);
+
+			const sunLight = new THREE.DirectionalLight(0xffffff, 1.1);
+			sunLight.position.set(WORLD_SIZE * 1.2, SUN_HEIGHT, WORLD_SIZE * 0.2);
+			sunLight.castShadow = false;
+			scene.add(sunLight);
+
+			// Helpers toggled by 'g'
+			const helperGroup = new THREE.Group();
+			helperGroup.visible = false;
+			const gridHelper = new THREE.GridHelper(WORLD_SIZE, 20, 0x6b7280, 0x374151);
+			gridHelper.position.y = 0;
+			helperGroup.add(gridHelper);
+			scene.add(helperGroup);
+
+			// Terrain geometry and mesh
+			const terrainGeometry = new THREE.PlaneGeometry(
+				WORLD_SIZE,
+				WORLD_SIZE,
+				TERRAIN_SEGMENTS,
+				TERRAIN_SEGMENTS,
+			);
+			terrainGeometry.rotateX(-Math.PI / 2);
+			terrainGeometry.translate(WORLD_SIZE / 2, 0, WORLD_SIZE / 2);
+
+			const positionAttr = terrainGeometry.getAttribute('position');
+			const vertexCount = positionAttr.count;
+			const colorArray = new Float32Array(vertexCount * 3);
+			terrainGeometry.setAttribute('color', new THREE.BufferAttribute(colorArray, 3));
+
+			const terrainMaterial = new THREE.MeshStandardMaterial({
+				vertexColors: true,
+				roughness: 0.95,
+				metalness: 0.0,
+			});
+			const terrainMesh = new THREE.Mesh(terrainGeometry, terrainMaterial);
+			scene.add(terrainMesh);
+
+			// -----------------------------
+			// Terrain generation state
+			// -----------------------------
+			let currentSeed = Math.floor(Math.random() * 1_000_000_000);
+			let currentInterpType = InterpType.linear;
+			let octavesUsed = MAX_OCTAVES;
+
+			// Lattice values per octave (stable across interpolation toggles)
+			/** @type {{cellsPerAxis:number, pointsPerAxis:number, values:Float32Array}[]} */
+			let octaveLattices = [];
+
+			// Precomputed per-vertex octave contributions (recomputed on interp changes)
+			/** @type {Float32Array[]} */
+			let octaveVertexNoise = [];
+
+			// Precomputed amplitude weights per octave
+			const octaveAmplitudes = new Float32Array(MAX_OCTAVES);
+			for (let i = 0; i < MAX_OCTAVES; i++) octaveAmplitudes[i] = PERSISTENCE ** i;
+
+			function computePerVertexOctaves() {
+				octaveVertexNoise = new Array(MAX_OCTAVES);
+				for (let o = 0; o < MAX_OCTAVES; o++) {
+					octaveVertexNoise[o] = new Float32Array(vertexCount);
+				}
+
+				for (let i = 0; i < vertexCount; i++) {
+					const x = positionAttr.getX(i);
+					const z = positionAttr.getZ(i);
+					const nx = x / WORLD_SIZE;
+					const nz = z / WORLD_SIZE;
+
+					for (let o = 0; o < MAX_OCTAVES; o++) {
+						const latticeValue = sampleLattice2D(octaveLattices[o], nx, nz, currentInterpType);
+						octaveVertexNoise[o][i] = latticeValue;
+					}
+				}
+			}
+
+			function applyOctaveSumToTerrain() {
+				let amplitudeSum = 0;
+				for (let o = 0; o < octavesUsed; o++) amplitudeSum += octaveAmplitudes[o];
+				if (amplitudeSum <= 0) amplitudeSum = 1;
+
+				const colorAttr = terrainGeometry.getAttribute('color');
+				for (let i = 0; i < vertexCount; i++) {
+					let sum = 0;
+					for (let o = 0; o < octavesUsed; o++) {
+						sum += octaveVertexNoise[o][i] * octaveAmplitudes[o];
+					}
+					const normalized = sum / amplitudeSum; // roughly [-1, 1]
+					const heightY = normalized * HEIGHT_AMPLITUDE;
+					positionAttr.setY(i, heightY);
+
+					const c = heightToColor(heightY);
+					colorAttr.setXYZ(i, c.r, c.g, c.b);
+				}
+				positionAttr.needsUpdate = true;
+				terrainGeometry.computeVertexNormals();
+				terrainGeometry.getAttribute('color').needsUpdate = true;
+			}
+
+			function regenerateLandscape(newSeed) {
+				currentSeed = newSeed;
+				const rng = mulberry32(currentSeed);
+
+				octaveLattices = [];
+				for (let o = 0; o < MAX_OCTAVES; o++) {
+					const cells = BASE_LATTICE_CELLS * 2 ** o;
+					octaveLattices.push(createLatticeValues(cells, rng));
+				}
+
+				computePerVertexOctaves();
+				applyOctaveSumToTerrain();
+				logMessage(`Regenerated landscape (seed=${currentSeed})`);
+			}
+
+			// -----------------------------
+			// HUD & logging
+			// -----------------------------
+			const hudElements = [
+				document.getElementById('hudLeft'),
+				document.getElementById('hudRight'),
+				document.getElementById('hudTop'),
+			];
+			let hudVisible = true;
+
+			const statusLinesEl = document.getElementById('statusLines');
+			const logAreaEl = document.getElementById('logArea');
+			const logLines = [];
+			const MAX_LOG_LINES = 10;
+
+			function fmtVec3(v, digits = 2) {
+				return `(${v.x.toFixed(digits)}, ${v.y.toFixed(digits)}, ${v.z.toFixed(digits)})`;
+			}
+
+			function logMessage(message) {
+				const time = new Date().toLocaleTimeString();
+				logLines.unshift(`[${time}] ${message}`);
+				if (logLines.length > MAX_LOG_LINES) logLines.length = MAX_LOG_LINES;
+				logAreaEl.textContent = logLines.join('\n');
+			}
+
+			function updateHudStatus() {
+				const camPos = camera.position.clone();
+				const dir = new THREE.Vector3();
+				camera.getWorldDirection(dir);
+				dir.normalize();
+
+				const sunPos = sunLight.position.clone();
+
+				statusLinesEl.textContent = [
+					`Seed: ${currentSeed}`,
+					`Octaves used: ${octavesUsed}/${MAX_OCTAVES}`,
+					`Interpolation: ${currentInterpType}`,
+					`Camera pos: ${fmtVec3(camPos)}`,
+					`Sun pos:   ${fmtVec3(sunPos)}`,
+					`View dir:  ${fmtVec3(dir, 3)}`,
+				].join('\n');
+			}
+
+			function setHudVisible(visible) {
+				hudVisible = visible;
+				for (const el of hudElements) el.style.display = hudVisible ? 'block' : 'none';
+			}
+
+			// -----------------------------
+			// UI wiring (slider + radios)
+			// -----------------------------
+			const octaveSlider = document.getElementById('octaveSlider');
+			const octaveValue = document.getElementById('octaveValue');
+
+			octaveSlider.min = '1';
+			octaveSlider.max = String(MAX_OCTAVES);
+			octaveSlider.value = String(octavesUsed);
+			octaveValue.textContent = String(octavesUsed);
+
+			octaveSlider.addEventListener('input', () => {
+				octavesUsed = Number(octaveSlider.value);
+				octaveValue.textContent = String(octavesUsed);
+				applyOctaveSumToTerrain();
+				logMessage(`Octaves used: ${octavesUsed}`);
+			});
+
+			for (const radio of document.querySelectorAll('input[name="interp"]')) {
+				radio.addEventListener('change', () => {
+					const selected = document.querySelector('input[name="interp"]:checked')?.value;
+					if (!selected) return;
+					currentInterpType = selected;
+					computePerVertexOctaves();
+					applyOctaveSumToTerrain();
+					logMessage(`Interpolation: ${currentInterpType}`);
+				});
+			}
+
+			// -----------------------------
+			// Input handling
+			// -----------------------------
+			const keyState = new Set();
+			window.addEventListener('contextmenu', (e) => e.preventDefault());
+
+			window.addEventListener('keydown', (e) => {
+				keyState.add(e.code);
+
+				if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
+					controls.mouseButtons.LEFT = THREE.MOUSE.PAN;
+				}
+
+				if (e.repeat && (e.code === 'KeyH' || e.code === 'KeyG' || e.code === 'KeyR')) return;
+
+				switch (e.code) {
+					case 'KeyH':
+						setHudVisible(!hudVisible);
+						break;
+					case 'KeyG':
+						helperGroup.visible = !helperGroup.visible;
+						logMessage(`Helpers: ${helperGroup.visible ? 'on' : 'off'}`);
+						break;
+					case 'KeyR':
+						regenerateLandscape(Math.floor(Math.random() * 1_000_000_000));
+						break;
+					case 'ArrowUp':
+						sunLight.position.z -= SUN_MOVE_STEP;
+						e.preventDefault();
+						break;
+					case 'ArrowDown':
+						sunLight.position.z += SUN_MOVE_STEP;
+						e.preventDefault();
+						break;
+					case 'ArrowLeft':
+						sunLight.position.x -= SUN_MOVE_STEP;
+						e.preventDefault();
+						break;
+					case 'ArrowRight':
+						sunLight.position.x += SUN_MOVE_STEP;
+						e.preventDefault();
+						break;
+					default:
+						break;
+				}
+			});
+
+			window.addEventListener('keyup', (e) => {
+				keyState.delete(e.code);
+				if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
+					controls.mouseButtons.LEFT = defaultLeftMouse;
+				}
+			});
+
+			function updateCameraMovement(dt) {
+				// WASD moves camera and orbit target together (keeps orbit interaction intuitive)
+				const forward = new THREE.Vector3();
+				camera.getWorldDirection(forward);
+				forward.y = 0;
+				forward.normalize();
+
+				const right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
+				const move = new THREE.Vector3(0, 0, 0);
+
+				if (keyState.has('KeyW')) move.add(forward);
+				if (keyState.has('KeyS')) move.sub(forward);
+				if (keyState.has('KeyD')) move.add(right);
+				if (keyState.has('KeyA')) move.sub(right);
+
+				if (move.lengthSq() === 0) return;
+				move.normalize().multiplyScalar(CAMERA_MOVE_SPEED * dt);
+				camera.position.add(move);
+				controls.target.add(move);
+			}
+
+			// -----------------------------
+			// Resize
+			// -----------------------------
+			window.addEventListener('resize', () => {
+				renderer.setSize(window.innerWidth, window.innerHeight);
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+			});
+
+			// -----------------------------
+			// Animation loop
+			// -----------------------------
+			const clock = new THREE.Clock();
+
+			function animate() {
+				requestAnimationFrame(animate);
+				const dt = Math.min(clock.getDelta(), 0.05);
+				updateCameraMovement(dt);
+				controls.update();
+				updateHudStatus();
+				renderer.render(scene, camera);
+			}
+
+			// Initialize
+			regenerateLandscape(currentSeed);
+			logMessage('Ready. Press R to regenerate.');
+			animate();
+		</script>
+	</body>
+</html>

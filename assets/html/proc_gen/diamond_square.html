@@ -1,0 +1,575 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Procedural Landscape (Diamond-Square) — Three.js</title>
+
+        <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+        </script>
+
+		<style>
+			:root {
+				--hud-w: 20vw;
+				--hud-h: 20vh;
+				--hud-pad: 12px;
+				--hud-bg: rgba(0, 0, 0, 0.55);
+				--hud-border: rgba(255, 255, 255, 0.18);
+				--hud-text: rgba(255, 255, 255, 0.92);
+				--hud-muted: rgba(255, 255, 255, 0.72);
+			}
+
+			html,
+			body {
+				height: 100%;
+				margin: 0;
+				overflow: hidden;
+				background: #0b1020;
+				font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica,
+					Arial, "Apple Color Emoji", "Segoe UI Emoji";
+			}
+
+			canvas {
+				display: block;
+			}
+
+			.hud {
+				position: fixed;
+				width: var(--hud-w);
+				height: var(--hud-h);
+				padding: var(--hud-pad);
+				box-sizing: border-box;
+				color: var(--hud-text);
+				background: var(--hud-bg);
+				border: 1px solid var(--hud-border);
+				border-radius: 10px;
+				backdrop-filter: blur(6px);
+				-webkit-backdrop-filter: blur(6px);
+				overflow: auto;
+				user-select: none;
+			}
+
+			#hudStatic {
+				top: 12px;
+				left: 12px;
+			}
+
+			#hudDynamic {
+				top: 12px;
+				right: 12px;
+			}
+
+			.hud h3 {
+				margin: 0 0 8px 0;
+				font-size: 13px;
+				letter-spacing: 0.3px;
+				text-transform: uppercase;
+			}
+
+			.hud .row {
+				font-size: 12px;
+				line-height: 1.35;
+				color: var(--hud-muted);
+			}
+
+			.hud code {
+				color: var(--hud-text);
+			}
+
+			#log {
+				margin-top: 8px;
+				font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+					"Courier New", monospace;
+				font-size: 11px;
+				color: rgba(255, 255, 255, 0.85);
+				white-space: pre-wrap;
+				word-break: break-word;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div id="hudStatic" class="hud" aria-label="Help HUD">
+			<h3>Controls</h3>
+			<div class="row"><code>Click + drag</code>: look around (OrbitControls)</div>
+			<div class="row"><code>Scroll</code>: zoom in/out</div>
+			<div class="row"><code>W/A/S/D</code>: move camera (fly/walk)</div>
+			<div class="row"><code>Shift</code>: faster movement</div>
+			<div class="row"><code>R</code>: regenerate terrain</div>
+			<div class="row"><code>H</code>: toggle HUD</div>
+			<div class="row"><code>P</code>: toggle grid</div>
+			<div class="row" style="margin-top: 8px">
+				Region: <code>100×100</code> units (centered at origin)
+			</div>
+		</div>
+
+		<div id="hudDynamic" class="hud" aria-label="Dynamic HUD">
+			<h3>Status</h3>
+			<div id="status" class="row"></div>
+			<div id="log"></div>
+		</div>
+
+		<script type="module">
+			import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+			import { OrbitControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
+
+			// -----------------------------
+			// Parameters (named constants)
+			// -----------------------------
+			const WORLD_SIZE = 100; // Terrain spans WORLD_SIZE x WORLD_SIZE units
+
+			// Diamond-square needs size = (2^n) + 1.
+			// Higher values = more detail (and more vertices).
+
+            const DETAIL_LEVEL = 10; // n
+
+			const HEIGHTMAP_SIZE = (2 ** DETAIL_LEVEL) + 1; // 2^n + 1 segments per side
+
+			const HEIGHT_SCALE = 18; // Vertical exaggeration
+			const BASE_HEIGHT = 0; // Vertical offset applied to terrain
+
+			const SEED = 1337; // Change to get different terrain
+			const INITIAL_ROUGHNESS = 1.0; // Starting noise amplitude
+			const ROUGHNESS_DECAY = 0.55; // Multiplier per iteration
+
+			const CAMERA_START_HEIGHT = 22;
+			const CAMERA_START_MARGIN = 2; // Slightly inside the corner
+
+			const MOVE_SPEED_UNITS_PER_SEC = 18;
+			const MOVE_SPEED_MULTIPLIER_WHEN_SHIFT = 2.4;
+
+			const BACKGROUND_COLOR = 0x0b1020;
+
+			// Lighting
+			const AMBIENT_INTENSITY = 0.55;
+			const SUN_INTENSITY = 1.1;
+			// Dramatic, low-angle sunlight from the side
+			const SUN_DIRECTION = new THREE.Vector3(-1.2, 0.45, 0.7).normalize();
+
+			// -----------------------------
+			// DOM / HUD helpers
+			// -----------------------------
+			const hudStatic = document.getElementById('hudStatic');
+			const hudDynamic = document.getElementById('hudDynamic');
+			const statusEl = document.getElementById('status');
+			const logEl = document.getElementById('log');
+
+			const LOG_MAX_LINES = 18;
+			const logLines = [];
+			function log(msg) {
+				const timestamp = new Date().toLocaleTimeString();
+				logLines.push(`[${timestamp}] ${msg}`);
+				while (logLines.length > LOG_MAX_LINES) logLines.shift();
+				logEl.textContent = logLines.join('\n');
+			}
+
+			// -----------------------------
+			// Deterministic RNG
+			// -----------------------------
+			function mulberry32(seed) {
+				let t = seed >>> 0;
+				return function next() {
+					t += 0x6d2b79f5;
+					let x = Math.imul(t ^ (t >>> 15), 1 | t);
+					x ^= x + Math.imul(x ^ (x >>> 7), 61 | x);
+					return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+				};
+			}
+
+			// -----------------------------
+			// Diamond-square heightmap
+			// -----------------------------
+			function create2DArray(size, initialValue = 0) {
+				const arr = new Array(size);
+				for (let i = 0; i < size; i++) {
+					arr[i] = new Float32Array(size);
+					if (initialValue !== 0) arr[i].fill(initialValue);
+				}
+				return arr;
+			}
+
+			function diamondSquare({ size, seed, initialRoughness, roughnessDecay }) {
+				const rand = mulberry32(seed);
+				const grid = create2DArray(size, 0);
+				const last = size - 1;
+
+				// Initialize corners
+				grid[0][0] = (rand() * 2 - 1);
+				grid[0][last] = (rand() * 2 - 1);
+				grid[last][0] = (rand() * 2 - 1);
+				grid[last][last] = (rand() * 2 - 1);
+
+				let stepSize = last;
+				let roughness = initialRoughness;
+
+				// Helper: random offset scaled by roughness
+				const offset = () => (rand() * 2 - 1) * roughness;
+
+				while (stepSize > 1) {
+					const half = stepSize / 2;
+
+					// Diamond step
+					for (let y = half; y < last; y += stepSize) {
+						for (let x = half; x < last; x += stepSize) {
+							const a = grid[y - half][x - half];
+							const b = grid[y - half][x + half];
+							const c = grid[y + half][x - half];
+							const d = grid[y + half][x + half];
+							const avg = (a + b + c + d) / 4;
+							grid[y][x] = avg + offset();
+						}
+					}
+
+					// Square step
+					for (let y = 0; y <= last; y += half) {
+						const shift = (y / half) % 2 === 0 ? half : 0;
+						for (let x = shift; x <= last; x += stepSize) {
+							let sum = 0;
+							let count = 0;
+
+							if (y - half >= 0) {
+								sum += grid[y - half][x];
+								count++;
+							}
+							if (y + half <= last) {
+								sum += grid[y + half][x];
+								count++;
+							}
+							if (x - half >= 0) {
+								sum += grid[y][x - half];
+								count++;
+							}
+							if (x + half <= last) {
+								sum += grid[y][x + half];
+								count++;
+							}
+
+							const avg = sum / count;
+							grid[y][x] = avg + offset();
+						}
+					}
+
+					stepSize = half;
+					roughness *= roughnessDecay;
+				}
+
+				// Normalize to [0, 1]
+				let min = Infinity;
+				let max = -Infinity;
+				for (let y = 0; y < size; y++) {
+					for (let x = 0; x < size; x++) {
+						const v = grid[y][x];
+						if (v < min) min = v;
+						if (v > max) max = v;
+					}
+				}
+				const range = Math.max(1e-6, max - min);
+				for (let y = 0; y < size; y++) {
+					for (let x = 0; x < size; x++) {
+						grid[y][x] = (grid[y][x] - min) / range;
+					}
+				}
+
+				return grid;
+			}
+
+			function heightToColor(t) {
+				// Simple biome-ish ramp based on normalized height.
+				// t in [0,1]
+				const color = new THREE.Color();
+
+				// Water
+				if (t < 0.32) {
+					color.setRGB(0.07, 0.25, 0.55);
+					return color;
+				}
+				// Shore / sand
+				if (t < 0.38) {
+					color.setRGB(0.76, 0.70, 0.48);
+					return color;
+				}
+				// Grass
+				if (t < 0.70) {
+					color.setRGB(0.15, 0.52, 0.22);
+					return color;
+				}
+				// Rock
+				if (t < 0.88) {
+					color.setRGB(0.38, 0.38, 0.40);
+					return color;
+				}
+				// Snow
+				color.setRGB(0.92, 0.93, 0.96);
+				return color;
+			}
+
+			// -----------------------------
+			// Three.js scene setup
+			// -----------------------------
+			const renderer = new THREE.WebGLRenderer({ antialias: true });
+			renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+			renderer.setSize(window.innerWidth, window.innerHeight);
+			renderer.setClearColor(BACKGROUND_COLOR, 1);
+			renderer.shadowMap.enabled = true;
+			renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+			document.body.appendChild(renderer.domElement);
+
+			const scene = new THREE.Scene();
+
+			const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 600);
+
+			// Place camera at a corner of the 100x100 region.
+			const halfWorld = WORLD_SIZE / 2;
+			camera.position.set(
+				-halfWorld + CAMERA_START_MARGIN,
+				CAMERA_START_HEIGHT,
+				-halfWorld + CAMERA_START_MARGIN
+			);
+
+			const controls = new OrbitControls(camera, renderer.domElement);
+			controls.enableDamping = true;
+			controls.dampingFactor = 0.06;
+			controls.enablePan = true;
+			controls.screenSpacePanning = false;
+			controls.minDistance = 5;
+			controls.maxDistance = 240;
+			controls.maxPolarAngle = Math.PI * 0.495;
+			controls.target.set(0, 6, 0);
+			controls.update();
+
+			// Lights
+			const ambient = new THREE.AmbientLight(0xffffff, AMBIENT_INTENSITY);
+			scene.add(ambient);
+
+			const sun = new THREE.DirectionalLight(0xffffff, SUN_INTENSITY);
+			sun.position.copy(SUN_DIRECTION).multiplyScalar(120);
+			sun.castShadow = true;
+			sun.shadow.mapSize.set(2048, 2048);
+			sun.shadow.camera.near = 1;
+			sun.shadow.camera.far = 400;
+			sun.shadow.camera.left = -120;
+			sun.shadow.camera.right = 120;
+			sun.shadow.camera.top = 120;
+			sun.shadow.camera.bottom = -120;
+			scene.add(sun);
+
+			// Track sun position for interactive control
+			const sunPosition = sun.position.clone();
+			const SUN_MOVE_STEP = 6; // units per arrow key press
+
+			// Ground plane for shadows / reference (slightly below terrain base)
+			const shadowPlane = new THREE.Mesh(
+				new THREE.PlaneGeometry(WORLD_SIZE * 2.5, WORLD_SIZE * 2.5, 1, 1),
+				new THREE.ShadowMaterial({ opacity: 0.25 })
+			);
+			shadowPlane.rotation.x = -Math.PI / 2;
+			shadowPlane.position.y = -2.0;
+			shadowPlane.receiveShadow = true;
+			scene.add(shadowPlane);
+
+			// Helpers / boundaries
+			const gridHelper = new THREE.GridHelper(WORLD_SIZE, 20, 0x3b4266, 0x1f2440);
+			gridHelper.position.y = 0.0;
+			scene.add(gridHelper);
+
+			// -----------------------------
+			// Terrain mesh generation
+			// -----------------------------
+			let terrainMesh = null;
+			let currentSeed = SEED;
+
+			function buildTerrain({ seed }) {
+				if (terrainMesh) {
+					terrainMesh.geometry.dispose();
+					terrainMesh.material.dispose();
+					scene.remove(terrainMesh);
+					terrainMesh = null;
+				}
+
+				const heightmap = diamondSquare({
+					size: HEIGHTMAP_SIZE,
+					seed,
+					initialRoughness: INITIAL_ROUGHNESS,
+					roughnessDecay: ROUGHNESS_DECAY,
+				});
+
+				const segments = HEIGHTMAP_SIZE - 1;
+				const geometry = new THREE.PlaneGeometry(WORLD_SIZE, WORLD_SIZE, segments, segments);
+				geometry.rotateX(-Math.PI / 2);
+
+				const positions = geometry.attributes.position;
+				const colors = new Float32Array(positions.count * 3);
+
+				// PlaneGeometry's vertex order maps x-fastest, then y.
+				// We'll treat heightmap[y][x], where y maps along "depth" of the plane.
+				let i3 = 0;
+				for (let y = 0; y < HEIGHTMAP_SIZE; y++) {
+					for (let x = 0; x < HEIGHTMAP_SIZE; x++) {
+						const idx = y * HEIGHTMAP_SIZE + x;
+						const h01 = heightmap[y][x];
+						const height = BASE_HEIGHT + (h01 - 0.5) * 2 * HEIGHT_SCALE;
+						positions.setY(idx, height);
+
+						const c = heightToColor(h01);
+						colors[i3++] = c.r;
+						colors[i3++] = c.g;
+						colors[i3++] = c.b;
+					}
+				}
+				geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+				geometry.computeVertexNormals();
+
+				const material = new THREE.MeshStandardMaterial({
+					vertexColors: true,
+					roughness: 0.95,
+					metalness: 0.0,
+				});
+
+				terrainMesh = new THREE.Mesh(geometry, material);
+				terrainMesh.castShadow = true;
+				terrainMesh.receiveShadow = true;
+				scene.add(terrainMesh);
+
+				log(`Terrain generated (seed=${seed}, size=${HEIGHTMAP_SIZE}×${HEIGHTMAP_SIZE}).`);
+			}
+
+			buildTerrain({ seed: currentSeed });
+
+			// -----------------------------
+			// WASD movement
+			// -----------------------------
+			const keyState = new Map();
+			const keys = {
+				forward: 'KeyW',
+				left: 'KeyA',
+				back: 'KeyS',
+				right: 'KeyD',
+				sprint: 'ShiftLeft',
+			};
+
+			window.addEventListener('keydown', (e) => {
+				keyState.set(e.code, true);
+
+				if (e.code === 'KeyR') {
+					currentSeed = (currentSeed + 1) >>> 0;
+					buildTerrain({ seed: currentSeed });
+				}
+
+				if (e.code === 'KeyH') {
+					const isHidden = hudStatic.style.display === 'none';
+					hudStatic.style.display = isHidden ? 'block' : 'none';
+					hudDynamic.style.display = isHidden ? 'block' : 'none';
+				}
+
+				if (e.code === 'KeyP') {
+					gridHelper.visible = !gridHelper.visible;
+				}
+
+				// Arrow keys: adjust sun position (x/z)
+				let changed = false;
+				if (e.code === 'ArrowLeft') {
+					sunPosition.x -= SUN_MOVE_STEP;
+					changed = true;
+				}
+				if (e.code === 'ArrowRight') {
+					sunPosition.x += SUN_MOVE_STEP;
+					changed = true;
+				}
+				if (e.code === 'ArrowUp') {
+					sunPosition.z -= SUN_MOVE_STEP;
+					changed = true;
+				}
+				if (e.code === 'ArrowDown') {
+					sunPosition.z += SUN_MOVE_STEP;
+					changed = true;
+				}
+				if (changed) {
+					sun.position.set(sunPosition.x, sunPosition.y, sunPosition.z);
+				}
+			});
+
+			window.addEventListener('keyup', (e) => {
+				keyState.set(e.code, false);
+			});
+
+			function isDown(code) {
+				return keyState.get(code) === true;
+			}
+
+			const up = new THREE.Vector3(0, 1, 0);
+			const forward = new THREE.Vector3();
+			const right = new THREE.Vector3();
+			const move = new THREE.Vector3();
+
+			function updateMovement(dtSeconds) {
+				const wantsMove =
+					isDown(keys.forward) || isDown(keys.back) || isDown(keys.left) || isDown(keys.right);
+				if (!wantsMove) return;
+
+				camera.getWorldDirection(forward);
+				forward.y = 0;
+				if (forward.lengthSq() < 1e-8) forward.set(0, 0, -1);
+				forward.normalize();
+				right.copy(forward).cross(up).normalize();
+
+				move.set(0, 0, 0);
+				if (isDown(keys.forward)) move.add(forward);
+				if (isDown(keys.back)) move.sub(forward);
+				if (isDown(keys.right)) move.add(right);
+				if (isDown(keys.left)) move.sub(right);
+
+				if (move.lengthSq() < 1e-8) return;
+				move.normalize();
+
+				const speedMultiplier = isDown(keys.sprint) ? MOVE_SPEED_MULTIPLIER_WHEN_SHIFT : 1;
+				const distance = MOVE_SPEED_UNITS_PER_SEC * speedMultiplier * dtSeconds;
+				move.multiplyScalar(distance);
+
+				camera.position.add(move);
+				controls.target.add(move);
+			}
+
+			// -----------------------------
+			// Resize + render loop
+			// -----------------------------
+			window.addEventListener('resize', () => {
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+				renderer.setSize(window.innerWidth, window.innerHeight);
+			});
+
+			const clock = new THREE.Clock();
+			let smoothedFps = 60;
+
+			function animate() {
+				requestAnimationFrame(animate);
+
+				const dt = Math.min(0.05, clock.getDelta());
+				const fps = 1 / Math.max(1e-6, dt);
+				smoothedFps = smoothedFps * 0.9 + fps * 0.1;
+
+				updateMovement(dt);
+				controls.update();
+
+				const p = camera.position;
+				const s = sun.position;
+				statusEl.textContent =
+					`FPS: ${smoothedFps.toFixed(0)}\n` +
+					`Camera: x=${p.x.toFixed(1)} y=${p.y.toFixed(1)} z=${p.z.toFixed(1)}\n` +
+					`Sun: x=${s.x.toFixed(1)} y=${s.y.toFixed(1)} z=${s.z.toFixed(1)}\n` +
+					`Seed: ${currentSeed}`;
+
+				renderer.render(scene, camera);
+			}
+
+			log('Ready. Drag to look, scroll to zoom, WASD to move.');
+			animate();
+		</script>
+	</body>
+</html>

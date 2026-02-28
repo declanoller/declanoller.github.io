@@ -1,0 +1,639 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Simplex Terrain (Three.js)</title>
+
+		<script type="importmap">
+			{
+			"imports": {
+				"three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+				"three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+			}
+			}
+		</script>
+
+		<style>
+			:root {
+				--hud-bg: rgba(0, 0, 0, 0.65);
+				--hud-border: rgba(255, 255, 255, 0.18);
+				--hud-text: rgba(255, 255, 255, 0.92);
+				--hud-muted: rgba(255, 255, 255, 0.72);
+				--hud-accent: rgba(120, 200, 255, 0.95);
+			}
+			html,
+			body {
+				height: 100%;
+				margin: 0;
+				overflow: hidden;
+				background: #0b0f16;
+				font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji",
+					"Segoe UI Emoji";
+			}
+			#app {
+				position: fixed;
+				inset: 0;
+			}
+			canvas {
+				display: block;
+			}
+			.hud {
+				position: fixed;
+				top: 1rem;
+				width: 20vw;
+				height: 30vh;
+				min-width: 260px;
+				min-height: 150px;
+				box-sizing: border-box;
+				padding: 0.75rem 0.8rem;
+				background: var(--hud-bg);
+				color: var(--hud-text);
+				border: 1px solid var(--hud-border);
+				border-radius: 12px;
+				backdrop-filter: blur(6px);
+				-webkit-backdrop-filter: blur(6px);
+				overflow: hidden;
+			}
+			#hudLeft {
+				left: 1rem;
+			}
+			#hudRight {
+				right: 1rem;
+				display: flex;
+				flex-direction: column;
+				gap: 0.5rem;
+			}
+			.hud h2 {
+				margin: 0 0 0.4rem 0;
+				font-size: 0.95rem;
+				font-weight: 650;
+				letter-spacing: 0.2px;
+			}
+			.hud .muted {
+				color: var(--hud-muted);
+				font-size: 0.88rem;
+				line-height: 1.25;
+			}
+			.kv {
+				font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+					"Courier New", monospace;
+				font-size: 0.86rem;
+				line-height: 1.25;
+				white-space: pre;
+			}
+			#log {
+				flex: 1;
+				overflow: auto;
+				border-top: 1px solid rgba(255, 255, 255, 0.12);
+				padding-top: 0.5rem;
+				color: var(--hud-muted);
+				font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+					"Courier New", monospace;
+				font-size: 0.82rem;
+				line-height: 1.25;
+			}
+			.badge {
+				display: inline-block;
+				padding: 0.1rem 0.4rem;
+				border-radius: 999px;
+				border: 1px solid rgba(120, 200, 255, 0.4);
+				color: var(--hud-accent);
+				font-size: 0.78rem;
+				margin-left: 0.4rem;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="app"></div>
+
+		<div id="hudLeft" class="hud">
+			<h2>
+				Controls <span class="badge">OrbitControls + WASD</span>
+			</h2>
+			<div class="muted">
+				<b>Mouse</b>
+				<div class="kv">
+LMB drag   rotate
+Wheel      zoom
+Shift+drag pan
+				</div>
+				<b>Keyboard</b>
+				<div class="kv">
+W/A/S/D    move camera (ground plane)
+P          toggle grid
+R          regenerate terrain (new seed)
+Arrow keys move sun (x/z)
+				</div>
+			</div>
+		</div>
+
+		<div id="hudRight" class="hud">
+			<h2>Status</h2>
+			<div id="status" class="kv"></div>
+			<div id="log"></div>
+		</div>
+
+		<script type="module">
+			import * as THREE from 'three';
+			import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+			// ---------------------------
+			// Scene constants (tune here)
+			// ---------------------------
+			const TERRAIN_SIZE = 100; // world units, square region is TERRAIN_SIZE x TERRAIN_SIZE
+			const TERRAIN_SEGMENTS = 160; // mesh resolution per side
+			const TERRAIN_MAX_HEIGHT = 18;
+			const TERRAIN_BASE_HEIGHT = -2;
+			const NOISE_SCALE = 0.06; // higher => more frequent features
+			const NOISE_OCTAVES = 5;
+			const NOISE_LACUNARITY = 2.0;
+			const NOISE_GAIN = 0.5;
+			const HEIGHT_POWER = 1.25; // shapes distribution: >1 makes more flats + sharper peaks
+
+			const CAMERA_START_CORNER = new THREE.Vector3(-TERRAIN_SIZE / 2, 22, -TERRAIN_SIZE / 2);
+			const CAMERA_LOOK_AT = new THREE.Vector3(0, 0, 0);
+
+			const MOVE_SPEED_UNITS_PER_SEC = 22;
+			const MOVE_FAST_MULTIPLIER = 2.0;
+			const CAMERA_HEIGHT_LOCK = 14; // keep camera from going too low; movement is mostly on XZ
+
+			const SUN_START_POS = new THREE.Vector3(55, 70, 35);
+			const SUN_STEP = 3;
+			const SUN_MIN_MAX = TERRAIN_SIZE * 1.2;
+
+			const GRID_COLOR_1 = 0x2a415d;
+			const GRID_COLOR_2 = 0x152436;
+			const CLEAR_COLOR = 0x0b0f16;
+
+			// Height band thresholds (normalized 0..1)
+			const HEIGHT_BANDS = {
+				water: 0.28,
+				sand: 0.35,
+				grass: 0.62,
+				rock: 0.82,
+			};
+
+			const COLORS = {
+				water: new THREE.Color('#1f4e79'),
+				sand: new THREE.Color('#cdb37e'),
+				grass: new THREE.Color('#2f8f4e'),
+				rock: new THREE.Color('#6b6e73'),
+				snow: new THREE.Color('#f2f7ff'),
+			};
+
+			// ---------------------------
+			// Minimal seeded RNG
+			// ---------------------------
+			function mulberry32(seed) {
+				let t = seed >>> 0;
+				return function () {
+					t += 0x6d2b79f5;
+					let x = t;
+					x = Math.imul(x ^ (x >>> 15), x | 1);
+					x ^= x + Math.imul(x ^ (x >>> 7), x | 61);
+					return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+				};
+			}
+
+			function randomSeed() {
+				// Use crypto if available for better seeds
+				if (globalThis.crypto?.getRandomValues) {
+					const buf = new Uint32Array(1);
+					globalThis.crypto.getRandomValues(buf);
+					return buf[0] >>> 0;
+				}
+				return (Math.random() * 0xffffffff) >>> 0;
+			}
+
+			// ---------------------------
+			// Simplex noise (2D)
+			// Based on the classic simplex approach, seeded via permutation table.
+			// ---------------------------
+			class SimplexNoise2D {
+				constructor(seed) {
+					const rng = mulberry32(seed);
+					const p = new Uint8Array(256);
+					for (let i = 0; i < 256; i++) p[i] = i;
+					for (let i = 255; i > 0; i--) {
+						const j = Math.floor(rng() * (i + 1));
+						const tmp = p[i];
+						p[i] = p[j];
+						p[j] = tmp;
+					}
+					this.perm = new Uint8Array(512);
+					for (let i = 0; i < 512; i++) this.perm[i] = p[i & 255];
+				}
+
+				static grad2(hash, x, y) {
+					// 8 gradient directions
+					switch (hash & 7) {
+						case 0:
+							return x + y;
+						case 1:
+							return -x + y;
+						case 2:
+							return x - y;
+						case 3:
+							return -x - y;
+						case 4:
+							return x;
+						case 5:
+							return -x;
+						case 6:
+							return y;
+						case 7:
+							return -y;
+						default:
+							return 0;
+					}
+				}
+
+				sample(xin, yin) {
+					// Skew/unskew factors for 2D
+					const F2 = 0.5 * (Math.sqrt(3) - 1);
+					const G2 = (3 - Math.sqrt(3)) / 6;
+
+					let n0 = 0,
+						n1 = 0,
+						n2 = 0;
+
+					const s = (xin + yin) * F2;
+					const i = Math.floor(xin + s);
+					const j = Math.floor(yin + s);
+					const t = (i + j) * G2;
+					const X0 = i - t;
+					const Y0 = j - t;
+					const x0 = xin - X0;
+					const y0 = yin - Y0;
+
+					let i1, j1;
+					if (x0 > y0) {
+						i1 = 1;
+						j1 = 0;
+					} else {
+						i1 = 0;
+						j1 = 1;
+					}
+
+					const x1 = x0 - i1 + G2;
+					const y1 = y0 - j1 + G2;
+					const x2 = x0 - 1 + 2 * G2;
+					const y2 = y0 - 1 + 2 * G2;
+
+					const ii = i & 255;
+					const jj = j & 255;
+					const gi0 = this.perm[ii + this.perm[jj]];
+					const gi1 = this.perm[ii + i1 + this.perm[jj + j1]];
+					const gi2 = this.perm[ii + 1 + this.perm[jj + 1]];
+
+					let t0 = 0.5 - x0 * x0 - y0 * y0;
+					if (t0 > 0) {
+						t0 *= t0;
+						n0 = t0 * t0 * SimplexNoise2D.grad2(gi0, x0, y0);
+					}
+					let t1 = 0.5 - x1 * x1 - y1 * y1;
+					if (t1 > 0) {
+						t1 *= t1;
+						n1 = t1 * t1 * SimplexNoise2D.grad2(gi1, x1, y1);
+					}
+					let t2 = 0.5 - x2 * x2 - y2 * y2;
+					if (t2 > 0) {
+						t2 *= t2;
+						n2 = t2 * t2 * SimplexNoise2D.grad2(gi2, x2, y2);
+					}
+
+					// Scale to roughly [-1, 1]
+					return 70 * (n0 + n1 + n2);
+				}
+			}
+
+			function fbm(noise2d, x, z) {
+				let frequency = 1;
+				let amplitude = 1;
+				let sum = 0;
+				let ampSum = 0;
+				for (let o = 0; o < NOISE_OCTAVES; o++) {
+					sum += amplitude * noise2d.sample(x * frequency, z * frequency);
+					ampSum += amplitude;
+					frequency *= NOISE_LACUNARITY;
+					amplitude *= NOISE_GAIN;
+				}
+				return sum / ampSum;
+			}
+
+			function clamp(v, min, max) {
+				return Math.min(max, Math.max(min, v));
+			}
+
+			function heightToColor(normalizedHeight01) {
+				if (normalizedHeight01 < HEIGHT_BANDS.water) return COLORS.water;
+				if (normalizedHeight01 < HEIGHT_BANDS.sand) return COLORS.sand;
+				if (normalizedHeight01 < HEIGHT_BANDS.grass) return COLORS.grass;
+				if (normalizedHeight01 < HEIGHT_BANDS.rock) return COLORS.rock;
+				return COLORS.snow;
+			}
+
+			function formatVec3(v) {
+				return `x: ${v.x.toFixed(2)}\ny: ${v.y.toFixed(2)}\nz: ${v.z.toFixed(2)}`;
+			}
+
+			function logLine(message) {
+				const logEl = document.getElementById('log');
+				const ts = new Date().toLocaleTimeString();
+				const div = document.createElement('div');
+				div.textContent = `[${ts}] ${message}`;
+				logEl.appendChild(div);
+				// keep last ~60 lines
+				while (logEl.childNodes.length > 60) logEl.removeChild(logEl.firstChild);
+				logEl.scrollTop = logEl.scrollHeight;
+			}
+
+			// ---------------------------
+			// Three.js setup
+			// ---------------------------
+			const app = document.getElementById('app');
+			const scene = new THREE.Scene();
+			scene.background = new THREE.Color(CLEAR_COLOR);
+			scene.fog = new THREE.Fog(new THREE.Color(CLEAR_COLOR), 60, 220);
+
+			const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 800);
+			camera.position.copy(CAMERA_START_CORNER);
+			camera.lookAt(CAMERA_LOOK_AT);
+
+			const renderer = new THREE.WebGLRenderer({ antialias: true });
+			renderer.setSize(window.innerWidth, window.innerHeight);
+			renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+			renderer.shadowMap.enabled = true;
+			renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+			app.appendChild(renderer.domElement);
+
+			const controls = new OrbitControls(camera, renderer.domElement);
+			controls.target.copy(CAMERA_LOOK_AT);
+			controls.enableDamping = true;
+			controls.dampingFactor = 0.08;
+			controls.screenSpacePanning = false;
+			controls.minDistance = 6;
+			controls.maxDistance = 260;
+			controls.maxPolarAngle = Math.PI * 0.495;
+
+			// Lighting
+			const ambient = new THREE.AmbientLight(0xffffff, 0.28);
+			scene.add(ambient);
+
+			const sun = new THREE.DirectionalLight(0xffffff, 1.1);
+			sun.position.copy(SUN_START_POS);
+			sun.castShadow = true;
+			sun.shadow.mapSize.set(2048, 2048);
+			sun.shadow.camera.left = -90;
+			sun.shadow.camera.right = 90;
+			sun.shadow.camera.top = 90;
+			sun.shadow.camera.bottom = -90;
+			sun.shadow.camera.near = 5;
+			sun.shadow.camera.far = 250;
+			scene.add(sun);
+
+			const sunTarget = new THREE.Object3D();
+			sunTarget.position.set(0, 0, 0);
+			scene.add(sunTarget);
+			sun.target = sunTarget;
+
+			// Grid helper at y=0
+			const gridHelper = new THREE.GridHelper(TERRAIN_SIZE, 20, GRID_COLOR_1, GRID_COLOR_2);
+			gridHelper.position.y = 0;
+			gridHelper.visible = true;
+			scene.add(gridHelper);
+
+			// Ground reference (just for subtle horizon cue)
+			const groundRing = new THREE.Mesh(
+				new THREE.CircleGeometry(TERRAIN_SIZE * 2.4, 64),
+				new THREE.MeshStandardMaterial({ color: 0x0f1622, roughness: 1.0, metalness: 0.0 })
+			);
+			groundRing.rotation.x = -Math.PI / 2;
+			groundRing.position.y = -0.03;
+			groundRing.receiveShadow = true;
+			scene.add(groundRing);
+
+			// ---------------------------
+			// Terrain generation
+			// ---------------------------
+			let terrainMesh = null;
+			let currentSeed = randomSeed();
+			let noise = new SimplexNoise2D(currentSeed);
+
+			function generateTerrainGeometry() {
+				const geometry = new THREE.PlaneGeometry(TERRAIN_SIZE, TERRAIN_SIZE, TERRAIN_SEGMENTS, TERRAIN_SEGMENTS);
+				geometry.rotateX(-Math.PI / 2);
+
+				const pos = geometry.attributes.position;
+				const colors = new Float32Array(pos.count * 3);
+
+				// Track min/max to normalize heights
+				let minH = Infinity;
+				let maxH = -Infinity;
+
+				// First pass: compute heights
+				const heights = new Float32Array(pos.count);
+				for (let i = 0; i < pos.count; i++) {
+					const x = pos.getX(i);
+					const z = pos.getZ(i);
+
+					// Normalize x/z to noise domain
+					const nx = x * NOISE_SCALE;
+					const nz = z * NOISE_SCALE;
+
+					let h = fbm(noise, nx, nz); // approx [-1,1]
+					h = (h * 0.5 + 0.5); // -> [0,1]
+					h = Math.pow(clamp(h, 0, 1), HEIGHT_POWER);
+					h = TERRAIN_BASE_HEIGHT + h * TERRAIN_MAX_HEIGHT;
+
+					heights[i] = h;
+					minH = Math.min(minH, h);
+					maxH = Math.max(maxH, h);
+				}
+
+				const range = Math.max(0.0001, maxH - minH);
+				for (let i = 0; i < pos.count; i++) {
+					const h = heights[i];
+					pos.setY(i, h);
+
+					const hn = (h - minH) / range;
+					const c = heightToColor(hn);
+					colors[i * 3 + 0] = c.r;
+					colors[i * 3 + 1] = c.g;
+					colors[i * 3 + 2] = c.b;
+				}
+
+				geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+				geometry.computeVertexNormals();
+				pos.needsUpdate = true;
+				return geometry;
+			}
+
+			function createTerrainMesh() {
+				const geometry = generateTerrainGeometry();
+				const material = new THREE.MeshStandardMaterial({
+					vertexColors: true,
+					roughness: 0.92,
+					metalness: 0.0,
+					flatShading: false,
+				});
+				const mesh = new THREE.Mesh(geometry, material);
+				mesh.castShadow = false;
+				mesh.receiveShadow = true;
+				return mesh;
+			}
+
+			function regenerateTerrain(newSeed = randomSeed()) {
+				currentSeed = newSeed >>> 0;
+				noise = new SimplexNoise2D(currentSeed);
+				const newMesh = createTerrainMesh();
+				if (terrainMesh) {
+					scene.remove(terrainMesh);
+					terrainMesh.geometry.dispose();
+					terrainMesh.material.dispose();
+				}
+				terrainMesh = newMesh;
+				scene.add(terrainMesh);
+				logLine(`Terrain regenerated (seed=${currentSeed}).`);
+			}
+
+			regenerateTerrain(currentSeed);
+
+			// ---------------------------
+			// Input handling
+			// ---------------------------
+			const keysDown = new Set();
+			let wantsFastMove = false;
+
+			function setGridVisible(nextVisible) {
+				gridHelper.visible = nextVisible;
+				logLine(`Grid ${gridHelper.visible ? 'shown' : 'hidden'}.`);
+			}
+
+			window.addEventListener('keydown', (e) => {
+				// Prevent arrow keys from scrolling the page
+				if ([
+					'ArrowUp',
+					'ArrowDown',
+					'ArrowLeft',
+					'ArrowRight',
+					'Space',
+				].includes(e.code)) {
+					e.preventDefault();
+				}
+
+				keysDown.add(e.code);
+				wantsFastMove = e.shiftKey;
+
+				if (e.code === 'KeyP' && !e.repeat) {
+					setGridVisible(!gridHelper.visible);
+				}
+				if (e.code === 'KeyR' && !e.repeat) {
+					regenerateTerrain(randomSeed());
+				}
+			}, { passive: false });
+
+			window.addEventListener('keyup', (e) => {
+				keysDown.delete(e.code);
+				wantsFastMove = e.shiftKey;
+			});
+
+			function moveSunByArrows() {
+				let moved = false;
+				if (keysDown.has('ArrowLeft')) {
+					sun.position.x -= SUN_STEP;
+					moved = true;
+				}
+				if (keysDown.has('ArrowRight')) {
+					sun.position.x += SUN_STEP;
+					moved = true;
+				}
+				if (keysDown.has('ArrowUp')) {
+					sun.position.z -= SUN_STEP;
+					moved = true;
+				}
+				if (keysDown.has('ArrowDown')) {
+					sun.position.z += SUN_STEP;
+					moved = true;
+				}
+
+				if (!moved) return;
+				sun.position.x = clamp(sun.position.x, -SUN_MIN_MAX, SUN_MIN_MAX);
+				sun.position.z = clamp(sun.position.z, -SUN_MIN_MAX, SUN_MIN_MAX);
+			}
+
+			function moveCameraWASD(deltaSeconds) {
+				const forward = new THREE.Vector3();
+				camera.getWorldDirection(forward);
+				forward.y = 0;
+				forward.normalize();
+
+				const right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
+				// Note: cross(forward, up) points left; invert to get camera-right
+				right.multiplyScalar(-1);
+
+				let moveX = 0;
+				let moveZ = 0;
+				if (keysDown.has('KeyW')) moveZ += 1;
+				if (keysDown.has('KeyS')) moveZ -= 1;
+				if (keysDown.has('KeyD')) moveX += 1;
+				if (keysDown.has('KeyA')) moveX -= 1;
+				if (moveX === 0 && moveZ === 0) return;
+
+				const speed = MOVE_SPEED_UNITS_PER_SEC * (wantsFastMove ? MOVE_FAST_MULTIPLIER : 1);
+				const step = speed * deltaSeconds;
+
+				const delta = new THREE.Vector3();
+				delta.addScaledVector(right, moveX * step);
+				delta.addScaledVector(forward, moveZ * step);
+
+				// Move both camera and orbit target so the orbit feels consistent.
+				camera.position.add(delta);
+				controls.target.add(delta);
+
+				// Keep camera above ground a bit (simple clamp).
+				camera.position.y = Math.max(camera.position.y, CAMERA_HEIGHT_LOCK);
+			}
+
+			// ---------------------------
+			// HUD updates
+			// ---------------------------
+			const statusEl = document.getElementById('status');
+			function updateHUD() {
+				const camPos = camera.position;
+				const sunPos = sun.position;
+				statusEl.textContent =
+					`Camera\n${formatVec3(camPos)}\n\nSun (DirectionalLight)\n${formatVec3(sunPos)}\n\nSeed\n${currentSeed}`;
+			}
+
+			// ---------------------------
+			// Resize handling
+			// ---------------------------
+			window.addEventListener('resize', () => {
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+				renderer.setSize(window.innerWidth, window.innerHeight);
+				renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+			});
+
+			logLine('Ready. Drag to orbit, WASD to move, R to regen.');
+
+			// ---------------------------
+			// Render loop
+			// ---------------------------
+			const clock = new THREE.Clock();
+			function animate() {
+				requestAnimationFrame(animate);
+				const dt = Math.min(clock.getDelta(), 0.05);
+
+				moveSunByArrows();
+				moveCameraWASD(dt);
+				controls.update();
+				updateHUD();
+				renderer.render(scene, camera);
+			}
+			animate();
+		</script>
+	</body>
+</html>

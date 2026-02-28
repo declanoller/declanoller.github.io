@@ -1,0 +1,936 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Worley / Voronoi (Three.js)</title>
+		<link rel="icon" href="data:," />
+
+		<script type="importmap">
+			{
+				"imports": {
+					"three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+					"three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+				}
+			}
+		</script>
+
+		<style>
+			:root {
+				--hud-bg: rgba(0, 0, 0, 0.55);
+				--hud-border: rgba(255, 255, 255, 0.18);
+				--hud-text: rgba(255, 255, 255, 0.92);
+				--hud-subtext: rgba(255, 255, 255, 0.72);
+			}
+			html,
+			body {
+				margin: 0;
+				padding: 0;
+				width: 100%;
+				height: 100%;
+				overflow: hidden;
+				background: #0b0e14;
+				font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial,
+					"Apple Color Emoji", "Segoe UI Emoji";
+			}
+			#app {
+				position: fixed;
+				inset: 0;
+			}
+			canvas {
+				display: block;
+				width: 100%;
+				height: 100%;
+			}
+
+			.hud {
+				position: fixed;
+				z-index: 10;
+				width: 20vw;
+				height: 30vh;
+				min-width: 260px;
+				min-height: 180px;
+				max-width: 520px;
+				max-height: 380px;
+				box-sizing: border-box;
+				padding: 12px 12px;
+				border: 1px solid var(--hud-border);
+				border-radius: 10px;
+				background: var(--hud-bg);
+				backdrop-filter: blur(6px);
+				color: var(--hud-text);
+				font-size: 13px;
+				line-height: 1.25;
+				overflow: auto;
+			}
+			#hudLeft {
+				top: 10px;
+				left: 10px;
+			}
+			#hudRight {
+				top: 10px;
+				right: 10px;
+			}
+			.hud h2 {
+				margin: 0 0 8px 0;
+				font-size: 13px;
+				letter-spacing: 0.02em;
+				text-transform: uppercase;
+				color: var(--hud-subtext);
+			}
+			.mono {
+				font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+					"Courier New", monospace;
+			}
+			.kv {
+				display: grid;
+				grid-template-columns: auto 1fr;
+				gap: 4px 10px;
+			}
+			.kv .k {
+				color: var(--hud-subtext);
+				white-space: nowrap;
+			}
+			.kv .v {
+				white-space: pre-wrap;
+				word-break: break-word;
+			}
+			.divider {
+				height: 1px;
+				background: var(--hud-border);
+				margin: 10px 0;
+			}
+			.log {
+				margin-top: 6px;
+				color: var(--hud-subtext);
+				white-space: pre-wrap;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="app"></div>
+
+		<div id="hudLeft" class="hud">
+			<h2>Help</h2>
+			<div class="kv mono">
+				<div class="k">Mouse</div>
+				<div class="v">Drag: rotate · Wheel: zoom · Shift+Drag: pan</div>
+				<div class="k">WASD</div>
+				<div class="v">Move camera (relative to view) · Hold S to move backward</div>
+				<div class="k">R</div>
+				<div class="v">Regenerate with new seed</div>
+				<div class="k">T</div>
+				<div class="v">Cycle render modes</div>
+				<div class="k">M</div>
+				<div class="v">Toggle moving feature points</div>
+				<div class="k">G</div>
+				<div class="v">Toggle grid</div>
+				<div class="k">S (tap)</div>
+				<div class="v">Toggle helper visuals (sun + axes)</div>
+				<div class="k">H</div>
+				<div class="v">Toggle HUD</div>
+				<div class="k">Arrow Keys</div>
+				<div class="v">Move sun in X/Z</div>
+			</div>
+			<div class="divider"></div>
+			<div id="regionInfo" class="mono" style="color: var(--hud-subtext)"></div>
+		</div>
+
+		<div id="hudRight" class="hud">
+			<h2>Status</h2>
+			<div class="kv mono" id="statusKv"></div>
+			<div class="divider"></div>
+			<div class="mono log" id="logBox"></div>
+		</div>
+
+		<script type="module">
+			import * as THREE from 'three';
+			import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+			// =========================
+			// Scene / World constants
+			// =========================
+			const REGION_SIZE_X = 100;
+			const REGION_SIZE_Z_MULT_FACTOR = 1.8;
+			const REGION_SIZE_Z = Math.round(REGION_SIZE_Z_MULT_FACTOR * REGION_SIZE_X);
+			const REGION_CENTER = new THREE.Vector3(REGION_SIZE_X / 2, 0, REGION_SIZE_Z / 2);
+			const GROUND_Y = 0;
+			const PLANE_SEGMENTS_X = 20;
+			const PLANE_SEGMENTS_Z = Math.max(1, Math.round(PLANE_SEGMENTS_X * REGION_SIZE_Z_MULT_FACTOR));
+
+			// Worley / Voronoi constants
+			const FEATURE_POINT_COUNT = 120;
+			const FEATURE_POINT_RANDOM_WALK_SPEED = 0.12; // normalized units per second (uv space)
+			const FEATURE_POINT_RANDOM_WALK_TURN_RATE = 3; // rad/sec
+			// Keep cells isotropic in world space even for non-square regions.
+			// We measure Worley distances in a metric where 1 unit in U equals 1 unit in V * (REGION_SIZE_Z/REGION_SIZE_X).
+			const WORLEY_ASPECT = REGION_SIZE_Z / REGION_SIZE_X;
+			const WORLEY_DISTANCE_MAX = Math.hypot(1, WORLEY_ASPECT); // max metric distance within [0,1]^2
+
+			// Camera / controls constants
+			const CAMERA_START = new THREE.Vector3(REGION_CENTER.x, 85, REGION_CENTER.z);
+			const CAMERA_NEAR = 0.1;
+			const CAMERA_FAR = 800;
+			const ORBIT_DAMPING = 0.08;
+			const WASD_MOVE_SPEED = 22; // world units/sec
+			const WASD_BOOST_MULTIPLIER = 2.2; // hold Shift to move faster
+
+			// Sun controls constants
+			const SUN_START_POS = new THREE.Vector3(240, 140, 90);
+			const SUN_STEP = 6; // world units per key press
+			const SUN_MIN_Y = 20;
+
+			// Rendering constants
+			const CLEAR_COLOR = 0x0b0e14;
+			const PIXEL_RATIO_CAP = 2;
+			const AMBIENT_LIGHT_INTENSITY = 0.3;
+			const LAMBERT_INTENSITY = 0.95;
+			const HEIGHT_AMPLITUDE = 20; // world units (increased for more relief)
+			const NOISE_RANGE_SAMPLES = 22; // CPU samples per axis to estimate min/max noise
+			const NOISE_COLOR_EXPONENT = 2; // f(x)=x^a applied after min/max normalization (a=1 is linear)
+			const CELL_OUTLINE_WIDTH_UV = 0.012; // uv-space thickness for Voronoi outlines
+			const FEATURE_POINT_RADIUS_UV = 0.005; // uv-space radius for feature point dots
+			const HIGH_COLOR_HEX = '#f20c55';
+
+			// Render modes
+			const RenderMode = Object.freeze({
+				ColoredFlat: 0,
+				ColoredHeight: 1,
+				CellsBW: 2,
+			});
+			const RENDER_MODE_NAMES = {
+				[RenderMode.ColoredFlat]: 'Colored (Black→Red) — flat',
+				[RenderMode.ColoredHeight]: 'Colored (Black→Red) + heightmap',
+				[RenderMode.CellsBW]: 'Voronoi cells — B/W',
+			};
+
+			// =========================
+			// DOM helpers (HUD)
+			// =========================
+			const hudLeft = document.getElementById('hudLeft');
+			const hudRight = document.getElementById('hudRight');
+			const statusKv = document.getElementById('statusKv');
+			const logBox = document.getElementById('logBox');
+			const regionInfo = document.getElementById('regionInfo');
+
+			const logLines = [];
+			const LOG_LINE_LIMIT = 10;
+			function pushLog(message) {
+				const ts = new Date().toLocaleTimeString();
+				logLines.unshift(`[${ts}] ${message}`);
+				logLines.splice(LOG_LINE_LIMIT);
+				logBox.textContent = logLines.join('\n');
+			}
+
+			function setStatus(rows) {
+				statusKv.innerHTML = '';
+				for (const [k, v] of rows) {
+					const kDiv = document.createElement('div');
+					kDiv.className = 'k';
+					kDiv.textContent = k;
+					const vDiv = document.createElement('div');
+					vDiv.className = 'v';
+					vDiv.textContent = v;
+					statusKv.appendChild(kDiv);
+					statusKv.appendChild(vDiv);
+				}
+			}
+
+			function fmtVec3(v) {
+				return `${v.x.toFixed(2)}, ${v.y.toFixed(2)}, ${v.z.toFixed(2)}`;
+			}
+
+			regionInfo.textContent = `Region: ${REGION_SIZE_X}×${REGION_SIZE_Z} (Z=${REGION_SIZE_Z_MULT_FACTOR}×X; x,z ∈ [0,${REGION_SIZE_X}]×[0,${REGION_SIZE_Z}])`;
+
+			// =========================
+			// Deterministic RNG
+			// =========================
+			function mulberry32(seed) {
+				let t = seed >>> 0;
+				return function random() {
+					t += 0x6d2b79f5;
+					let r = Math.imul(t ^ (t >>> 15), 1 | t);
+					r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
+					return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+				};
+			}
+
+			function randomSeed() {
+				return (Math.random() * 0xffffffff) >>> 0;
+			}
+
+			// =========================
+			// CPU-side Worley utilities (for height baseline)
+			// =========================
+			function worleyF1F2AndIdx(pUv) {
+				let d1 = Infinity;
+				let d2 = Infinity;
+				let idx = 0;
+				for (let i = 0; i < FEATURE_POINT_COUNT; i++) {
+					const dx = pUv.x - featurePoints[i].x;
+					const dy = pUv.y - featurePoints[i].y;
+					const d = Math.hypot(dx, dy * WORLEY_ASPECT);
+					if (d < d1) {
+						d2 = d1;
+						d1 = d;
+						idx = i;
+					} else if (d < d2) {
+						d2 = d;
+					}
+				}
+				return { d1, d2, idx };
+			}
+
+			function worleyNoise01(pUv) {
+				const { d1 } = worleyF1F2AndIdx(pUv);
+				const t = Math.min(1, Math.max(0, d1 / WORLEY_DISTANCE_MAX));
+				return 1 - t;
+			}
+
+			function estimateNoiseRange01(samplesPerAxis) {
+				let minN = 1;
+				let maxN = 0;
+				for (let y = 0; y < samplesPerAxis; y++) {
+					for (let x = 0; x < samplesPerAxis; x++) {
+						const u = (x + 0.5) / samplesPerAxis;
+						const v = (y + 0.5) / samplesPerAxis;
+						const n = worleyNoise01({ x: u, y: v });
+						if (n < minN) minN = n;
+						if (n > maxN) maxN = n;
+					}
+				}
+				return { minN, maxN };
+			}
+
+			// =========================
+			// Three.js setup
+			// =========================
+			const app = document.getElementById('app');
+			const scene = new THREE.Scene();
+			scene.background = new THREE.Color(CLEAR_COLOR);
+
+			const camera = new THREE.PerspectiveCamera(
+				55,
+				window.innerWidth / window.innerHeight,
+				CAMERA_NEAR,
+				CAMERA_FAR
+			);
+			camera.position.copy(CAMERA_START);
+			// Looking straight down makes the default up vector degenerate.
+			// Set up so screen left/right aligns with world Z.
+			camera.up.set(1, 0, 0);
+			camera.lookAt(REGION_CENTER);
+
+			const renderer = new THREE.WebGLRenderer({ antialias: true });
+			renderer.setSize(window.innerWidth, window.innerHeight);
+			renderer.setPixelRatio(Math.min(window.devicePixelRatio, PIXEL_RATIO_CAP));
+			renderer.outputColorSpace = THREE.SRGBColorSpace;
+			app.appendChild(renderer.domElement);
+
+			const controls = new OrbitControls(camera, renderer.domElement);
+			controls.target.copy(REGION_CENTER);
+			controls.enableDamping = true;
+			controls.dampingFactor = ORBIT_DAMPING;
+			controls.enablePan = true;
+			controls.screenSpacePanning = false;
+			controls.minDistance = 3;
+			controls.maxDistance = 320;
+			controls.maxPolarAngle = Math.PI * 0.49;
+			controls.mouseButtons.LEFT = THREE.MOUSE.ROTATE;
+			controls.mouseButtons.MIDDLE = THREE.MOUSE.DOLLY;
+			controls.mouseButtons.RIGHT = THREE.MOUSE.PAN;
+
+			// Shift+drag to pan (temporarily remap left mouse)
+			const leftButtonDefault = controls.mouseButtons.LEFT;
+			window.addEventListener('keydown', (e) => {
+				if (e.key === 'Shift') controls.mouseButtons.LEFT = THREE.MOUSE.PAN;
+			});
+			window.addEventListener('keyup', (e) => {
+				if (e.key === 'Shift') controls.mouseButtons.LEFT = leftButtonDefault;
+			});
+
+			// Helpers
+			function createRectGrid(width, depth, cellSize = 1, majorEvery = 10) {
+				const minorColor = new THREE.Color(0x1a2131);
+				const majorColor = new THREE.Color(0x2b3345);
+
+				const halfW = width / 2;
+				const halfD = depth / 2;
+				const xLines = Math.floor(width / cellSize) + 1;
+				const zLines = Math.floor(depth / cellSize) + 1;
+				const totalLines = xLines + zLines;
+
+				const positions = new Float32Array(totalLines * 2 * 3);
+				const colors = new Float32Array(totalLines * 2 * 3);
+				let o = 0;
+				let c = 0;
+
+				function pushVertex(x, y, z, col) {
+					positions[o++] = x;
+					positions[o++] = y;
+					positions[o++] = z;
+					colors[c++] = col.r;
+					colors[c++] = col.g;
+					colors[c++] = col.b;
+				}
+
+				for (let i = 0; i < xLines; i++) {
+					const x = -halfW + i * cellSize;
+					const isMajor = majorEvery > 0 && i % majorEvery === 0;
+					const col = isMajor ? majorColor : minorColor;
+					pushVertex(x, 0, -halfD, col);
+					pushVertex(x, 0, +halfD, col);
+				}
+
+				for (let k = 0; k < zLines; k++) {
+					const z = -halfD + k * cellSize;
+					const isMajor = majorEvery > 0 && k % majorEvery === 0;
+					const col = isMajor ? majorColor : minorColor;
+					pushVertex(-halfW, 0, z, col);
+					pushVertex(+halfW, 0, z, col);
+				}
+
+				const geom = new THREE.BufferGeometry();
+				geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+				geom.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+				const mat = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.9 });
+				const lines = new THREE.LineSegments(geom, mat);
+				lines.position.set(REGION_CENTER.x, GROUND_Y, REGION_CENTER.z);
+				return lines;
+			}
+
+			const grid = createRectGrid(REGION_SIZE_X, REGION_SIZE_Z, 1, 10);
+			scene.add(grid);
+
+			const axes = new THREE.AxesHelper(12);
+			axes.position.set(0, 0.01, 0);
+			scene.add(axes);
+
+			// =========================
+			// Sun (directional light) + uniforms
+			// =========================
+			const sunLight = new THREE.DirectionalLight(0xffffff, 1.2);
+			sunLight.position.copy(SUN_START_POS);
+			sunLight.target.position.copy(REGION_CENTER);
+			scene.add(sunLight);
+			scene.add(sunLight.target);
+
+			const sunHelper = new THREE.DirectionalLightHelper(sunLight, 10, 0xfff1cc);
+			scene.add(sunHelper);
+
+			const ambient = new THREE.AmbientLight(0xffffff, 0.20);
+			scene.add(ambient);
+            
+			// Default helper visuals OFF (grid + sun helper + axes)
+			grid.visible = false;
+			sunHelper.visible = false;
+			axes.visible = false;
+
+			// =========================
+			// Worley / Voronoi feature points (encoded in a DataTexture)
+			// =========================
+			let seed = randomSeed();
+			let rng = mulberry32(seed);
+			let movingFeaturePoints = false;
+			let renderMode = RenderMode.ColoredFlat;
+			let noiseMin01 = 0.0;
+			let noiseMax01 = 1.0;
+			let worleyMaterial;
+
+			// feature points in uv space [0,1]
+			const featurePoints = Array.from({ length: FEATURE_POINT_COUNT }, () => new THREE.Vector2());
+			const featureVelocities = Array.from({ length: FEATURE_POINT_COUNT }, () => new THREE.Vector2());
+
+			const pointsTexData = new Float32Array(FEATURE_POINT_COUNT * 4);
+			const pointsTexture = new THREE.DataTexture(
+				pointsTexData,
+				FEATURE_POINT_COUNT,
+				1,
+				THREE.RGBAFormat,
+				THREE.FloatType
+			);
+			pointsTexture.magFilter = THREE.NearestFilter;
+			pointsTexture.minFilter = THREE.NearestFilter;
+			pointsTexture.wrapS = THREE.ClampToEdgeWrapping;
+			pointsTexture.wrapT = THREE.ClampToEdgeWrapping;
+			pointsTexture.needsUpdate = true;
+
+			function resetFeaturePoints(newSeed) {
+				seed = newSeed;
+				rng = mulberry32(seed);
+				for (let i = 0; i < FEATURE_POINT_COUNT; i++) {
+					featurePoints[i].set(rng(), rng());
+					const ang = rng() * Math.PI * 2;
+					featureVelocities[i].set(Math.cos(ang), Math.sin(ang)).multiplyScalar(0.25 + rng() * 0.75);
+				}
+				writePointsTexture();
+				const { minN, maxN } = estimateNoiseRange01(NOISE_RANGE_SAMPLES);
+				noiseMin01 = minN;
+				noiseMax01 = maxN;
+				if (worleyMaterial) {
+					worleyMaterial.uniforms.uNoiseMin.value = noiseMin01;
+					worleyMaterial.uniforms.uNoiseMax.value = noiseMax01;
+				}
+				pushLog(`Regenerated feature points (seed=${seed}).`);
+			}
+
+			function writePointsTexture() {
+				for (let i = 0; i < FEATURE_POINT_COUNT; i++) {
+					const o = i * 4;
+					pointsTexData[o + 0] = featurePoints[i].x;
+					pointsTexData[o + 1] = featurePoints[i].y;
+					pointsTexData[o + 2] = 0;
+					pointsTexData[o + 3] = 1;
+				}
+				pointsTexture.needsUpdate = true;
+			}
+
+			resetFeaturePoints(seed);
+			// Noise min/max is sampled in resetFeaturePoints() and kept fixed
+			// even while feature points move, to avoid vertical "jumping".
+
+			// =========================
+			// Shader (Worley noise in fragment + optional vertex displacement)
+			// =========================
+			const vertexShader = /* glsl */ `
+				precision highp float;
+
+				uniform sampler2D uPointsTex;
+				uniform float uHeightAmplitude;
+				uniform float uNoiseMin;
+				uniform float uNoiseMax;
+				uniform float uUvNeighborStep;
+
+				varying vec2 vUv;
+				varying vec3 vWorldPos;
+				varying vec3 vWorldNormal;
+				varying float vNoise;
+
+				#define FEATURE_POINT_COUNT ${FEATURE_POINT_COUNT}
+				const float WORLEY_ASPECT = ${WORLEY_ASPECT.toFixed(8)};
+				const float WORLEY_DISTANCE_MAX = ${WORLEY_DISTANCE_MAX.toFixed(8)};
+
+				vec2 getPoint(int idx) {
+					float x = (float(idx) + 0.5) / float(FEATURE_POINT_COUNT);
+					return texture2D(uPointsTex, vec2(x, 0.5)).xy;
+				}
+
+				float worleyF1(vec2 p) {
+					float dMin = 1e9;
+					for (int i = 0; i < FEATURE_POINT_COUNT; i++) {
+						vec2 fp = getPoint(i);
+						float d = length((p - fp) * vec2(1.0, WORLEY_ASPECT));
+						dMin = min(dMin, d);
+					}
+					return dMin;
+				}
+
+				float worleyNoise(vec2 p) {
+					float f1 = worleyF1(p);
+					float t = clamp(f1 / WORLEY_DISTANCE_MAX, 0.0, 1.0);
+					return 1.0 - t;
+				}
+
+				void main() {
+					vUv = uv;
+
+					float n = worleyNoise(uv);
+					vNoise = n;
+					float denom = max(uNoiseMax - uNoiseMin, 1e-6);
+					float h = clamp((n - uNoiseMin) / denom, 0.0, 1.0);
+
+					vec3 displaced = position;
+					displaced.y += uHeightAmplitude * h;
+
+					vec4 world = modelMatrix * vec4(displaced, 1.0);
+					vWorldPos = world.xyz;
+
+					// Approx normal: take original normal in world; good enough for a stylized heightfield.
+					vWorldNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz);
+
+					gl_Position = projectionMatrix * modelViewMatrix * vec4(displaced, 1.0);
+				}
+			`;
+
+			const fragmentShader = /* glsl */ `
+				precision highp float;
+
+				#ifdef GL_OES_standard_derivatives
+				#extension GL_OES_standard_derivatives : enable
+				#endif
+
+				uniform sampler2D uPointsTex;
+				uniform int uRenderMode;
+				uniform vec3 uSunPos;
+				uniform vec3 uCameraPos;
+				uniform float uAmbient;
+				uniform float uLambert;
+				uniform float uSpecularStrength;
+				uniform float uShininess;
+				uniform float uCellEdgeWidth;
+				uniform float uPointRadius;
+				uniform float uNoiseMin;
+				uniform float uNoiseMax;
+				uniform float uNoiseColorExponent;
+				uniform vec3 uHighColor;
+				uniform float uUvNeighborStep;
+
+				varying vec2 vUv;
+				varying vec3 vWorldPos;
+				varying vec3 vWorldNormal;
+				varying float vNoise;
+
+				#define FEATURE_POINT_COUNT ${FEATURE_POINT_COUNT}
+				const float WORLEY_ASPECT = ${WORLEY_ASPECT.toFixed(8)};
+				const float WORLEY_DISTANCE_MAX = ${WORLEY_DISTANCE_MAX.toFixed(8)};
+
+				vec2 getPoint(int idx) {
+					float x = (float(idx) + 0.5) / float(FEATURE_POINT_COUNT);
+					return texture2D(uPointsTex, vec2(x, 0.5)).xy;
+				}
+
+				void worleyF1F2(vec2 p, out float f1, out float f2, out int nearestIdx) {
+					float d1 = 1e9;
+					float d2 = 1e9;
+					int best = 0;
+					for (int i = 0; i < FEATURE_POINT_COUNT; i++) {
+						vec2 fp = getPoint(i);
+						float d = length((p - fp) * vec2(1.0, WORLEY_ASPECT));
+						if (d < d1) {
+							d2 = d1;
+							d1 = d;
+							best = i;
+						} else if (d < d2) {
+							d2 = d;
+						}
+					}
+					f1 = d1;
+					f2 = d2;
+					nearestIdx = best;
+				}
+
+				float worleyNoise(vec2 p) {
+					int idx;
+					float f1;
+					float f2;
+					worleyF1F2(p, f1, f2, idx);
+					float t = clamp(f1 / WORLEY_DISTANCE_MAX, 0.0, 1.0);
+					return 1.0 - t;
+				}
+
+				float hash01(float x) {
+					return fract(sin(x * 12.9898) * 43758.5453);
+				}
+
+				void main() {
+					// Render modes:
+					// 0 = ColoredFlat
+					// 1 = ColoredHeight
+					// 2 = CellsBW
+
+					int nearestIdx;
+					float f1;
+					float f2;
+					worleyF1F2(vUv, f1, f2, nearestIdx);
+					float t = clamp(f1 / WORLEY_DISTANCE_MAX, 0.0, 1.0);
+					float noise = 1.0 - t;
+					float denom = max(uNoiseMax - uNoiseMin, 1e-6);
+					float noiseNorm = clamp((noise - uNoiseMin) / denom, 0.0, 1.0);
+
+					if (uRenderMode == 2) {
+						// White interiors, black outlines + black feature points.
+						float edgeMetric = f2 - f1;
+						float edge = 1.0 - smoothstep(0.0, uCellEdgeWidth, edgeMetric);
+						float pointDot = 1.0 - smoothstep(uPointRadius * 0.7, uPointRadius, f1);
+						float ink = max(edge, pointDot);
+						vec3 col = mix(vec3(1.0), vec3(0.0), clamp(ink, 0.0, 1.0));
+						gl_FragColor = vec4(col, 1.0);
+						return;
+					}
+
+					// Colormap: black -> uHighColor, using full sampled noise range,
+					// then an optional nonlinear shaping step f(x)=x^a.
+					float a = max(uNoiseColorExponent, 1e-6);
+					float noiseShaped = pow(noiseNorm, a);
+					vec3 baseColor = mix(vec3(0.0), uHighColor, noiseShaped);
+
+					vec3 V = normalize(uCameraPos - vWorldPos);
+					vec3 L = normalize(uSunPos - vWorldPos);
+
+					// Lighting: use screen-space derivatives for a better normal on displaced terrain.
+					vec3 nrm = normalize(cross(dFdx(vWorldPos), dFdy(vWorldPos)));
+					if (nrm.y < 0.0) nrm = -nrm;
+
+					float ndotl = max(dot(nrm, L), 0.0);
+					float shade = uAmbient + uLambert * ndotl;
+					vec3 diffuse = baseColor * shade;
+
+					// Specular (Blinn-Phong)
+					vec3 H = normalize(L + V);
+					float spec = pow(max(dot(nrm, H), 0.0), uShininess) * uSpecularStrength;
+					vec3 col = diffuse + vec3(spec);
+
+					gl_FragColor = vec4(col, 1.0);
+				}
+			`;
+
+			worleyMaterial = new THREE.ShaderMaterial({
+				vertexShader,
+				fragmentShader,
+				uniforms: {
+					uPointsTex: { value: pointsTexture },
+					uRenderMode: { value: renderMode },
+					uSunPos: { value: sunLight.position.clone() },
+					uCameraPos: { value: camera.position.clone() },
+					uAmbient: { value: AMBIENT_LIGHT_INTENSITY },
+					uLambert: { value: LAMBERT_INTENSITY },
+					uSpecularStrength: { value: 0.82 },
+					uShininess: { value: 90.0 },
+					uHeightAmplitude: { value: 0.0 },
+					uNoiseMin: { value: noiseMin01 },
+					uNoiseMax: { value: noiseMax01 },
+					uNoiseColorExponent: { value: NOISE_COLOR_EXPONENT },
+					uHighColor: { value: new THREE.Color(HIGH_COLOR_HEX) },
+					uCellEdgeWidth: { value: CELL_OUTLINE_WIDTH_UV },
+					uPointRadius: { value: FEATURE_POINT_RADIUS_UV },
+					uUvNeighborStep: { value: 1.0 / Math.max(PLANE_SEGMENTS_X, PLANE_SEGMENTS_Z) },
+				},
+				extensions: { derivatives: true },
+			});
+			worleyMaterial.toneMapped = false;
+			// uniforms uNoiseMin/uNoiseMax are initialized from the current feature points
+
+			const planeGeom = new THREE.PlaneGeometry(
+				REGION_SIZE_X,
+				REGION_SIZE_Z,
+				PLANE_SEGMENTS_X,
+				PLANE_SEGMENTS_Z
+			);
+			planeGeom.rotateX(-Math.PI / 2);
+			planeGeom.translate(REGION_CENTER.x, GROUND_Y, REGION_CENTER.z);
+			const planeMesh = new THREE.Mesh(planeGeom, worleyMaterial);
+			planeMesh.receiveShadow = false;
+			scene.add(planeMesh);
+
+			// =========================
+			// Input: WASD (camera move), arrow keys (sun move), R/T/M toggles
+			// =========================
+			const pressed = new Set();
+			let gridVisible = false;
+			let sunHelperVisible = false;
+			let hudVisible = true;
+
+			const HOLD_TO_MOVE_THRESHOLD_MS = 160;
+			let sKeyIsDown = false;
+			let sKeyMoves = false;
+			let sKeyDownAt = 0;
+
+			window.addEventListener('keydown', (e) => {
+				// Special handling: tap S toggles sun helper; hold S moves backward.
+				if (e.code === 'KeyS' && !e.repeat) {
+					sKeyIsDown = true;
+					sKeyMoves = false;
+					sKeyDownAt = performance.now();
+					window.setTimeout(() => {
+						if (sKeyIsDown && !sKeyMoves) {
+							sKeyMoves = true;
+							pressed.add('KeyS');
+						}
+					}, HOLD_TO_MOVE_THRESHOLD_MS);
+					return;
+				}
+
+				pressed.add(e.code);
+
+				if (e.code === 'KeyH' && !e.repeat) {
+					hudVisible = !hudVisible;
+					hudLeft.style.display = hudVisible ? '' : 'none';
+					hudRight.style.display = hudVisible ? '' : 'none';
+					pushLog(`HUD: ${hudVisible ? 'ON' : 'OFF'}`);
+				}
+
+				if (e.code === 'KeyG' && !e.repeat) {
+					gridVisible = !gridVisible;
+					grid.visible = gridVisible;
+					pushLog(`Grid: ${gridVisible ? 'ON' : 'OFF'}`);
+				}
+
+				if (e.code === 'KeyR') {
+					resetFeaturePoints(randomSeed());
+				}
+
+				if (e.code === 'KeyT') {
+					renderMode = (renderMode + 1) % 3;
+					worleyMaterial.uniforms.uRenderMode.value = renderMode;
+					worleyMaterial.uniforms.uHeightAmplitude.value =
+						renderMode === RenderMode.ColoredHeight ? HEIGHT_AMPLITUDE : 0.0;
+					pushLog(`Mode: ${RENDER_MODE_NAMES[renderMode]}`);
+				}
+
+				if (e.code === 'KeyM') {
+					movingFeaturePoints = !movingFeaturePoints;
+					pushLog(`Moving feature points: ${movingFeaturePoints ? 'ON' : 'OFF'}`);
+				}
+
+				// Discrete sun nudges (arrow keys)
+				if (e.code === 'ArrowUp') {
+					sunLight.position.z -= SUN_STEP;
+				}
+				if (e.code === 'ArrowDown') {
+					sunLight.position.z += SUN_STEP;
+				}
+				if (e.code === 'ArrowLeft') {
+					sunLight.position.x -= SUN_STEP;
+				}
+				if (e.code === 'ArrowRight') {
+					sunLight.position.x += SUN_STEP;
+				}
+				sunLight.position.y = Math.max(sunLight.position.y, SUN_MIN_Y);
+				worleyMaterial.uniforms.uSunPos.value.copy(sunLight.position);
+				sunHelper.update();
+			});
+
+			window.addEventListener('keyup', (e) => {
+				if (e.code === 'KeyS') {
+					const heldMs = performance.now() - sKeyDownAt;
+					sKeyIsDown = false;
+					if (!sKeyMoves && heldMs < HOLD_TO_MOVE_THRESHOLD_MS) {
+						sunHelperVisible = !sunHelperVisible;
+						sunHelper.visible = sunHelperVisible;
+						axes.visible = sunHelperVisible;
+						pushLog(`Helper visuals: ${sunHelperVisible ? 'ON' : 'OFF'}`);
+					}
+					pressed.delete('KeyS');
+					sKeyMoves = false;
+					return;
+				}
+				pressed.delete(e.code);
+			});
+
+			function updateWASD(dtSeconds) {
+				const forward = new THREE.Vector3();
+				camera.getWorldDirection(forward);
+				forward.y = 0;
+				forward.normalize();
+
+				const right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
+				const move = new THREE.Vector3(0, 0, 0);
+
+				if (pressed.has('KeyW')) move.add(forward);
+				if (pressed.has('KeyS')) move.sub(forward);
+				if (pressed.has('KeyD')) move.add(right);
+				if (pressed.has('KeyA')) move.sub(right);
+
+				if (move.lengthSq() === 0) return;
+				move.normalize();
+				const boost = pressed.has('ShiftLeft') || pressed.has('ShiftRight') ? WASD_BOOST_MULTIPLIER : 1.0;
+				const step = WASD_MOVE_SPEED * boost * dtSeconds;
+				move.multiplyScalar(step);
+
+				camera.position.add(move);
+				controls.target.add(move);
+			}
+
+			// =========================
+			// Feature point random walk
+			// =========================
+			function updateFeaturePoints(dtSeconds) {
+				if (!movingFeaturePoints) return;
+
+				let changed = false;
+				for (let i = 0; i < FEATURE_POINT_COUNT; i++) {
+					const v = featureVelocities[i];
+					const p = featurePoints[i];
+
+					// Slowly turn velocity for a smoother random walk
+					const ang = Math.atan2(v.y, v.x);
+					const turn = (rng() - 0.5) * FEATURE_POINT_RANDOM_WALK_TURN_RATE * dtSeconds;
+					const newAng = ang + turn;
+					v.set(Math.cos(newAng), Math.sin(newAng)).multiplyScalar(v.length());
+
+					// Apply aspect-aware motion so movement is isotropic in the same metric used by Worley.
+					p.x += v.x * FEATURE_POINT_RANDOM_WALK_SPEED * dtSeconds;
+					p.y += (v.y / WORLEY_ASPECT) * FEATURE_POINT_RANDOM_WALK_SPEED * dtSeconds;
+
+					// Bounce off borders in uv space
+					if (p.x < 0) {
+						p.x = 0;
+						v.x = Math.abs(v.x);
+					}
+					if (p.x > 1) {
+						p.x = 1;
+						v.x = -Math.abs(v.x);
+					}
+					if (p.y < 0) {
+						p.y = 0;
+						v.y = Math.abs(v.y);
+					}
+					if (p.y > 1) {
+						p.y = 1;
+						v.y = -Math.abs(v.y);
+					}
+
+					changed = true;
+				}
+
+				if (changed) writePointsTexture();
+			}
+
+			// =========================
+			// Resize
+			// =========================
+			window.addEventListener('resize', () => {
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+				renderer.setSize(window.innerWidth, window.innerHeight);
+				renderer.setPixelRatio(Math.min(window.devicePixelRatio, PIXEL_RATIO_CAP));
+			});
+
+			// =========================
+			// Animation loop
+			// =========================
+			let lastT = performance.now();
+			let fps = 0;
+			let fpsAccumTime = 0;
+			let fpsFrames = 0;
+			function animate(now) {
+				requestAnimationFrame(animate);
+				const dt = Math.min(1.0/60.0, (now - lastT) / 1000);
+				lastT = now;
+
+				fpsAccumTime += dt;
+				fpsFrames += 1;
+				if (fpsAccumTime >= 0.5) {
+					fps = fpsFrames / fpsAccumTime;
+					fpsAccumTime = 0;
+					fpsFrames = 0;
+				}
+
+				updateWASD(dt);
+				updateFeaturePoints(dt);
+				controls.update();
+
+				const viewDir = new THREE.Vector3();
+				camera.getWorldDirection(viewDir);
+
+				// Keep status HUD updated
+				setStatus([
+					['FPS', fps ? fps.toFixed(1) : '—'],
+					['Seed', String(seed)],
+					['Mode', RENDER_MODE_NAMES[renderMode]],
+					['Moving points', movingFeaturePoints ? 'ON' : 'OFF'],
+					['Camera pos', fmtVec3(camera.position)],
+					['View dir', fmtVec3(viewDir)],
+					['Sun pos', fmtVec3(sunLight.position)],
+				]);
+
+				worleyMaterial.uniforms.uCameraPos.value.copy(camera.position);
+
+				renderer.render(scene, camera);
+			}
+			requestAnimationFrame(animate);
+
+			pushLog('Ready. Press T to cycle modes.');
+		</script>
+	</body>
+</html>
