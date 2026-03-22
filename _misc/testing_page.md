@@ -247,3 +247,21 @@ flowchart TD
 
 
 
+### Mermaid with colors!?!?
+
+
+```mermaid
+graph TD
+A --> B
+A --> C
+B --> D
+B --> E
+C --> F
+C --> G
+
+classDef blue fill:#e8f0ff,stroke:#7aa2ff,stroke-width:2px,color:#1f2a44;
+classDef green fill:#e8fff0,stroke:#4caf50,stroke-width:2px,color:#1f2a44;
+
+class A blue;
+class B,C green;
+```
