@@ -236,3 +236,14 @@ C --> G
 ```
 
 
+
+### Mermaid with math??
+
+```mermaid
+flowchart TD
+    A["$$f(x)$$"] --> B["$$\mathbb{E}[X]$$"]
+    A --> C["$$\sigma^2$$"]
+```
+
+
+
