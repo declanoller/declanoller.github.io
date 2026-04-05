@@ -21,7 +21,7 @@ Please poke around, and if you’d like to contact me about anything, please ema
 
 ## CV / Professional
 
-[A probably out of date resume]({{ site.baseurl }}/assets/misc/Declan_Oller_Resume.pdf)
+[Resume / CV]({{ site.baseurl }}/assets/misc/Declan_Oller_resume.pdf)
 
 [github](https://github.com/declanoller)
 
