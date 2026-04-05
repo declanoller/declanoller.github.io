@@ -1,5 +1,5 @@
 ---
-date: 2025-10-08 00:00:00-05:00
+date: 2026-04-05 00:00:00-05:00
 layout: post
 permalink: laplacian_in_rl_wu_et_al
 thumbnail: /assets/thumbnails/laplacian_in_rl_thumbnail.png
