@@ -417,14 +417,12 @@ So basically... I can't imagine why it'd behave differently than the one-hot, wh
 
 Unfortunately, I don't remember what exactly I was doing differently when I was getting those earlier results that looked like theirs... 
 
-That said, I have a guess -- at some point I realized that while `np.linalg.eigh` returns eigenvalues in *ascending* order, `np.linalg.svd` returns them in *descending* order. When we calculate the SVD of the incidence matrix, $T = U \Sigma V^\intercal$, and take the first $d$ columns of $V$ to use as the PVFs, naively taking the first $d$ would give much worse results. Additionally, there's another possible pitfall -- for $N$ transition samples ($N > m, where $\psi(s) \in \mathbb R^m$), $T$ has shape $N \times m$, there are $m$ singular values, and $V$ has shape $m \times m$. However, depending on the SR, $m$ can be bigger than the number of states, which means there are many zero singular values.
-For one-hot SR, $m$ is exactly equal to the number of states, but for pixels SR, there end up being many zero singular values. Therefore, when selecting the $d$ columns, I think we also need to take the $d$ smallest *nonzero* ones, or else we'll be using a bunch of invalid eigenvectors.
+That said, I have a guess -- at some point I realized that while `np.linalg.eigh` returns eigenvalues in *ascending* order, `np.linalg.svd` returns them in *descending* order. When we calculate the SVD of the incidence matrix, $T = U \Sigma V^\intercal$, and take the first $d$ columns of $V$ to use as the PVFs, naively taking the first $d$ would give much worse results. Additionally, there's another possible pitfall -- for $N$ transition samples ($N > m$, where $\psi(s) \in \mathbb R^m$), $T$ has shape $N \times m$, there are $m$ singular values, and $V$ has shape $m \times m$. However, depending on the SR, $m$ can be bigger than the number of states, which means there are many zero singular values. For one-hot SR, $m$ is exactly equal to the number of states, but for pixels SR, there end up being many zero singular values. Therefore, when selecting the $d$ columns, I think we also need to take the $d$ smallest *nonzero* ones, or else we'll be using a bunch of invalid eigenvectors.
 
 
 #### Samples vs steps?
 
-Relatively minor, but: they're a bit unclear about the data they're training the learned embeddings with. In the Evaluating the Learned Representations experiments (section 5.1), the x-axis is "number of samples" and they say in the appendix that their method is trained for 
-100k training steps, so that's pretty clear.
+Relatively minor, but: they're a bit unclear about the data they're training the learned embeddings with. In the Evaluating the Learned Representations experiments (section 5.1), the x-axis is "number of samples" and they say in the appendix that their method is trained for 100k training steps, so that's pretty clear.
 
 But for the representation learning for reward shaping, they say:
 
