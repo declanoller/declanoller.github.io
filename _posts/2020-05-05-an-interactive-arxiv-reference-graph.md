@@ -11,7 +11,7 @@ I read a lot of papers to keep up to date on topics I'm interested in and find n
 
 So I wanted to visualize this for fun! but it also has the possible benefit of giving some insights. To do this, I scraped arXiv, parsed references, created a graph, and then made it interactive with d3.js.
 
-[Try it out here if you don't want to read about it!]({{site.baseurl}}/assets/html/d3_graph.html)
+[Try it out here if you don't want to read about it!]({{site.baseurl}}/assets/html/sims_and_interactive/d3_graph.html)
 
 There are lots of ways of doing this, but I did it in a quick and dirty way. Here's a brief overview. arXiv is of course free, and they do support you downloading papers/sources/etc, but they also don't want you spamming them to a ridiculous extent. I'd much rather use Google Scholar, but as of this date, they're actually very *against* this type of thing. [This article talks](https://www.nature.com/articles/d41586-018-04190-5) about a grad student's summer project being about getting data from Google Scholar, but it seems like he had to just solve lots of CAPTCHAs anyway! The reason I've heard for them being cagey is that they probably have some deal with journals that don't want their data aggregated.
 
@@ -70,7 +70,7 @@ In this case, I hacked the graph together the d3.js nodes/network presentation f
 
 I added a few features that you can only have with an interactive graph. If you hover over the node, it shows you the title and year.  If the paper is an arXiv paper, it appears with the link to it. Additionally, since it's usually pretty cluttered, I made it so everything is a little grayed out, and when you hover over a node, it highlights its references, what references it, and the links between them. If you click on a node, it focuses it, so you can click the link.
 
-[But what am I doing telling you about it when you can just try it here!]({{site.baseurl}}/assets/html/d3_graph.html)
+[But what am I doing telling you about it when you can just try it here!]({{site.baseurl}}/assets/html/sims_and_interactive/d3_graph.html)
 
 Note that you can also drag around and zoom in and out.
 

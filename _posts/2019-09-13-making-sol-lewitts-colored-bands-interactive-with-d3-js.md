@@ -7,7 +7,7 @@ image: /assets/thumbnails/full_withturb.png
 title: Making Sol LeWitt's colored bands interactive with d3.js
 ---
 
-[Skip to the full page interactive version]({{site.baseurl}}/assets/html/bands_1.html) if you don't want to read!
+[Skip to the full page interactive version]({{site.baseurl}}/assets/html/sims_and_interactive/bands_1.html) if you don't want to read!
 
 [I made a post a while ago about recreating a Sol LeWitt piece using d3.js]({{ site.baseurl }}/2019-06-21-programmatically-recreating-sol-lewitts-all-two-part-combinations-of-arcs-from-corners-and-sides-and-straight-not-straight-and-broken-lines-with-d3-js), and making it interactive. I had a lot of fun doing that one, and it wasn't even my favorite of his stuff that I saw! So, I knew I'd be back.
 
@@ -172,6 +172,6 @@ To use this, I had to employ a couple other filters. Filters are kind of functio
 
 One downside is that it's applying the same filter to the whole svg, so if you look closely, you can see when it moves that there's a kind of constant pattern "behind" the bands (or if you look closely when it's stationary, you can see some patches cross band boundaries). Ideally, I'd like them to each have their own noise pattern. I can do this, but when I tried instead applying the filter to each band, it was incredibly slow and basically couldn't move. I'm not exactly sure why this is. On the one hand, I know why it might be slow: it's just doing a pixelwise xor each time, which has gotta be intensive. On the other hand, it apparently does it fine for the whole svg. When I do it for each band, it's only doing it for the bounding area of the band. Maybe I'll figure it out someday, but for now it's a pretty diminishing return.
 
-[Anyway, here's the full, interactive version!]({{site.baseurl}}/assets/html/bands_1.html) Give it a try. If you like how it looks at a given point, there's a button to save the image! (without the button itself in the image :P)
+[Anyway, here's the full, interactive version!]({{site.baseurl}}/assets/html/sims_and_interactive/bands_1.html) Give it a try. If you like how it looks at a given point, there's a button to save the image! (without the button itself in the image :P)
 
 It was tons of fun to make this and I'm sure I'll do it again in the future. d3.js is very cool and Sol LeWitt's works are perfect for it. See you next time!

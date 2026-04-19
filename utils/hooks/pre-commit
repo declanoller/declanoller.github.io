@@ -38,3 +38,9 @@ RESIZE_THUMBNAIL_SCRIPT="$REPO_ROOT/utils/resize_thumbnails.py"
 
 echo "[pre-commit] running $RESIZE_THUMBNAIL_SCRIPT"
 python3 "$RESIZE_THUMBNAIL_SCRIPT"
+
+# Run your python util (pick python3 explicitly)
+CREATE_POSTS_JSON_SCRIPT="$REPO_ROOT/utils/create_posts_json_for_3d.py"
+
+echo "[pre-commit] running $CREATE_POSTS_JSON_SCRIPT"
+python3 "$CREATE_POSTS_JSON_SCRIPT"
