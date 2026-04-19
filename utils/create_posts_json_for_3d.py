@@ -119,6 +119,8 @@ def main():
         with open(POSTS_JSON_PATH, "w", encoding="utf-8") as f:
             json.dump(posts_sorted, f, indent=2)
         print("\t✅✅✅ posts.json updated!")
+    else:
+        print("\t✨🎯⚡ posts.json is up to date; no changes needed.")
 
 
 if __name__ == "__main__":
