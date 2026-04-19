@@ -1,5 +1,35 @@
 [
   {
+    "date": "2026-04-05",
+    "post_url": "https://declanoller.github.io/laplacian_in_rl_wu_et_al",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/laplacian_in_rl_thumbnail.png",
+    "title_text": "The Laplacian in RL"
+  },
+  {
+    "date": "2026-03-19",
+    "post_url": "https://declanoller.github.io/proc_gen_1",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/proc_gen_1_thumbnail.png",
+    "title_text": "Standard Operating Procedur...al generation"
+  },
+  {
+    "date": "2026-03-08",
+    "post_url": "https://declanoller.github.io/ogcrl_1",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/ogcrl_1_thumbnail.png",
+    "title_text": "Keep your eyes on the prize: offline GCRL with OGBench"
+  },
+  {
+    "date": "2026-02-22",
+    "post_url": "https://declanoller.github.io/2026-02-22-india",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/india_thumbnail.jpg",
+    "title_text": "Holy cow! A great time in India"
+  },
+  {
+    "date": "2026-01-21",
+    "post_url": "https://declanoller.github.io/eigenoptions",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/eigenoptions_thumbnail.png",
+    "title_text": "Eigenpurposes, eigenbehaviors, and eigenoptions, oh my!"
+  },
+  {
     "date": "2026-01-07",
     "post_url": "https://declanoller.github.io/something_fishy_pedal",
     "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/something_fishy.jpg",

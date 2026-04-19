@@ -11,10 +11,10 @@ POSTS_PATH = ROOT_PATH / "_posts"
 HTML_ASSETS_PATH = ROOT_PATH / "assets" / "html"
 POSTS_JSON_PATH = HTML_ASSETS_PATH / "site_viewer" / "posts.json"
 
-print(f"Script path: {SCRIPT_PATH}")
-print(f"Posts path: {POSTS_PATH}")
-print(f"HTML assets path: {HTML_ASSETS_PATH}")
-print(f"Posts JSON path: {POSTS_JSON_PATH}")
+print(f"\tScript path: {SCRIPT_PATH}")
+print(f"\tPosts path: {POSTS_PATH}")
+print(f"\tHTML assets path: {HTML_ASSETS_PATH}")
+print(f"\tPosts JSON path: {POSTS_JSON_PATH}")
 
 
 def convert_permalink_to_url(permalink: str) -> str:
@@ -103,10 +103,10 @@ def main():
     posts = get_all_posts(POSTS_PATH)
     posts_sorted = sort_posts(posts)
     if not POSTS_JSON_PATH.exists():
-        print("⚠️ posts.json does not exist; creating new file.")
+        print("\t⚠️ posts.json does not exist; creating new file.")
         with open(POSTS_JSON_PATH, "w", encoding="utf-8") as f:
             json.dump(posts_sorted, f, indent=2)
-        print("✅➕✅ posts.json created!")
+        print("\t✅➕✅ posts.json created!")
         return
     # If exists, compare
     with open(POSTS_JSON_PATH, "r", encoding="utf-8") as f:
@@ -115,11 +115,12 @@ def main():
         except Exception:
             old_posts = []
     if not posts_equal(posts_sorted, old_posts):
-        print("👴🏻👴🏻👴🏻 posts.json is outdated; updating file...")
+        print("\t👴🏻 👴🏻 👴🏻 posts.json is outdated; updating file...")
         with open(POSTS_JSON_PATH, "w", encoding="utf-8") as f:
             json.dump(posts_sorted, f, indent=2)
-        print("✅✅✅ posts.json updated!")
+        print("\t✅✅✅ posts.json updated!")
 
 
 if __name__ == "__main__":
     main()
+    print()
