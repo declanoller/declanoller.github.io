@@ -869,6 +869,9 @@
           if (isMobile) {
             mobileNav.style.display = "flex";
             mobileNav.setAttribute("aria-hidden", "false");
+            // Turn off the hint on mobile:
+            const hint = document.getElementById("hint");
+            hint.style.display = "none";
           }
 
         } catch (e) {
