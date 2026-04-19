@@ -9,7 +9,7 @@ SCRIPT_PATH = Path(__file__).resolve()
 ROOT_PATH = SCRIPT_PATH.parent.parent
 POSTS_PATH = ROOT_PATH / "_posts"
 HTML_ASSETS_PATH = ROOT_PATH / "assets" / "html"
-POSTS_JSON_PATH = HTML_ASSETS_PATH / "posts.json"
+POSTS_JSON_PATH = HTML_ASSETS_PATH / "site_viewer" / "posts.json"
 
 print(f"Script path: {SCRIPT_PATH}")
 print(f"Posts path: {POSTS_PATH}")
