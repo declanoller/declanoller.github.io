@@ -103,7 +103,7 @@ def main():
     posts = get_all_posts(POSTS_PATH)
     posts_sorted = sort_posts(posts)
     if not POSTS_JSON_PATH.exists():
-        print("\t⚠️ posts.json does not exist; creating new file.")
+        print("\n\t⚠️ posts.json does not exist; creating new file.")
         with open(POSTS_JSON_PATH, "w", encoding="utf-8") as f:
             json.dump(posts_sorted, f, indent=2)
         print("\t✅➕✅ posts.json created!")
@@ -115,12 +115,12 @@ def main():
         except Exception:
             old_posts = []
     if not posts_equal(posts_sorted, old_posts):
-        print("\t👴🏻 👴🏻 👴🏻 posts.json is outdated; updating file...")
+        print("\n\t👴🏻 👴🏻 👴🏻 posts.json is outdated; updating file...")
         with open(POSTS_JSON_PATH, "w", encoding="utf-8") as f:
             json.dump(posts_sorted, f, indent=2)
         print("\t✅✅✅ posts.json updated!")
     else:
-        print("\t✨🎯⚡ posts.json is up to date; no changes needed.")
+        print("\n\t✨🎯⚡ posts.json is up to date; no changes needed.")
 
 
 if __name__ == "__main__":
