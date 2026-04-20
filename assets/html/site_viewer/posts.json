@@ -1,5 +1,11 @@
 [
   {
+    "date": "2026-04-20",
+    "post_url": "https://declanoller.github.io/blogging_in_3d",
+    "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/blogging_3d_thumbnail.png",
+    "title_text": "Blogging, but in 3D"
+  },
+  {
     "date": "2026-04-05",
     "post_url": "https://declanoller.github.io/laplacian_in_rl_wu_et_al",
     "thumbnail_url": "https://declanoller.github.io/assets/thumbnails/laplacian_in_rl_thumbnail.png",
