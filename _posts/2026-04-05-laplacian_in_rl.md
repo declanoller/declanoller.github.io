@@ -310,7 +310,7 @@ This can actually be a very good measure of how well we've learned the eigenfunc
 - if the energies are all lower than the true eigenfunctions, chances are they're violating the constraint
 - if the mean of the energies match the mean of the true eigenvalues, we've found a set of orthogonal functions that collectively have the lowest energy possible, but not the *true* eigenfunctions
 
-For more info, check out the section [here]({{site.baseurl}}/laplacian-quadratic-form#the-problem).
+For more info, check out the section [here]({{site.baseurl}}/laplacian_quadratic_form#the-problem).
 
 So here's a plot of the energies for the eigenfunctions shown above (one-hot SR, 1-room maze): 
 
