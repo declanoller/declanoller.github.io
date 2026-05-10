@@ -99,7 +99,7 @@ A) any tree can be formed by starting with a single vertex, and then "splitting"
 
 B) we know that the trivial TD is a single bag/node with all vertices from $G$, and the ideal TD is one with more nodes, that each have smaller numbers of vertices.
 
-So these make me want to start with a big ol' trivial single bag TD, and then apply a splitting step where I create a new node, while also changing the subset of vertices in the source node (based on the subset we put in the new node), and then repeating that process until some stopping condition. My one question/worry with this approach is that I don't know how much "path dependency" there will be in the splitting choices. I.e., could some earlier splitting choice put us in a state where we would never find the optimal solution?
+So these make me want to start with a big ol' trivial single bag TD, and then apply a splitting step where I split a source node, creating a new node with some of the vertices, and removing some subset of vertices in the source node. Since we only care about the largest node size, repeating that process until some stopping condition should give TDs of decreasing width. My one question/worry with this approach is that I don't know how much "path dependency" there will be in the splitting choices. I.e., could some earlier splitting choice put us in a state where we would never find the optimal solution?
 
 Anyway, I need a bit more intuition for the splitting step. What does it mean to split?
 
