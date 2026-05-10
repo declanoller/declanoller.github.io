@@ -1,0 +1,1 @@
+[linktext]({{site.baseurl}}/shortlinkname)
