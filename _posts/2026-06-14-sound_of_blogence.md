@@ -1,10 +1,10 @@
 ---
 date: 2026-06-14 00:00:00-05:00
 layout: post
-permalink: 2026-06-14-sound_of_blogness
-thumbnail: /assets/thumbnails/sound_of_blogness_thumbnail.png
-image: /assets/thumbnails/sound_of_blogness_thumbnail.png
-title: The sound of blogness - a year of back to blog
+permalink: 2026-06-14-sound_of_blogence
+thumbnail: /assets/thumbnails/sound_of_blogence_thumbnail.png
+image: /assets/thumbnails/sound_of_blogence_thumbnail.png
+title: The sound of blogence - a year of back to blog
 ---
 
 And it's already been a year! How time flies when you're having mild fun and very busy.
