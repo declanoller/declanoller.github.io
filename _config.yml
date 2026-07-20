@@ -10,6 +10,7 @@ collections:
 
 plugins:
   - jekyll-seo-tag
+  - jekyll-sitemap
 
 # Optional: default image for posts/pages without one
 defaults:
