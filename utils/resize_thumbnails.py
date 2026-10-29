@@ -71,18 +71,18 @@ def ensure_under_kb(
             im = im.resize((new_w, new_h), Image.LANCZOS)
 
             save_kwargs = {}
-            if ext in (".jpg", ".jpeg"):
-                # JPEG: pick sane defaults; you can also do a quality search if you want.
-                save_kwargs = dict(optimize=True, quality=85, progressive=True)
-            elif ext == ".png":
-                # PNG: optimize + max compression level helps, but may not be enough.
-                save_kwargs = dict(optimize=True, compress_level=9)
 
-                # Optional but often huge: palette-ize thumbnails (good for web graphics)
-                # Comment out if you don't want any color quantization.
-                if im.mode not in ("P", "L"):
-                    im = im.convert("RGBA") if im.mode != "RGBA" else im
-                    im = im.quantize(colors=256, method=Image.MEDIANCUT)
+            if ext in (".jpg", ".jpeg"):
+                save_kwargs = dict(
+                    optimize=True,
+                    quality=90,
+                    progressive=True,
+                )
+            elif ext == ".png":
+                save_kwargs = dict(
+                    optimize=True,
+                    compress_level=9,
+                )
 
             im.save(file_path, **save_kwargs)
 
