@@ -111,8 +111,9 @@ It also seems like there's some version of this in E&M, or maybe certain types o
 
 Here's my best stab at saying this vague feeling briefly: maybe all the complex phenomena we see in the world are actually the result of large systems of simple elements interacting with pretty simple rules. I.e., what's sometimes called "emergence". Using fancy math, we can come up with high level ways to *describe* the systems, but when we want to actually do something with them, we end up falling back on simple building blocks.
 
-Why are the simple building blocks so effective compared to other approaches? I dunno. This seems related to the [Bitter Lesson](https://en.wikipedia.org/wiki/Bitter_lesson). It seems like a premise I'm dancing around here is that there's a kind of ladder of abstraction layers in nature, and it goes in only one direction -- from local/easily described/more "real" layers, to less local and more abstract layers. I'm sure smarter people than me would have examples of where this fails. However, if we're willing to buy that, then it wouldn't surprise me if we need simple but flexible building blocks to mimic and manipulate the world: trying to do it "top-down" is trying to cram the square peg of irreducible complexity into the round hole of some constrained elegant theory. That's doomed to fail, and the best we can do is try to supply our own mushy pile of complexity that can fill the mold of the problem at hand.
+![midwit_fancy_math](assets/images/midwit_fancy_math.png)
 
+Why are the simple building blocks so effective compared to other approaches? I dunno. This seems related to the [Bitter Lesson](https://en.wikipedia.org/wiki/Bitter_lesson). It seems like a premise I'm dancing around here is that there's a kind of ladder of abstraction layers in nature, and it goes in only one direction -- from local/easily described/more "real" layers, to less local and more abstract layers. I'm sure smarter people than me would have examples of where this fails. However, if we're willing to buy that, then it wouldn't surprise me if we need simple but flexible building blocks to mimic and manipulate the world: trying to do it "top-down" is trying to cram the square peg of irreducible complexity into the round hole of some constrained elegant theory. That's doomed to fail, and the best we can do is try to supply our own mushy pile of complexity that can fill the mold of the problem at hand.
 
 ### The end result looks simple, the path to it is thorny
 
@@ -181,5 +182,4 @@ Yeah, that's pretty much hitting the nail on the head. Let this be a lesson kids
 and the full post screenshotted for posterity:
 
 ![](/assets/images/fancy_math_twitter.png)
-
 
