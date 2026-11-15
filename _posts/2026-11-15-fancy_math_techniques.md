@@ -21,6 +21,8 @@ Some examples of what I mean by "fancy math" would be topics like group/field/et
 
 But that's kind of my point! Those topics I mentioned are more like "back half of undergrad / early grad school", so it's not like they're crazy abstruse.
 
+![fancy_math_thumbnail](assets/thumbnails/fancy_math_thumbnail.png)
+
 ## Examples, in both directions
 
 Alright, so let's look at some examples of the phenomenon I'm talking about, where the cutting edge techniques rely mostly on simple math. I'll use examples of what I'm most familiar with at this point, which is ML and more specifically RL.
@@ -59,16 +61,18 @@ That can be cool, and has the potential to be exciting. E.g., you can imagine us
 
 But... it feels like when I go to see if they've, you know, *actually done that*, it turns out it's all just describing existing solutions rather than ever using the method to solve a previously unsolved problem.
 
->>learn of a new area of math
->>about to open a textbook on it
->>ask professor if the topic is just descriptive of solutions other topics have already come up with
->>he doesn't understand
->>explain the difference between producing new solution methods vs just describing existing ones in a new language
->>he still doesn't get it
->>pull out my handwritten blog post to show the difference
->>he laughs and says it's fine
->>spend a month reading topic textbook
->>it's just descriptive of existing solutions
+```
+>learn of a new area of math
+>about to open a textbook on it
+>ask professor if the topic is just descriptive of solutions other topics have already come up with
+>he doesn't understand
+>explain the difference between producing new solution methods vs just describing existing ones in a new language
+>he still doesn't get it
+>pull out my handwritten blog post to show the difference
+>he laughs and says it's fine
+>spend a month reading topic textbook
+>it's just descriptive of existing solutions
+```
 
 ![](/assets/images/Pasted%20image%2020260106162316.png)
 
