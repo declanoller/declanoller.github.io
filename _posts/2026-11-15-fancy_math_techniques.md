@@ -23,6 +23,8 @@ But that's kind of my point! Those topics I mentioned are more like "back half o
 
 ![fancy_math_thumbnail](assets/thumbnails/fancy_math_thumbnail.png)
 
+(I'm sorry, 3B1B.)
+
 ## Examples, in both directions
 
 Alright, so let's look at some examples of the phenomenon I'm talking about, where the cutting edge techniques rely mostly on simple math. I'll use examples of what I'm most familiar with at this point, which is ML and more specifically RL.
